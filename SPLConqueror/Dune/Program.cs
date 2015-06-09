@@ -13,7 +13,7 @@ namespace Dune
     static class Program
     {
 
-        static String[] DUNE_MODULES; // = new String[1] {"dune-common"};//, "dune-geometry", "dune-grid", "dune-istl", "dune-localfunctions", "dune-typetree", "dune-pdelab"};
+        static String PATH = @"D:\owncloud\all.xml";
         const String XML_LOCATION = @"doc\doxygen\xml\";
         static ArrayList features = new ArrayList();
         const bool INCLUDE_CLASSES_FROM_STD = false;
@@ -25,112 +25,112 @@ namespace Dune
         {
             Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
 
-            DUNE_MODULES = new String[] {"dune-common"};
-            parse(@"F:\Dune");
+            // If the path was not specified until now, the path is taken from the arguments
+            if (PATH.Equals(@""))
+            {
+                if (args.Length > 0)
+                {
+                    PATH = args[0];
+                }
+                else
+                {
+                    System.Console.WriteLine("No path passed as argument. Aborting...");
+                    return;
+                }
+            }
+            parse(PATH);
+
+            // Force the gc to remove all the unneeded data in memory
+            System.GC.Collect();
+            GC.WaitForPendingFinalizers();
+
+            // Needed for debugging purposes.
             System.Console.ReadKey();
         }
 
         /// <summary>
-        /// Parst die xml-Dateien von doxygen, sofern vorhanden.
+        /// Parses the xml-file containing all the other files(please use the combine.xslt-file in order to combine these if not done so).
         /// </summary>
-        /// <param name="path">Der Pfad zur Dune-Bibliothek. Im Verzeichnis befinden sich dabei in etwa Ordner wie "dune-common", "dune-grid", etc.</param>
+        /// <param name="path">The path to the all.xml-file.</param>
         static void parse(String path)
         {
-            foreach(String module in DUNE_MODULES) {
-                try
+            XmlDocument dat = new XmlDocument();
+
+            dat.Load(PATH);
+            XmlElement current = dat.DocumentElement;
+            XmlNodeList childList = current.ChildNodes;
+            foreach (XmlNode child in childList)
+            {
+                //            XmlNode child = current.ChildNodes.Item(0);
+                String refId = child.Attributes["id"].Value.ToString();
+                String name = child.FirstChild.InnerText.ToString();
+
+                // Ignore the classes which are not by Dune
+                if (!name.Contains("Dune::"))
                 {
-                    String d = path + "\\" + module + "\\" + XML_LOCATION;
-                    DirectoryInfo dir = new DirectoryInfo(d);
-                    XmlDocument dat = new XmlDocument();
-                    var files = dir.GetFiles("*", SearchOption.TopDirectoryOnly);
-                    foreach (FileInfo f in files)
-                    {
-                        try
-                        {
-                            if (!f.ToString().StartsWith("a") || !f.ToString().EndsWith(".xml")) // Skip every file which is not in our pattern "a*.xml"
-                            {
-                                continue;
-                            }
-
-                            dat.Load(d + "\\" + f.ToString());
-                            XmlElement current = dat.DocumentElement;
-                            XmlNode child = current.ChildNodes.Item(0);
-                            String refId = child.Attributes["id"].Value.ToString();
-                            String name = convertName(child.FirstChild.InnerText.ToString());
-
-                            DuneFeature df = new DuneFeature(refId, name);
-                            int indx = Program.features.IndexOf(df);
-
-                            if (indx >= 0)
-                            {
-                                df = Program.features[Program.features.IndexOf(df)] as DuneFeature;
-                            }
-                            else
-                            {
-                                Program.features.Add(df);
-                            }
-
-                            int i = 1;
-                            Boolean anotherBase = true;
-                            while (anotherBase)
-                            {
-                                XmlNode c = child.ChildNodes.Item(i);
-                                if (!c.Name.Equals("basecompoundref"))
-                                {
-                                    anotherBase = false;
-                                    continue;
-                                }
-                                if (i == 2)
-                                {
-                                    System.Console.WriteLine("The class " + f + " has more than one basecompound.");
-                                }
-
-                                String refNew;
-
-                                if (c.Attributes["refid"] == null)
-                                {
-                                    if (!INCLUDE_CLASSES_FROM_STD)
-                                    {
-                                        i++;
-                                        continue;
-                                    }
-                                    refNew = "s0000";
-                                }
-                                else
-                                {
-                                    refNew = c.Attributes["refid"].Value.ToString();
-                                }
-                                String nameNew = convertName(c.InnerText.ToString());
-                                DuneFeature newDF = new DuneFeature(refNew, nameNew);
-                                indx = Program.features.IndexOf(newDF);
-
-                                if (indx >= 0)
-                                {
-                                    newDF = Program.features[Program.features.IndexOf(newDF)] as DuneFeature;
-                                }
-                                else
-                                {
-                                    Program.features.Add(newDF);
-                                }
-
-                                df.addParent(newDF);
-                                newDF.addChildren(df);
-                                i++;
-                            }
-                            System.Console.WriteLine(f.ToString());
-                        }
-                        catch
-                        {
-                            System.Console.WriteLine("Maybe something wrong in " + f + "? Skipped this one.");
-                        }
-                    }
+                    continue;
                 }
-                catch
+
+                name = convertName(name);
+
+                DuneFeature df = new DuneFeature(refId, name);
+                int indx = Program.features.IndexOf(df);
+
+                if (indx >= 0)
                 {
-                    System.Console.WriteLine(System.Environment.StackTrace);
+                    df = Program.features[Program.features.IndexOf(df)] as DuneFeature;
+                }
+                else
+                {
+                    Program.features.Add(df);
+                }
+
+                int i = 1;
+                Boolean anotherBase = true;
+                while (anotherBase)
+                {
+                    XmlNode c = child.ChildNodes.Item(i);
+                    if (!c.Name.Equals("basecompoundref"))
+                    {
+                        anotherBase = false;
+                        continue;
+                    }
+
+                    String refNew;
+
+                    if (c.Attributes["refid"] == null)
+                    {
+                        if (!INCLUDE_CLASSES_FROM_STD)
+                        {
+                            i++;
+                            continue;
+                        }
+                        refNew = "s0000";
+                    }
+                    else
+                    {
+                        refNew = c.Attributes["refid"].Value.ToString();
+                    }
+                    String nameNew = convertName(c.InnerText.ToString());
+                    DuneFeature newDF = new DuneFeature(refNew, nameNew);
+                    indx = Program.features.IndexOf(newDF);
+
+                    if (indx >= 0)
+                    {
+                        newDF = Program.features[Program.features.IndexOf(newDF)] as DuneFeature;
+                    }
+                    else
+                    {
+                        Program.features.Add(newDF);
+                    }
+
+                    df.addParent(newDF);
+                    newDF.addChildren(df);
+                    i++;
                 }
             }
-            
+            dat = null;
+
         }
 
         /// <summary>
@@ -140,8 +140,9 @@ namespace Dune
         /// <returns>the name of the class</returns>
         private static String convertName(String toConv)
         {
+            // TODO add template-recognition
             int index = toConv.IndexOf("<");
-            if (index > 0)
+            if (index > 0 && toConv.Contains("::"))
             {
                 toConv = toConv.Substring(6, index - 6);
             }
