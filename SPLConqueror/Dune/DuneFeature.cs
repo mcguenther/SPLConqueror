@@ -10,8 +10,9 @@ namespace Dune
     {
         private String reference;
         private String className;
-        private System.Collections.ArrayList parents;
-        private ArrayList children;
+        private List<DuneFeature> parents;
+        private List<DuneFeature> children;
+        private List<DuneFeature> template;
 
         /// <summary>
         /// Constructs a new DuneFeature with the given reference and the given className
@@ -22,8 +23,9 @@ namespace Dune
         {
             this.reference = reference;
             this.className = className;
-            this.parents = new System.Collections.ArrayList();
-            this.children = new ArrayList();
+            this.parents = new List<DuneFeature>();
+            this.children = new List<DuneFeature>();
+            this.template = new List<DuneFeature>();
         }
 
         /// <summary>
@@ -33,6 +35,11 @@ namespace Dune
         public void addParent(DuneFeature d)
         {
             parents.Add(d);
+        }
+
+        public void addTemplateClass(DuneFeature d)
+        {
+            this.template.Add(d);
         }
 
         /// <summary>
