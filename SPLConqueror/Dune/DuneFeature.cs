@@ -13,6 +13,7 @@ namespace Dune
         private List<DuneFeature> parents;
         private List<DuneFeature> children;
         private List<DuneFeature> template;
+        private List<String> unknownTemplates;
 
         /// <summary>
         /// Constructs a new DuneFeature with the given reference and the given className
@@ -26,6 +27,7 @@ namespace Dune
             this.parents = new List<DuneFeature>();
             this.children = new List<DuneFeature>();
             this.template = new List<DuneFeature>();
+            this.unknownTemplates = new List<String>();
         }
 
         /// <summary>
@@ -37,9 +39,18 @@ namespace Dune
             parents.Add(d);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="d"></param>
         public void addTemplateClass(DuneFeature d)
         {
             this.template.Add(d);
+        }
+
+        public void addUnknownTemplate(String template) {
+
+            this.unknownTemplates.Add(template);
         }
 
         /// <summary>

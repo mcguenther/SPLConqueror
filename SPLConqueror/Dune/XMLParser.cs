@@ -14,6 +14,11 @@ namespace Dune
     {
 
         static List<DuneFeature> features = new List<DuneFeature>();
+        static Dictionary<DuneFeature, String> templatesToAnalyze = new Dictionary<DuneFeature, string>();
+
+        // Is only here for debugging
+        static System.IO.StreamWriter file;
+        static List<String> classNames = new List<String>();
 
         /// <summary>
         /// Parses the xml-file containing all the other files(please use the combine.xslt-file in order to combine these if not done so).
@@ -31,11 +36,23 @@ namespace Dune
                 //            XmlNode child = current.ChildNodes.Item(0);
                 String refId = child.Attributes["id"].Value.ToString();
                 String name = child.FirstChild.InnerText.ToString();
+                
+                // Helper classes are skipped
+                if (name.Contains("Helper") || name.Contains("helper"))
+                {
+                    continue;
+                }
 
                 String template = extractTemplate(name);
                 name = convertName(name);
 
                 DuneFeature df = getFeature(new DuneFeature(refId, name));
+
+                if (template != null)
+                {
+                    // Add the class and the template to the list of templates to be analyzed
+                    templatesToAnalyze.Add(df, template);
+                }
 
                 int i = 1;
 
@@ -75,8 +92,32 @@ namespace Dune
                     i++;
                 }
             }
+
+            file = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\templates.txt");
+
             dat = null;
 
+            List<DuneFeature> toRemove = new List<DuneFeature>();
+            // analyze all templates
+            foreach (DuneFeature d in templatesToAnalyze.Keys)
+            {
+                String value;
+                if (templatesToAnalyze.TryGetValue(d,out value)) {
+                    analyzeTemplate(d, value);
+                    toRemove.Add(d);
+                }
+            }
+
+            while (toRemove.Count() > 0)
+            {
+                templatesToAnalyze.Remove(toRemove.ElementAt(0));
+                toRemove.RemoveAt(0);
+            }
+            toRemove.Clear();
+
+            printClassList();
+            file.Flush();
+            file.Close();
         }
 
         /// <summary>
@@ -101,18 +142,120 @@ namespace Dune
         /// <summary>
         /// Analyzes the given template
         /// </summary>
-        /// <param name="template"></param>
-        private static void analyzeTemplate(String template)
+        /// <param name="f">the feature the template belongs to</param>
+        /// <param name="template">the template to be analyzed</param>
+        private static void analyzeTemplate(DuneFeature f, String template)
         {
-            String[] classes = template.Split(new Char[] { ',' });
+            template = template.Trim();
+            int level = 0;
+            int i = 0;
+            int from = 0;
+            DuneFeature n = null;
+            int currentBeginning = 0;
+            while (i < template.Length)
+            {
+                switch (template.ElementAt(i)) {
+                    case '<':
+                        if (level == 0)
+                        {
+                            n = getFeature(template.Substring(currentBeginning, i - currentBeginning).Trim());
 
+                            //Debug
+                            if (n == null)
+                            {
+                                addToList(template.Substring(currentBeginning, i - currentBeginning).Trim());
+                            }
+
+                            from = i;
+                        }
+                        level++;
+                        break;
+                    case '>':
+                        level--;
+                        if (n == null)
+                        {
+                            f.addUnknownTemplate(template.Substring(currentBeginning, i - currentBeginning).Trim());
+                        }
+                        else
+                        {
+                            f.addTemplateClass(n);
+                            
+                        }
+                      //  analyzeTemplate(n, template.Substring(from, i - from));
+                        
+                        break;
+                    case ',':
+                        if (level != 0)
+                        {
+                            break;
+                        }
+
+                        if (from <= currentBeginning)
+                        {
+                            DuneFeature df = getFeature(template.Substring(currentBeginning, i - currentBeginning).Trim());
+
+                            // Debug
+                            if (df == null)
+                            {
+                                addToList(template.Substring(currentBeginning, i - currentBeginning).Trim());
+                            }
+
+                            // The last class contains no template
+                            if (df != null)
+                            {
+                                f.addTemplateClass(df);
+                            }
+                        }
+                        // There has to be one more classname which may also contain a template
+                        currentBeginning = i + 1;
+
+                        break;
+                    default:
+                        break;
+                }
+
+                i++;
+            }
+
+        }
+
+        private static void addToList(String className) {
+            if (!classNames.Contains(className))
+            {
+                classNames.Add(className);
+            }
+        }
+
+        private static void printClassList()
+        {
+            foreach (String s in classNames)
+            {
+                file.WriteLine(s);
+            }
+        }
+
+        /// <summary>
+        /// Returns the feature with the given name. Note that is does return the <ul>first</ul> feature with this name if it occurs more than once.
+        /// </summary>
+        /// <param name="className">the name of the feature to be searched for</param>
+        /// <returns>the feature with the given name</returns>
+        private static DuneFeature getFeature(String className)
+        {
+            foreach (DuneFeature f in features)
+            {
+                if (f.getClassName().Equals(className))
+                {
+                    return f;
+                }
+            }
+            return null;
         }
 
         /// <summary>
         /// This method extracts the information of the template.
         /// </summary>
         /// <param name="toConv">the whole name of the class including the template</param>
-        /// <returns></returns>
+        /// <returns>the string containing the template</returns>
         private static String extractTemplate(String toConv)
         {
             if (!toConv.Contains("<"))

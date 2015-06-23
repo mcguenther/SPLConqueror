@@ -37,7 +37,7 @@ namespace Dune
             }
             XMLParser.parse(PATH);
 
-            // Force the gc to remove all the unneeded data in memory
+            // Force the gc to remove all the unneeded data in memory - May be remove if it does not bring any improvement
             System.GC.Collect();
             GC.WaitForPendingFinalizers();
 
