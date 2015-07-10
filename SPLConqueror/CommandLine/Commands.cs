@@ -38,6 +38,9 @@ namespace CommandLine
 
         public const string COMMAND_ANALYZE_LEARNING = "analyze-learning";
         public const string COMMAND_PRINT_MLSETTINGS = "printsettings";
+        
+        // using this option, a partial or full option order can be defined. The order is used during the printconfigs command. To define an order, the names of the options separated with whitespace have to be defined. If an option is not defined in the ordering its name and the value is printed at the end of the configurtion. 
+        public const string COMMAND_SAMPLING_OPTIONORDER = "optionorder";
         public const string COMMAND_PRINT_CONFIGURATIONS = "printconfigs";
 
         public const string COMMAND_VARIABILITYMODEL = "vm";
@@ -143,12 +146,12 @@ namespace CommandLine
                         if (taskAsParameter.Contains(COMMAND_VALIDATION))
                         {
                             exp.addBinarySelection_Validation(vg.generateAllVariantsFast(GlobalState.varModel));
-                            exp.addBinarySampling_Validation("all-Binary");
+                            exp.addBinarySampling_Validation(COMMAND_SAMPLE_ALLBINARY);
                         }
                         else
                         {
                             exp.addBinarySelection_Learning(vg.generateAllVariantsFast(GlobalState.varModel));
-                            exp.addBinarySampling_Learning("all-Binary");
+                            exp.addBinarySampling_Learning(COMMAND_SAMPLE_ALLBINARY);
                         }
 
                         break;
@@ -181,6 +184,10 @@ namespace CommandLine
                     }
                 case COMMAND_EXERIMENTALDESIGN:
                     performOneCommand_ExpDesign(task);
+                    break;
+
+                case COMMAND_SAMPLING_OPTIONORDER:
+                    parseOptionOrder(task);
                     break;
 
                 case COMMAND_VARIABILITYMODEL:
@@ -260,7 +267,7 @@ namespace CommandLine
                         }
                         string[] para = task.Split(new char[] { ' ' });
                         // TODO very error prune..
-                        ConfigurationPrinter printer = new ConfigurationPrinter(para[0], para[1], para[2]);
+                        ConfigurationPrinter printer = new ConfigurationPrinter(para[0], para[1], para[2], GlobalState.optionOrder);
                         printer.print(configurations);
 
                         break;
@@ -373,6 +380,17 @@ namespace CommandLine
                     return command;
             }
             return "";
+        }
+
+        private void parseOptionOrder(string task)
+        {
+            String[] optionNames = task.Split(' ');
+            foreach(String option in optionNames){
+                if (option.Trim().Length == 0)
+                    continue;
+                GlobalState.optionOrder.Add(GlobalState.varModel.getOption(option.Trim()));
+            }
+
         }
 
         /// <summary>
@@ -534,12 +552,14 @@ namespace CommandLine
 
                 case COMMAND_EXPDESIGN_HYPERSAMPLING:
                     design = new HyperSampling(optionsToConsider);
-                    ((HyperSampling)design).Precision = Int32.Parse(parameter["precision"]);
+                    if(parameter.ContainsKey("precision"))
+                        ((HyperSampling)design).Precision = Int32.Parse(parameter["precision"]);
                     break;
 
                 case COMMAND_EXPDESIGN_ONEFACTORATATIME:
                     design = new OneFactorAtATime(optionsToConsider);
-                    ((OneFactorAtATime)design).distinctValuesPerOption = Int32.Parse(parameter["distinctValuesPerOption"]);
+                    if(parameter.ContainsKey("distinctValuesPerOption"))
+                        ((OneFactorAtATime)design).distinctValuesPerOption = Int32.Parse(parameter["distinctValuesPerOption"]);
                     break;
 
                 case COMMAND_EXPDESIGN_KEXCHANGE:
@@ -548,7 +568,8 @@ namespace CommandLine
 
                 case COMMAND_EXPDESIGN_PLACKETTBURMAN:
                     design = new PlackettBurmanDesign(optionsToConsider);
-                    ((PlackettBurmanDesign)design).setSeed(Int32.Parse(parameter["measurements"]), Int32.Parse(parameter["level"]));
+                    if(parameter.ContainsKey("measurements") && parameter.ContainsKey("level"))
+                        ((PlackettBurmanDesign)design).setSeed(Int32.Parse(parameter["measurements"]), Int32.Parse(parameter["level"]));
                     break;
 
                 case COMMAND_EXPDESIGN_RANDOM:
