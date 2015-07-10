@@ -10,9 +10,12 @@ namespace Dune
 {
     static class Program
     {
+        // The path of the xml-file to read the dependencies from
+        static String PATH = @"all.xml";
 
-        static String PATH = @"D:\owncloud\all.xml";
+        // Should be no longer needed
         const String XML_LOCATION = @"doc\doxygen\xml\";
+
         public const bool INCLUDE_CLASSES_FROM_STD = false;
 
         /// <summary>
@@ -41,7 +44,9 @@ namespace Dune
             System.GC.Collect();
             GC.WaitForPendingFinalizers();
 
+            
             // Needed for debugging purposes.
+            System.Console.WriteLine("Press a button to close the window.");
             System.Console.ReadKey();
         }
 

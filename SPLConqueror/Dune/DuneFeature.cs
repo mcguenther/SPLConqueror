@@ -14,6 +14,7 @@ namespace Dune
         private List<DuneFeature> children;
         private List<DuneFeature> template;
         private List<String> unknownTemplates;
+        private List<int> methodHashes;
 
         /// <summary>
         /// Constructs a new DuneFeature with the given reference and the given className
@@ -28,6 +29,45 @@ namespace Dune
             this.children = new List<DuneFeature>();
             this.template = new List<DuneFeature>();
             this.unknownTemplates = new List<String>();
+            this.methodHashes = new List<int>();
+        }
+
+        /// <summary>
+        /// Returns the methodHashes of the specific class.
+        /// </summary>
+        /// <returns>the methodHashes of the specific class</returns>
+        public List<int> getMethodHashes()
+        {
+            return this.methodHashes;
+        }
+
+        /// <summary>
+        /// Returns <code>true</code> iff the hash is included in the <code>methodHashes</code>-list.
+        /// </summary>
+        /// <param name="hash">the hash it is searched for</param>
+        /// <returns><code>true</code> iff the hash is included in the <code>methodHases</code>-list</returns>
+        public Boolean containsMethodHash(int hash)
+        {
+            return methodHashes.Contains(hash);
+        }
+
+        /// <summary>
+        /// Adds the given method signature to the list of the feature
+        /// </summary>
+        /// <param name="methodSig">the method signature to add</param>
+        public void addMethod(String methodSig)
+        {
+            this.methodHashes.Add(methodSig.GetHashCode());
+        }
+
+        /// <summary>
+        /// Returns <code>true</code> if the specific class has a direct relation to the given feature; <code>false</code> otherwise.
+        /// </summary>
+        /// <param name="df">the feature a relation is searched to</param>
+        /// <returns><code>true</code> if the specific class has a direct relation to the given feature; <code>false</code> otherwise</returns>
+        public Boolean hasDirectRelationTo(DuneFeature df)
+        {
+            return this.parents.Contains(df) || this.children.Contains(df);
         }
 
         /// <summary>
@@ -40,9 +80,9 @@ namespace Dune
         }
 
         /// <summary>
-        /// 
+        /// Adds a template class to the template
         /// </summary>
-        /// <param name="d"></param>
+        /// <param name="d">the template class as a <code>DuneFeature</code> to add</param>
         public void addTemplateClass(DuneFeature d)
         {
             this.template.Add(d);

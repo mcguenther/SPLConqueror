@@ -16,6 +16,12 @@ namespace Dune
         static List<DuneFeature> features = new List<DuneFeature>();
         static Dictionary<DuneFeature, String> templatesToAnalyze = new Dictionary<DuneFeature, string>();
 
+        static List<DuneFeature> classesAndInterfaces = new List<DuneFeature>();
+        static List<DuneFeature> classes = new List<DuneFeature>();
+
+
+        static Dictionary<DuneFeature, String> classesToAnalyze = new Dictionary<DuneFeature, string>();
+
         // Is only here for debugging
         static System.IO.StreamWriter file;
         static List<String> classNames = new List<String>();
@@ -52,6 +58,27 @@ namespace Dune
                 {
                     // Add the class and the template to the list of templates to be analyzed
                     templatesToAnalyze.Add(df, template);
+                }
+
+                // This boolean indicates if the current child is an interface, an abstract class or a normal class.
+                Boolean normalClass = child.Attributes.GetNamedItem("kind").Value.Equals("struct") ||
+                    child.Attributes.GetNamedItem("abstract") == null;
+                Boolean interfaceOrNotAbstract = child.Attributes.GetNamedItem("kind") != null && 
+                    (normalClass);
+
+                if (interfaceOrNotAbstract)
+                {
+                    if (normalClass)
+                    {
+                        classes.Add(df);
+                    }
+                    // Save the methods in the feature
+                    saveMethods(child, df);
+                    classesAndInterfaces.Add(df);
+                }
+                else
+                {
+                    // TODO Relevant?
                 }
 
                 int i = 1;
@@ -118,6 +145,84 @@ namespace Dune
             printClassList();
             file.Flush();
             file.Close();
+
+            System.Console.WriteLine("Now finding potential parents(duck-typing)");
+            findPotentialParents();
+        }
+
+        /// <summary>
+        /// Analyzes for classes from which the classes of the <code>classes</code>-list could inherit from.
+        /// </summary>
+        private static void findPotentialParents()
+        {
+            foreach (DuneFeature df in classes)
+            {
+                foreach (DuneFeature comp in classesAndInterfaces)
+                {
+                    // Don't compare it with itself and with direct related features(weak optimization)
+                    if (df != comp && !df.hasDirectRelationTo(comp))
+                    {
+                        Boolean isSubclassOf = true;
+                        foreach (int methodHash in comp.getMethodHashes())
+                        {
+                            if (!df.containsMethodHash(methodHash))
+                            {
+                                isSubclassOf = false;
+                                break;
+                            }
+                        }
+                        if (isSubclassOf)
+                        {
+                            System.Console.WriteLine(df.getClassName() + " inherits from " + comp.getClassName());
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Saves the methods of the class/interface
+        /// </summary>
+        /// <param name="node">the object containing all the information about the class/interface</param>
+        /// <param name="df">the feature-object the methods should be added to</param>
+        private static void saveMethods(XmlNode node, DuneFeature df)
+        {
+
+            foreach (XmlNode child in node.ChildNodes)
+            {
+                // Only the public functions are crucial
+                if (child.Name.Equals("sectiondef") && child.Attributes.GetNamedItem("kind") != null && child.Attributes.GetNamedItem("kind").Value.Equals("public-func")) {
+                    
+                    // Access memberdefs and search for the value of the definition tag
+                    foreach (XmlNode c in node.ChildNodes)
+                    {
+                        if (c.Name.Equals("memberdef")) {
+                            XmlNode defi = getChild("definition", c.ChildNodes);
+                            df.addMethod(defi.Value);
+                        }
+                    }
+                    break;
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// Returns the node of the nodelist with the given name.
+        /// </summary>
+        /// <param name="name">the name to be searched for</param>
+        /// <param name="list">the list which contains all children</param>
+        /// <returns>the node of the nodelist with the given name</returns>
+        private static XmlNode getChild(String name, XmlNodeList list)
+        {
+            foreach (XmlNode child in list)
+            {
+                if (child.Name.Equals(name))
+                {
+                    return child;
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -154,13 +259,15 @@ namespace Dune
             int currentBeginning = 0;
             while (i < template.Length)
             {
+                // The whole template is parsed and only the arguments in the upper layer(not containing another template) are important.
+                // The arguments in another template are analyzed recursively.
                 switch (template.ElementAt(i)) {
                     case '<':
                         if (level == 0)
                         {
                             n = getFeature(template.Substring(currentBeginning, i - currentBeginning).Trim());
 
-                            //Debug
+                            // TODO Debug
                             if (n == null)
                             {
                                 addToList(template.Substring(currentBeginning, i - currentBeginning).Trim());
@@ -194,10 +301,16 @@ namespace Dune
                         {
                             DuneFeature df = getFeature(template.Substring(currentBeginning, i - currentBeginning).Trim());
 
-                            // Debug
+                            // TODO Debug
                             if (df == null)
                             {
                                 addToList(template.Substring(currentBeginning, i - currentBeginning).Trim());
+
+                                // Debug
+                                //if (template.Substring(currentBeginning, i - currentBeginning).Trim().Equals("1"))
+                                //{
+                                //    System.Console.WriteLine("1: " + f.getClassName());
+                                //}
                             }
 
                             // The last class contains no template
