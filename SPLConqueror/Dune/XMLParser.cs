@@ -19,6 +19,9 @@ namespace Dune
         static List<DuneFeature> classesAndInterfaces = new List<DuneFeature>();
         static List<DuneFeature> classes = new List<DuneFeature>();
 
+        static List<DuneFeature> classesWithoutParents = new List<DuneFeature>();
+        static List<DuneFeature> classesWithoutChildren = new List<DuneFeature>();
+
 
         static Dictionary<DuneFeature, String> classesToAnalyze = new Dictionary<DuneFeature, string>();
 
@@ -37,6 +40,7 @@ namespace Dune
             dat.Load(path);
             XmlElement current = dat.DocumentElement;
             XmlNodeList childList = current.ChildNodes;
+            System.Console.WriteLine("Parsing the file...");
             foreach (XmlNode child in childList)
             {
                 //            XmlNode child = current.ChildNodes.Item(0);
@@ -118,13 +122,27 @@ namespace Dune
                     newDF.addChildren(df);
                     i++;
                 }
+
+                // Now the classes/interfaces with no parents and no children are sorted
+                // in order to minimize the number of comparisons.
+                if (!df.hasParents() && df.getMethodHashes().Any())
+                {
+                    classesWithoutParents.Add(df);
+                }
+                if (!df.hasChildren())
+                { 
+                    classesWithoutChildren.Add(df); 
+                }
             }
+
+            System.Console.WriteLine("Done!");
 
             file = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\templates.txt");
 
             dat = null;
 
             List<DuneFeature> toRemove = new List<DuneFeature>();
+            System.Console.WriteLine("Analyzing all templates and printing them out");
             // analyze all templates
             foreach (DuneFeature d in templatesToAnalyze.Keys)
             {
@@ -155,12 +173,15 @@ namespace Dune
         /// </summary>
         private static void findPotentialParents()
         {
-            foreach (DuneFeature df in classes)
+            System.IO.StreamWriter file = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\inherits.txt");
+
+            // The newer version with optimizations
+            foreach (DuneFeature df in classesWithoutChildren)
             {
-                foreach (DuneFeature comp in classesAndInterfaces)
+                foreach (DuneFeature comp in classesWithoutParents)
                 {
-                    // Don't compare it with itself and with direct related features(weak optimization)
-                    if (df != comp && !df.hasDirectRelationTo(comp))
+                    // If there is no transitive relation between the classes, the classes are analyzed
+                    if (df != comp && !df.hasRelationTo(comp))
                     {
                         Boolean isSubclassOf = true;
                         foreach (int methodHash in comp.getMethodHashes())
@@ -173,11 +194,37 @@ namespace Dune
                         }
                         if (isSubclassOf)
                         {
-                            System.Console.WriteLine(df.getClassName() + " inherits from " + comp.getClassName());
+                            file.WriteLine(df.getClassName() + " -> " + comp.getClassName());
                         }
                     }
                 }
             }
+            file.Flush();
+            file.Close();
+
+        //    foreach (DuneFeature df in classes)
+        //    {
+        //        foreach (DuneFeature comp in classesAndInterfaces)
+        //        {
+        //            // Don't compare it with itself and with direct related features(weak optimization)
+        //            if (df != comp && !df.hasDirectRelationTo(comp))
+        //            {
+        //                Boolean isSubclassOf = true;
+        //                foreach (int methodHash in comp.getMethodHashes())
+        //                {
+        //                    if (!df.containsMethodHash(methodHash))
+        //                    {
+        //                        isSubclassOf = false;
+        //                        break;
+        //                    }
+        //                }
+        //                if (isSubclassOf)
+        //                {
+        //                    System.Console.WriteLine(df.getClassName() + " inherits from " + comp.getClassName());
+        //                }
+        //            }
+        //        }
+        //    }
         }
 
         /// <summary>
@@ -194,11 +241,13 @@ namespace Dune
                 if (child.Name.Equals("sectiondef") && child.Attributes.GetNamedItem("kind") != null && child.Attributes.GetNamedItem("kind").Value.Equals("public-func")) {
                     
                     // Access memberdefs and search for the value of the definition tag
-                    foreach (XmlNode c in node.ChildNodes)
+                    foreach (XmlNode c in child.ChildNodes)
                     {
                         if (c.Name.Equals("memberdef")) {
-                            XmlNode defi = getChild("definition", c.ChildNodes);
-                            df.addMethod(defi.Value);
+                            XmlNode type = getChild("type", c.ChildNodes);
+                            XmlNode args = getChild("argsstring", c.ChildNodes);
+                            XmlNode name = getChild("name", c.ChildNodes);
+                            df.addMethod(type.InnerText + " " + name.InnerText + args.InnerText);
                         }
                     }
                     break;

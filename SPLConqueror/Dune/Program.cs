@@ -12,7 +12,7 @@ namespace Dune
     {
         // The path of the xml-file to read the dependencies from
         // Please adjust it, as I have not found a solution not to do so...
-        static String PATH = @"all.xml";
+        static String PATH = @"D:\owncloud\all.xml";
 
         // Should be no longer needed
         const String XML_LOCATION = @"doc\doxygen\xml\";

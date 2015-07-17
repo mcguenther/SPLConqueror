@@ -33,6 +33,24 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns whether this feature has parents or not.
+        /// </summary>
+        /// <returns><code>true</code> if this feature has parents; <code>false</code> otherwise</returns>
+        public Boolean hasParents()
+        {
+            return parents.Any();
+        }
+
+        /// <summary>
+        /// Returns whether this feature has children or not.
+        /// </summary>
+        /// <returns><code>true</code> if this feature has children; <code>false</code> otherwise</returns>
+        public Boolean hasChildren()
+        {
+            return children.Any();
+        }
+
+        /// <summary>
         /// Returns the methodHashes of the specific class.
         /// </summary>
         /// <returns>the methodHashes of the specific class</returns>
@@ -68,6 +86,59 @@ namespace Dune
         public Boolean hasDirectRelationTo(DuneFeature df)
         {
             return this.parents.Contains(df) || this.children.Contains(df);
+        }
+
+        /// <summary>
+        /// Returns if the class has a relation(also considering the transitive hull) to the given class.
+        /// </summary>
+        /// <param name="df">the class, a relation should be searched to</param>
+        /// <returns><code>true</code> if the class has a relation(also indirect) to the given class; <code>false</code> otherwise</returns>
+        public Boolean hasRelationTo(DuneFeature df)
+        {
+            return hasRelationTo(df, new List<DuneFeature>());
+        }
+
+        /// <summary>
+        /// Returns if the class has a relation(also considering the transitive hull) to the given class.
+        /// </summary>
+        /// <param name="df">the class, a relation should be searched to</param>
+        /// <param name="analyzed">the list which contains the classes which were already analyzed</param>
+        /// <returns><code>true</code> if the class has a relation(also indirect) to the given class; <code>false</code> otherwise</returns>
+        private Boolean hasRelationTo(DuneFeature df, List<DuneFeature> analyzed)
+        {
+            if (analyzed.Contains(this))
+            {
+                return false;
+            }
+
+            if (df == this)
+            {
+                return true;
+            }
+
+            if (!hasDirectRelationTo(df))
+            {
+                analyzed.Add(this);
+                foreach (DuneFeature p in parents)
+                {
+                    if (p.hasRelationTo(df, analyzed))
+                    {
+                        return true;
+                    }
+                }
+                foreach (DuneFeature c in children)
+                {
+                    if (c.hasRelationTo(df, analyzed))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         /// <summary>
