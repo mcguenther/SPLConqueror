@@ -165,6 +165,15 @@ namespace Dune
         }
 
         /// <summary>
+        /// Sets the reference to the given reference.
+        /// </summary>
+        /// <param name="reference">the reference on which the feature should be set to</param>
+        public void setReference(String reference)
+        {
+            this.reference = reference;
+        }
+
+        /// <summary>
         /// Adds a child feature.
         /// </summary>
         /// <param name="d">the feature to add to the children-list</param>
@@ -207,7 +216,7 @@ namespace Dune
             }
 
             // Return true if the fields match:
-            return this.className.Equals(p.className) && this.reference.Equals(p.reference);
+            return this.className.Equals(p.className);
         }
 
         public override int GetHashCode()

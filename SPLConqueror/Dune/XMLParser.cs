@@ -45,7 +45,18 @@ namespace Dune
             {
                 //            XmlNode child = current.ChildNodes.Item(0);
                 String refId = child.Attributes["id"].Value.ToString();
+
                 String name = child.FirstChild.InnerText.ToString();
+
+                if (name.Equals("Dune::AdaptDataHandleInterface"))
+                {
+                    Console.WriteLine("");
+                }
+
+                if (refId == null)
+                {
+                    refId = name;
+                }
                 
                 // Helper classes are skipped
                 if (name.Contains("Helper") || name.Contains("helper"))
@@ -56,16 +67,30 @@ namespace Dune
                 String template = extractTemplate(name);
                 name = convertName(name);
 
+                if (!(template == null))
+                {
+                    name += "<" + template + ">";
+                }
+
+
+
                 DuneFeature df = getFeature(new DuneFeature(refId, name));
 
-                if (template != null)
+                if (df.getReference() == null && refId != null)
+                {
+                    df.setReference(refId);
+                }
+
+
+                if (template != null && !templatesToAnalyze.ContainsKey(df))
                 {
                     // Add the class and the template to the list of templates to be analyzed
                     templatesToAnalyze.Add(df, template);
                 }
 
                 // This boolean indicates if the current child is an interface, an abstract class or a normal class.
-                Boolean normalClass = child.Attributes.GetNamedItem("kind").Value.Equals("struct") ||
+                Boolean structClass = child.Attributes.GetNamedItem("kind").Value.Equals("struct");
+                Boolean normalClass = structClass ||
                     child.Attributes.GetNamedItem("abstract") == null;
                 Boolean interfaceOrNotAbstract = child.Attributes.GetNamedItem("kind") != null && 
                     (normalClass);
@@ -85,6 +110,7 @@ namespace Dune
                     // TODO Relevant?
                 }
 
+                // Has to start from 1, because the child at position 0 is always the compoundname-tag
                 int i = 1;
 
                 // This boolean indicates if there are another basecompoundref-elements
@@ -97,25 +123,26 @@ namespace Dune
                     if (!c.Name.Equals("basecompoundref"))
                     {
                         anotherBase = false;
+                        i++;
                         continue;
                     }
 
-                    String refNew;
+                    String refNew = null;
+                    String nameNew = convertName(c.InnerText.ToString());
 
                     if (c.Attributes["refid"] == null)
                     {
-                        if (!Program.INCLUDE_CLASSES_FROM_STD)
+                        if (nameNew.Contains("std") && !Program.INCLUDE_CLASSES_FROM_STD)
                         {
                             i++;
                             continue;
                         }
-                        refNew = "s0000";
                     }
                     else
                     {
                         refNew = c.Attributes["refid"].Value.ToString();
                     }
-                    String nameNew = convertName(c.InnerText.ToString());
+                    
                     DuneFeature newDF = getFeature(new DuneFeature(refNew, nameNew));
 
                     df.addParent(newDF);
@@ -129,11 +156,40 @@ namespace Dune
                 {
                     classesWithoutParents.Add(df);
                 }
-                if (!df.hasChildren())
+                if (!df.hasChildren() && !structClass)
                 { 
                     classesWithoutChildren.Add(df); 
                 }
             }
+
+
+            List<DuneFeature> toRemove = new List<DuneFeature>();
+            // The classes which no longer belong to these lists are removed
+            foreach (DuneFeature df in classesWithoutParents) {
+                if (df.hasParents()) {
+                    toRemove.Add(df);
+                }
+            }
+
+            foreach (DuneFeature toRem in toRemove) {
+                classesWithoutParents.Remove(toRem);
+            }
+            toRemove.Clear();
+
+            foreach (DuneFeature df in classesWithoutChildren)
+            {
+                if (df.hasChildren())
+                {
+                    toRemove.Add(df);
+                }
+            }
+
+            foreach (DuneFeature toRem in toRemove)
+            {
+                classesWithoutChildren.Remove(toRem);
+            }
+
+            toRemove.Clear();
 
             System.Console.WriteLine("Done!");
 
@@ -141,7 +197,6 @@ namespace Dune
 
             dat = null;
 
-            List<DuneFeature> toRemove = new List<DuneFeature>();
             System.Console.WriteLine("Analyzing all templates and printing them out");
             // analyze all templates
             foreach (DuneFeature d in templatesToAnalyze.Keys)
