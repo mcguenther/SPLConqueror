@@ -15,6 +15,7 @@ namespace Dune
         private List<DuneFeature> template;
         private List<String> unknownTemplates;
         private List<int> methodHashes;
+        private Dictionary<String, List<String>> enums;
 
         /// <summary>
         /// Constructs a new DuneFeature with the given reference and the given className
@@ -30,6 +31,17 @@ namespace Dune
             this.template = new List<DuneFeature>();
             this.unknownTemplates = new List<String>();
             this.methodHashes = new List<int>();
+            this.enums = new Dictionary<string, List<string>>();
+        }
+
+        /// <summary>
+        /// Adds an enum to the dictionary of enums of the class.
+        /// </summary>
+        /// <param name="key">the name of the enum</param>
+        /// <param name="enums">a list containing all enum-options</param>
+        public void addEnum(String key, List<String> enums)
+        {
+            this.enums.Add(key, enums);
         }
 
         /// <summary>

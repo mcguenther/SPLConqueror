@@ -101,6 +101,14 @@ namespace Dune
                     {
                         classes.Add(df);
                     }
+                    if (df.getClassName().Equals("Dune::DuneGridFormatParser"))
+                    {
+                        Console.Write("");
+                    }
+
+                    // Save the enums in the feature
+                    saveEnums(child, df);
+
                     // Save the methods in the feature
                     saveMethods(child, df);
                     classesAndInterfaces.Add(df);
@@ -110,7 +118,7 @@ namespace Dune
                     // TODO Relevant?
                 }
 
-                // Has to start from 1, because the child at position 0 is always the compoundname-tag
+                // Has to start from 1, because the child at position 0 is always the compoundname-tag containing the own name of the class as well as the template
                 int i = 1;
 
                 // This boolean indicates if there are another basecompoundref-elements
@@ -256,36 +264,50 @@ namespace Dune
             }
             file.Flush();
             file.Close();
+        }
 
-        //    foreach (DuneFeature df in classes)
-        //    {
-        //        foreach (DuneFeature comp in classesAndInterfaces)
-        //        {
-        //            // Don't compare it with itself and with direct related features(weak optimization)
-        //            if (df != comp && !df.hasDirectRelationTo(comp))
-        //            {
-        //                Boolean isSubclassOf = true;
-        //                foreach (int methodHash in comp.getMethodHashes())
-        //                {
-        //                    if (!df.containsMethodHash(methodHash))
-        //                    {
-        //                        isSubclassOf = false;
-        //                        break;
-        //                    }
-        //                }
-        //                if (isSubclassOf)
-        //                {
-        //                    System.Console.WriteLine(df.getClassName() + " inherits from " + comp.getClassName());
-        //                }
-        //            }
-        //        }
-        //    }
+        /// <summary>
+        /// This method saves the enums of the respective class in the corresponding Dictionary-element from the DuneFeature-class.
+        /// </summary>
+        /// <param name="node">the object containing all information about the class/interface</param>
+        /// <param name="df">the feature-object the enums should be added to</param>
+        private static void saveEnums(XmlNode node, DuneFeature df)
+        {
+            foreach (XmlNode child in node.ChildNodes)
+            {
+                // Only the public types are crucial
+                if (child.Name.Equals("sectiondef") && child.Attributes.GetNamedItem("kind") != null && child.Attributes.GetNamedItem("kind").Value.Equals("public-type"))
+                {
+                    // Access memberdefs and search for the value of the definition tag
+                    foreach (XmlNode c in child.ChildNodes)
+                    {
+                        if (c.Name.Equals("memberdef") && c.Attributes.GetNamedItem("kind") != null && c.Attributes.GetNamedItem("kind").Value.Equals("enum"))
+                        {
+                            XmlNode name = getChild("name", c.ChildNodes);
+                            List<String> enumNames = new List<String>();
+
+                            // Extract the enum-options
+                            foreach (XmlNode enumvalue in c.ChildNodes)
+                            {
+                                if (enumvalue.Name.Equals("enumvalue"))
+                                {
+                                    enumNames.Add(getChild("name", enumvalue.ChildNodes).InnerText);
+
+                                }
+                            }
+
+                            df.addEnum(name.InnerText, enumNames);
+                        }
+                    }
+                    break;
+                }
+            }
         }
 
         /// <summary>
         /// Saves the methods of the class/interface
         /// </summary>
-        /// <param name="node">the object containing all the information about the class/interface</param>
+        /// <param name="node">the object containing all information about the class/interface</param>
         /// <param name="df">the feature-object the methods should be added to</param>
         private static void saveMethods(XmlNode node, DuneFeature df)
         {
