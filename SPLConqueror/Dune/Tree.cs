@@ -14,7 +14,7 @@ namespace Dune
     /// </summary>
     class Tree : TreeElement
     {
-        List<TreeNode> children;
+        private List<TreeNode> children;
 
         /// <summary>
         /// The constructor of the <code>Tree</code>-element analyzes the given template recursively.
@@ -22,7 +22,12 @@ namespace Dune
         /// <param name="templateToAnalyze">the template to analyze</param>
         public Tree(String templateToAnalyze)
         {
-            
+            // TODO: implement
+        }
+
+        public List<Object> getRange()
+        {
+            return null;
         }
 
         /// <summary>
@@ -30,7 +35,7 @@ namespace Dune
         /// </summary>
         /// <param name="templateToAnalyze">the template to analyze</param>
         public void analyzeTemplate(String templateToAnalyze) {
-
+            // TODO: implement
         }
     }
 }

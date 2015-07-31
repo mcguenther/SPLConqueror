@@ -13,6 +13,8 @@ namespace Dune
     class XMLParser
     {
 
+        static String[] blacklisted = { "Dune::YaspGrid::YGridLevel" };
+
         static List<DuneFeature> features = new List<DuneFeature>();
         static Dictionary<DuneFeature, String> templatesToAnalyze = new Dictionary<DuneFeature, string>();
 
@@ -101,10 +103,6 @@ namespace Dune
                     {
                         classes.Add(df);
                     }
-                    if (df.getClassName().Equals("Dune::DuneGridFormatParser"))
-                    {
-                        Console.Write("");
-                    }
 
                     // Save the enums in the feature
                     saveEnums(child, df);
@@ -160,7 +158,7 @@ namespace Dune
 
                 // Now the classes/interfaces with no parents and no children are sorted
                 // in order to minimize the number of comparisons.
-                if (!df.hasParents() && df.getMethodHashes().Any())
+                if (!df.hasParents() && df.getMethodHashes().Any() && !isBlacklisted(df.getClassName()))
                 {
                     classesWithoutParents.Add(df);
                 }
@@ -229,6 +227,24 @@ namespace Dune
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
             findPotentialParents();
+        }
+
+
+        /// <summary>
+        /// Returns <code>true</code> if the given name appears in the blacklist; <code>false</code> otherwise.
+        /// </summary>
+        /// <param name="name">the name of the class</param>
+        /// <returns><code>true</code> if the given name appears in the blacklist; <code>false</code> otherwise</returns>
+        private static Boolean isBlacklisted(String name)
+        {
+            for (int i = 0; i < blacklisted.Length; i++)
+            {
+                if (name.Equals(blacklisted[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>

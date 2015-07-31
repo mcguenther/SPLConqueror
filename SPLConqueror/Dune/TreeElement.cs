@@ -14,6 +14,6 @@ namespace Dune
         /// Returns the range of the respective element.
         /// </summary>
         /// <returns>the range of the respective element</returns>
-        public List<Object> getRange();
+        List<Object> getRange();
     }
 }
