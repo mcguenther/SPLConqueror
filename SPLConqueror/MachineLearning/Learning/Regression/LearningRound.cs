@@ -56,5 +56,38 @@ namespace MachineLearning.Learning.Regression
 
         internal LearningRound() {}
 
+        public override bool Equals(System.Object obj)
+        {
+            LearningRound other = ((LearningRound)obj);
+            if (this.featureSet.Count != other.featureSet.Count)
+                return false;
+
+            for (int i = 0; i < this.featureSet.Count; i++)
+            {
+                bool found = false;
+                int otherIndex = 0;
+                do
+                {
+                    if(other.featureSet[otherIndex].Equals(this.featureSet[i]))
+                        found = true;
+
+                    otherIndex += 1;
+                } while (!found && otherIndex < this.featureSet.Count);
+
+                if (!found)
+                {
+                    return false;
+                }
+                
+            }
+            return true;
+        }
+
+
+        public override int GetHashCode()
+        {
+            // this could lead to a bug...
+            return this.featureSet.GetHashCode();
+        }
     }
 }

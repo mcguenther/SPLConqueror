@@ -108,8 +108,12 @@ namespace MachineLearning.Learning.Regression
 
                 if (this.MLsettings.useBackward)
                 {
-                    current = performBackwardStep(current);
-                    learningHistory.Add(current);
+                    LearningRound afterBackward = performBackwardStep(current);
+                    if (!afterBackward.Equals(current))
+                    {
+                        learningHistory.Add(afterBackward);
+                    }
+                    current = afterBackward;
                 }
             } while (!abortLearning(current, oldRoundError));
             updateInfluenceModel();
@@ -500,28 +504,54 @@ namespace MachineLearning.Learning.Regression
             {
                 double roundError = Double.MaxValue;
                 Feature toRemove = null;
-                foreach (Feature toDelete in featureSet)
+                // we start with index 1 because index 0 is the feature describing the influence of the root feature
+                // we end at Count - 1 because at Cound the 
+                for(int i = 1; i < featureSet.Count -1; i++)
                 {
+                    Feature toDelete = featureSet[i];
                     List<Feature> tempSet = copyCombination(featureSet);
                     tempSet.Remove(toDelete);
                     double relativeError = 0;
+                    if (!fitModel(tempSet))
+                        continue;
                     double error = computeModelError(tempSet,out relativeError);
-                    if (error - this.MLsettings.backwardErrorDelta < current.validationError && error < roundError)
-                    {
-                        roundError = error;
-                        toRemove = toDelete;
+                    if (errorImrpovementInBackwardStepAllowed(error, current.validationError))
+                    { 
+                        if(error < roundError)
+                        {
+                            roundError = error;
+                            toRemove = toDelete;
+                        }
                     }
                 }
                 if (toRemove != null)
                     featureSet.Remove(toRemove);
                 if (featureSet.Count <= 2)
                     abort = true;
+                if (toRemove == null)
+                {
+                    abort = true;
+                }
             }
-            current.FeatureSet = featureSet;
-            return current;
+
+            fitModel(featureSet);
+
+            double relativeErrorTrain = 0;
+            double relativeErrorEval = 0;
+            LearningRound newRound = new LearningRound(featureSet, computeLearningError(featureSet, out relativeErrorTrain), computeValidationError(featureSet, out relativeErrorEval), current.round);
+            newRound.learningError_relative = relativeErrorTrain;
+            newRound.validationError_relative = relativeErrorEval;
+            return newRound;
         }
 
-
+        protected bool errorImrpovementInBackwardStepAllowed(double newError, double oldError)
+        {
+            if (newError - this.MLsettings.backwardErrorDelta < oldError)
+            {
+                return true;
+            }
+            return false;
+        }
 
         #endregion
 
@@ -681,7 +711,7 @@ namespace MachineLearning.Learning.Regression
             if (current.round >= this.MLsettings.numberOfRounds)
                 return true;
             TimeSpan diff = DateTime.Now - this.startTime;
-            if (MLsettings.stopOnLongRound && current.round > 30 && diff.Minutes > 60)
+            if (MLsettings.stopOnLongRound && current.round > 30 && diff.Hours > 1)
                 return true;
             if (abortDueError(current))
                 return true;

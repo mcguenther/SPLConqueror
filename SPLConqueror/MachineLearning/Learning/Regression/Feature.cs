@@ -95,7 +95,7 @@ namespace MachineLearning.Learning.Regression
 
         public override string ToString()
         {
-            return base.ToString();
+            return base.ToString() ;
         }
 
         private int initHashCode()
