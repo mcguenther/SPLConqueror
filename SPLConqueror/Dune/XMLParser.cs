@@ -50,11 +50,6 @@ namespace Dune
 
                 String name = child.FirstChild.InnerText.ToString();
 
-                if (name.Equals("Dune::AdaptDataHandleInterface"))
-                {
-                    Console.WriteLine("");
-                }
-
                 if (refId == null)
                 {
                     refId = name;
@@ -227,6 +222,7 @@ namespace Dune
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
             findPotentialParents();
+
         }
 
 

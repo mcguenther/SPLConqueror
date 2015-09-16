@@ -12,7 +12,7 @@ namespace Dune
     {
         // The path of the xml-file to read the dependencies from
         // Please adjust it, as I have not found a solution not to do so...
-        static String PATH = @"D:\owncloud\all.xml";
+        static String PATH = @"D:\owncloud\all1.xml";
 
         // Should be no longer needed
         const String XML_LOCATION = @"doc\doxygen\xml\";
@@ -41,12 +41,7 @@ namespace Dune
             }
             XMLParser.parse(PATH);
 
-            // Force the gc to remove all the unneeded data in memory - May be remove if it does not bring any improvement
-            // Until now (10.07) it wasn't helpfull - it will be removed in a future commit
-            System.GC.Collect();
-            GC.WaitForPendingFinalizers();
-
-            
+            // TODO Add the shell here
             // Needed for debugging purposes.
             System.Console.WriteLine("Press a button to close the window.");
             System.Console.ReadKey();
