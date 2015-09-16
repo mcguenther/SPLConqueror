@@ -17,11 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptGenerator", "ScriptGenerator\ScriptGenerator.csproj", "{D56A3575-D0FD-45DD-82A1-D0BA3BAE834A}"
 EndProject
-<<<<<<< HEAD
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dune", "Dune\Dune.csproj", "{197EF14B-BE63-474B-B105-BC2786F7A058}"
-=======
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VariabilitModel_GUI", "VariabilitModel_GUI\VariabilitModel_GUI.csproj", "{3C922751-4E88-47F8-89D7-1D3D4BC4E533}"
->>>>>>> add7d294a7da1a45ae4ee995845009bf14f0a981
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -137,7 +134,6 @@ Global
 		{D56A3575-D0FD-45DD-82A1-D0BA3BAE834A}.Release|x64.Build.0 = Release|x64
 		{D56A3575-D0FD-45DD-82A1-D0BA3BAE834A}.Release|x86.ActiveCfg = Release|x86
 		{D56A3575-D0FD-45DD-82A1-D0BA3BAE834A}.Release|x86.Build.0 = Release|x86
-<<<<<<< HEAD
 		{197EF14B-BE63-474B-B105-BC2786F7A058}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{197EF14B-BE63-474B-B105-BC2786F7A058}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
 		{197EF14B-BE63-474B-B105-BC2786F7A058}.Debug|Mixed Platforms.Build.0 = Debug|x64
@@ -153,10 +149,9 @@ Global
 		{197EF14B-BE63-474B-B105-BC2786F7A058}.Release|x64.ActiveCfg = Release|x86
 		{197EF14B-BE63-474B-B105-BC2786F7A058}.Release|x86.ActiveCfg = Release|x86
 		{197EF14B-BE63-474B-B105-BC2786F7A058}.Release|x86.Build.0 = Release|x86
-=======
 		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
+		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Debug|Mixed Platforms.Build.0 = Debug|x64
 		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Debug|Win32.ActiveCfg = Debug|x86
 		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Debug|x64.ActiveCfg = Debug|x86
 		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Debug|x86.ActiveCfg = Debug|x86
@@ -168,7 +163,6 @@ Global
 		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Release|x64.ActiveCfg = Release|x86
 		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Release|x86.ActiveCfg = Release|x86
 		{3C922751-4E88-47F8-89D7-1D3D4BC4E533}.Release|x86.Build.0 = Release|x86
->>>>>>> add7d294a7da1a45ae4ee995845009bf14f0a981
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

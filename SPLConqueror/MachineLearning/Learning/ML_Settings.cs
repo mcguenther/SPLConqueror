@@ -71,12 +71,36 @@ namespace MachineLearning.Learning
         public bool withHierarchy = true;
 
         /// <summary>
+        /// Defines how candidate features are generated.  False - candidates 
+        /// are generated in each step based on the features in the model and a
+        /// set of initial features.  True - all possible combinations of initial
+        /// features (up to featureSizeTreshold) are generated and used as
+        /// candidates (brute force means, that features alredy present in the
+        /// model are not taken inot account).
+        /// </summary>
+        public bool bruteForceCandidates = false;
+
+        /// <summary>
+        /// Enables an optimization: we do not want to consider candidates in the next X rounds that showed no or only a slight improvment in accuracy relative to all other candidates.
+        /// </summary>
+        public bool ignoreBadFeatures = true;
+
+        /// <summary>
+        /// If true, stop learning if the whole process is running longer than 1 hour and the current round runs longer then 30 minutes.
+        /// </summary>
+        public bool stopOnLongRound = true;
+
+        public double candidateSizePenalty = 0;
+
+        /// <summary>
         /// Returns a new settings object with the settings specified in the file as key value pair. Settings not beeing specified in this file will have the default value. 
         /// </summary>
         /// <param name="settings">All settings to be changed in a string with whitespaces as separator .</param>
         /// <returns>A settings object with the values specified in the file.</returns>
         public static ML_Settings readSettings(string settings)
         {
+            settings = settings.Trim();
+            settings = settings.Replace(System.Environment.NewLine, "");
             ML_Settings mls = new ML_Settings();
             String[] settingArray = settings.Split(' ');
 
@@ -144,18 +168,44 @@ namespace MachineLearning.Learning
 
             if (fi.FieldType.FullName.Equals("System.Boolean"))
             {
-                fi.SetValue(this, Convert.ToBoolean(value));
-                return true;
+                if (value == "true" || value == "false")
+                {
+                    fi.SetValue(this, Convert.ToBoolean(value));
+                    return true;
+                }else
+                    return false;
+
             }
             if (fi.FieldType.FullName.Equals("System.Int32"))
             {
-                fi.SetValue(this, Convert.ToInt32(value));
-                return true;
+                int n;
+                bool isNumeric = int.TryParse(value, out n);
+
+                if (isNumeric)
+                {
+                    fi.SetValue(this, n);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
             if (fi.FieldType.FullName.Equals("System.Int64"))
             {
-                fi.SetValue(this, Convert.ToInt64(value));
-                return true;
+                int n;
+                bool isNumeric = int.TryParse(value, out n);
+
+                if (isNumeric)
+                {
+                    fi.SetValue(this, n);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
             }
             if (fi.FieldType.FullName.Equals("MachineLearning.Learning.ML_Settings+LossFunction"))
             {
@@ -177,8 +227,19 @@ namespace MachineLearning.Learning
             }
             if (fi.FieldType.FullName.Equals("System.Double"))
             {
-                fi.SetValue(this, Convert.ToDouble(value));
-                return true;
+                double n;
+                bool isNumeric = double.TryParse(value, out n);
+
+                if (isNumeric)
+                {
+                    fi.SetValue(this, n);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
             }
 
 

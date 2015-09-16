@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+using System.Threading;
+using System.Globalization;
 
-namespace VariabilitModel_GUI
+namespace PerformancePrediction_GUI
 {
     static class Program
     {
@@ -13,9 +15,11 @@ namespace VariabilitModel_GUI
         [STAThread]
         static void Main()
         {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new PerformancePrediction_Frame());
         }
     }
 }

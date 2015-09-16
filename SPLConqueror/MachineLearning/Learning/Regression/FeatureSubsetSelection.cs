@@ -10,6 +10,7 @@ using System.Diagnostics;
 using SPLConqueror_Core;
 using MachineLearning.Learning;
 using System.Runtime.InteropServices;
+using System.Collections.ObjectModel;
 
 namespace MachineLearning.Learning.Regression
 {
@@ -17,25 +18,14 @@ namespace MachineLearning.Learning.Regression
     {
         //Information about the state of learning
         protected InfluenceModel infModel = null;
-        protected List<LearningRound> learningHistory = new List<LearningRound>();
+        protected ObservableCollection<LearningRound> learningHistory = new ObservableCollection<LearningRound>();
         protected int hierachyLevel = 1;
         protected DateTime startTime;
-
-        public List<LearningRound> LearningHistory
-        {
-            get { return learningHistory; }
-        }
-
         private LearningRound currentRound = null;
-
-        protected LearningRound CurrentRound
-        {
-            get { if (learningHistory.Count == 0) return null; else return learningHistory[learningHistory.Count - 1]; }
-        }
-
         protected List<Feature> initialFeatures = new List<Feature>();
         protected List<Feature> strictlyMandatoryFeatures = new List<Feature>();
         protected ML_Settings MLsettings = null;
+        protected List<Feature> bruteForceCandidates = new List<Feature>();
 
         //Learning and validation data sets
         protected List<Configuration> learningSet = new List<Configuration>();
@@ -45,12 +35,45 @@ namespace MachineLearning.Learning.Regression
 
         //Optimization: Remember candidates with no or only a tiny improvement to test them not in every round, int = nb of remaining rounds to ignore this feature
         private Dictionary<Feature, int> badFeatures = new Dictionary<Feature, int>();
-        
+
+        public ObservableCollection<LearningRound> LearningHistory
+        {
+            get { return learningHistory; }
+        }
+
+        protected LearningRound CurrentRound
+        {
+            get { if (learningHistory.Count == 0) return null; else return learningHistory[learningHistory.Count - 1]; }
+        }
+
+        public void clean()
+        {
+            infModel = null;
+            learningHistory = new ObservableCollection<LearningRound>();
+            hierachyLevel = 1;
+            currentRound = null;
+            initialFeatures = new List<Feature>();
+            strictlyMandatoryFeatures = new List<Feature>();
+            MLsettings = null;
+            bruteForceCandidates = new List<Feature>();
+            learningSet = new List<Configuration>();
+            validationSet = new List<Configuration>();
+            Y_validation = ILMath.empty();
+            Y_learning = ILMath.empty();
+            DM_columns = new Dictionary<Feature, ILArray<double>>();
+            badFeatures = new Dictionary<Feature, int>();
+        }
+
+        public FeatureSubsetSelection()
+        {
+
+        }
+
         /// <summary>
         /// Constructor of the learning class. It reads all configuration options and generates candidates for possible influences (i.e., features).
         /// </summary>
         /// <param name="infModel">The influence model which will later hold all determined influences and contains the variability model from which we derive all configuration options.</param>
-        public FeatureSubsetSelection(InfluenceModel infModel, ML_Settings settings)
+        public void init(InfluenceModel infModel, ML_Settings settings)
         {
             this.infModel = infModel;
             this.MLsettings = settings;
@@ -60,7 +83,7 @@ namespace MachineLearning.Learning.Regression
                     continue;
                 initialFeatures.Add(new Feature(opt.Name, infModel.Vm));
             }
-            this.strictlyMandatoryFeatures.Add(new Feature(infModel.Vm.Root.Name,infModel.Vm));
+            this.strictlyMandatoryFeatures.Add(new Feature(infModel.Vm.Root.Name, infModel.Vm));
             foreach (var opt in infModel.Vm.NumericOptions)
                 initialFeatures.Add(new Feature(opt.Name, infModel.Vm));
         }
@@ -74,15 +97,15 @@ namespace MachineLearning.Learning.Regression
         {
             foreach (var influence in knownInfluences)
             {
-                if(!strict)
+                if (!strict)
                     initialFeatures.Add(new Feature(influence.ToString(), this.infModel.Vm));
                 else
-                    strictlyMandatoryFeatures.Add(new Feature(infModel.ToString(),this.infModel.Vm));
+                    strictlyMandatoryFeatures.Add(new Feature(infModel.ToString(), this.infModel.Vm));
             }
         }
 
         #region learning algorithm
-        
+
         /// <summary>
         /// Performs learning using an adapted feature-selection algorithm.
         /// Learning is done in rounds, in which each round adds an additional feature (i.e., configuration option or interaction) to the current model containing all influences.
@@ -97,7 +120,7 @@ namespace MachineLearning.Learning.Regression
             if (this.strictlyMandatoryFeatures.Count > 0)
                 current.FeatureSet.AddRange(this.strictlyMandatoryFeatures);
             double oldRoundError = Double.MaxValue;
-            do 
+            do
             {
                 oldRoundError = current.validationError;
                 current = performForwardStep(current);
@@ -149,8 +172,8 @@ namespace MachineLearning.Learning.Regression
                     {
                         InfluenceFunction composed = new InfluenceFunction(this.infModel.NumericOptionsInfluence[f.participatingNumOptions.ElementAt(0)].ToString() + " + " + f.ToString(), f.participatingNumOptions.ElementAt(0));
                         this.infModel.NumericOptionsInfluence[f.participatingNumOptions.ElementAt(0)] = composed;
-                    } 
-                    else 
+                    }
+                    else
                         this.infModel.NumericOptionsInfluence.Add(f.participatingNumOptions.ElementAt(0), f);
                     continue;
                 }
@@ -160,7 +183,7 @@ namespace MachineLearning.Learning.Regression
             }
         }
 
-        
+
         /// <summary>
         /// Makes one further step in learning. That is, it adds a further feature to the current model.
         /// </summary>
@@ -174,9 +197,15 @@ namespace MachineLearning.Learning.Regression
 
             //Go through each feature of the initial set and combine them with the already present features to build new candidates
             List<Feature> candidates = new List<Feature>();
-            foreach (Feature basicFeature in this.initialFeatures)
-                candidates.AddRange(generateCandidates(currentModel.FeatureSet, basicFeature));
-            
+            if (this.MLsettings.bruteForceCandidates)
+            {
+                candidates = generateBruteForceCandidates(currentModel.FeatureSet, initialFeatures);
+            }
+            else
+            {
+                candidates = generateCandidates(currentModel.FeatureSet, this.initialFeatures);
+            }
+
             //If we got no candidates and we perform hierachical learning, we go one step further
             if (candidates.Count == 0 && this.MLsettings.withHierarchy)
             {
@@ -186,13 +215,13 @@ namespace MachineLearning.Learning.Regression
                 return performForwardStep(currentModel);
             }
 
-            Dictionary<Feature, double> errorOfFeature = new Dictionary<Feature,double>();
+            Dictionary<Feature, double> errorOfFeature = new Dictionary<Feature, double>();
             Feature bestCandidate = null;
 
             //Learn for each candidate a new model and compute the error for each newly learned model
             foreach (Feature candidate in candidates)
             {
-                if (this.badFeatures.Keys.Contains(candidate) && this.badFeatures[candidate] > 0)
+                if (MLsettings.ignoreBadFeatures && this.badFeatures.Keys.Contains(candidate) && this.badFeatures[candidate] > 0)
                 {
                     this.badFeatures[candidate]--;
                     continue;
@@ -216,11 +245,22 @@ namespace MachineLearning.Learning.Regression
             }
             double relativeErrorTrain = 0;
             double relativeErrorEval = 0;
-            addFeaturesToIgnore(errorOfFeature);
-            LearningRound newRound = new LearningRound(minimalErrorModel, computeLearningError(minimalErrorModel, out relativeErrorTrain), computeValidationError(minimalErrorModel, out relativeErrorEval), currentModel.round + 1);
-            newRound.learningError_relative = relativeErrorTrain;
-            newRound.validationError_relative = relativeErrorEval;
-            return newRound;
+            if (MLsettings.ignoreBadFeatures)
+            {
+                addFeaturesToIgnore(errorOfFeature);
+            }
+            if (minimalErrorModel == null)
+            {
+                return null;
+            }
+            else
+            {
+                LearningRound newRound = new LearningRound(minimalErrorModel, computeLearningError(minimalErrorModel, out relativeErrorTrain), computeValidationError(minimalErrorModel, out relativeErrorEval), currentModel.round + 1);
+                newRound.learningError_relative = relativeErrorTrain;
+                newRound.validationError_relative = relativeErrorEval;
+                return newRound;
+
+            }
         }
 
         /// <summary>
@@ -232,14 +272,14 @@ namespace MachineLearning.Learning.Regression
             List<KeyValuePair<Feature, double>> myList = errorOfCandidates.ToList();
             myList.Sort((x, y) => x.Value.CompareTo(y.Value));
             int minNumberToKeep = 5;
-            for (int i = myList.Count-1; i > myList.Count / 2; i--)
+            for (int i = myList.Count - 1; i > myList.Count / 2; i--)
             {
                 if (i <= (minNumberToKeep))
                     return;
                 if (this.badFeatures.Keys.Contains(myList[i].Key))
                     this.badFeatures[myList[i].Key] = 3;
                 else
-                    this.badFeatures.Add(myList[i].Key,3);//wait for 3 rounds
+                    this.badFeatures.Add(myList[i].Key, 3);//wait for 3 rounds
             }
         }
 
@@ -249,12 +289,12 @@ namespace MachineLearning.Learning.Regression
             ILArray<double> DM = createDataMatrix(newModel);
             if (DM.Size.NumberOfElements == 0)
                 return false;
-         //   ILArray<double> DMT = DM.T;
-            ILArray<double> temparray =null;
+            //   ILArray<double> DMT = DM.T;
+            ILArray<double> temparray = null;
 
             double[,] fixSVDwithACCORD;
             //var exp = toSystemMatrix<double>(DM.T);
-           // fixSVDwithACCORD = (double[,])exp;
+            // fixSVDwithACCORD = (double[,])exp;
             fixSVDwithACCORD = ((double[,])toSystemMatrix<double>(DM.T)).PseudoInverse();
             temparray = fixSVDwithACCORD;
 
@@ -264,7 +304,7 @@ namespace MachineLearning.Learning.Regression
             else
                 constants = ILMath.multiply(temparray, Y_learning.T);
             double[] fittedConstant = constants.ToArray<double>();
-            for(int i = 0; i < constants.Length; i++)
+            for (int i = 0; i < constants.Length; i++)
             {
                 newModel[i].Constant = fittedConstant[i];
                 //constants.GetValue(i);
@@ -283,84 +323,194 @@ namespace MachineLearning.Learning.Regression
         /// Which candidates and polynomial degrees are generated depends on the parameters given in ML_settings.
         /// </summary>
         /// <param name="currentModel">The model containing the features found so far. These features are combined with the basic feature.</param>
-        /// <param name="basicFeature">The feature for which we generate new candidates.</param>
+        /// <param name="basicFeatures">The features for which we generate new candidates.</param>
         /// <returns>Returns a list of candidates that can be added to the current model.</returns>
-        protected List<Feature> generateCandidates(List<Feature> currentModel, Feature basicFeature)
+        protected List<Feature> generateCandidates(List<Feature> currentModel, List<Feature> basicFeatures)
         {
-            List<Feature> listOfCandidates = new List<Feature>();
-            //add the feature to the list of candidates if it is not already in the model
-            if (!currentModel.Contains(basicFeature))
-                listOfCandidates.Add(basicFeature);
-
-            if (this.MLsettings.withHierarchy && this.hierachyLevel == 1)
-                return listOfCandidates;
-
-            foreach (var feature in currentModel)
+            var listOfCandidates = new List<Feature>();
+            foreach (Feature basicFeature in basicFeatures)
             {
-                if (this.MLsettings.limitFeatureSize && (feature.getNumberOfParticipatingOptions() == this.MLsettings.featureSizeTreshold))
+                //add the feature to the list of candidates if it is not already in the model
+                if (!currentModel.Contains(basicFeature))
+                    listOfCandidates.Add(basicFeature);
+
+                if (this.MLsettings.withHierarchy && this.hierachyLevel == 1)
                     continue;
-                //We do not want to generate interactions with the root option
-                if ((feature.participatingNumOptions.Count == 0 && feature.participatingBoolOptions.Count == 1 && feature.participatingBoolOptions.ElementAt(0) == infModel.Vm.Root)
+
+                foreach (var feature in currentModel)
+                {
+                    if (this.MLsettings.limitFeatureSize && (feature.getNumberOfParticipatingOptions() == this.MLsettings.featureSizeTreshold))
+                        continue;
+                    //We do not want to generate interactions with the root option
+                    if ((feature.participatingNumOptions.Count == 0 && feature.participatingBoolOptions.Count == 1 && feature.participatingBoolOptions.ElementAt(0) == infModel.Vm.Root)
                     || basicFeature.participatingNumOptions.Count == 0 && basicFeature.participatingBoolOptions.Count == 1 && basicFeature.participatingBoolOptions.ElementAt(0) == infModel.Vm.Root)
-                    continue;
-                if (this.MLsettings.withHierarchy && feature.getNumberOfParticipatingOptions() >= this.hierachyLevel)
-                    continue;
-                
-                //Binary times the same binary makes no sense
-                if(basicFeature.participatingBoolOptions.Count > 0)
-                {
-                    foreach (var binOption in basicFeature.participatingBoolOptions)
-                        if (feature.participatingBoolOptions.Contains(binOption))
-                            goto nextRound;
-                }
-
-                Feature newCandidate = new Feature(feature.ToString() + " * " + basicFeature.ToString(), basicFeature.getVariabilityModel());
-                if (!currentModel.Contains(newCandidate))
-                    listOfCandidates.Add(newCandidate);
-                nextRound:{}
-            }
-
-            //if basic feature represents a numeric option and quadratic function support is activated, then we add a feature representing a quadratic functions of this feature
-            if (this.MLsettings.quadraticFunctionSupport && basicFeature.participatingNumOptions.Count > 0)
-            {
-                Feature newCandidate = new Feature(basicFeature.ToString() + " * " + basicFeature.ToString(), basicFeature.getVariabilityModel());
-                if (!currentModel.Contains(newCandidate))
-                    listOfCandidates.Add(newCandidate);
-                
-                foreach (var feature in currentModel)
-                {
+                        continue;
                     if (this.MLsettings.withHierarchy && feature.getNumberOfParticipatingOptions() >= this.hierachyLevel)
                         continue;
-                    if (this.MLsettings.limitFeatureSize && (feature.getNumberOfParticipatingOptions() == this.MLsettings.featureSizeTreshold))
-                        continue;
-                    newCandidate = new Feature(feature.ToString() + " * " + basicFeature.ToString() + " * " + basicFeature.ToString(), basicFeature.getVariabilityModel());
+
+                    //Binary times the same binary makes no sense
+                    if (basicFeature.participatingBoolOptions.Count > 0)
+                    {
+                        foreach (var binOption in basicFeature.participatingBoolOptions)
+                            if (feature.participatingBoolOptions.Contains(binOption))
+                                goto nextRound;
+                    }
+
+                    Feature newCandidate = new Feature(feature.ToString() + " * " + basicFeature.ToString(), basicFeature.getVariabilityModel());
                     if (!currentModel.Contains(newCandidate))
                         listOfCandidates.Add(newCandidate);
+                nextRound:
+                    { }
                 }
-            }
 
-            //if basic feature represents a numeric option and logarithmic function support is activated, then we add a feature representing a logarithmic functions of this feature 
-            if (this.MLsettings.learn_logFunction && basicFeature.participatingNumOptions.Count > 0)
-            {
-                Feature newCandidate = new Feature("log10(" + basicFeature.ToString()+")", basicFeature.getVariabilityModel());
-                if (!currentModel.Contains(newCandidate))
-                    listOfCandidates.Add(newCandidate);
-
-                foreach (var feature in currentModel)
+                //if basic feature represents a numeric option and quadratic function support is activated, then we add a feature representing a quadratic functions of this feature
+                if (this.MLsettings.quadraticFunctionSupport && basicFeature.participatingNumOptions.Count > 0)
                 {
-                    if (this.MLsettings.withHierarchy && feature.getNumberOfParticipatingOptions() >= this.hierachyLevel)
-                        continue;
-                    if (this.MLsettings.limitFeatureSize && (feature.getNumberOfParticipatingOptions() == this.MLsettings.featureSizeTreshold))
-                        continue;
-                    newCandidate = new Feature(feature.ToString() + " * log10(" + basicFeature.ToString()+")", basicFeature.getVariabilityModel());
+                    Feature newCandidate = new Feature(basicFeature.ToString() + " * " + basicFeature.ToString(), basicFeature.getVariabilityModel());
                     if (!currentModel.Contains(newCandidate))
                         listOfCandidates.Add(newCandidate);
+
+                    foreach (var feature in currentModel)
+                    {
+                        if (this.MLsettings.withHierarchy && feature.getNumberOfParticipatingOptions() >= this.hierachyLevel)
+                            continue;
+                        if (this.MLsettings.limitFeatureSize && (feature.getNumberOfParticipatingOptions() == this.MLsettings.featureSizeTreshold))
+                            continue;
+                        newCandidate = new Feature(feature.ToString() + " * " + basicFeature.ToString() + " * " + basicFeature.ToString(), basicFeature.getVariabilityModel());
+                        if (!currentModel.Contains(newCandidate))
+                            listOfCandidates.Add(newCandidate);
+                    }
+                }
+
+                //if basic feature represents a numeric option and logarithmic function support is activated, then we add a feature representing a logarithmic functions of this feature 
+                if (this.MLsettings.learn_logFunction && basicFeature.participatingNumOptions.Count > 0)
+                {
+                    Feature newCandidate = new Feature("log10(" + basicFeature.ToString() + ")", basicFeature.getVariabilityModel());
+                    if (!currentModel.Contains(newCandidate))
+                        listOfCandidates.Add(newCandidate);
+
+                    foreach (var feature in currentModel)
+                    {
+                        if (this.MLsettings.withHierarchy && feature.getNumberOfParticipatingOptions() >= this.hierachyLevel)
+                            continue;
+                        if (this.MLsettings.limitFeatureSize && (feature.getNumberOfParticipatingOptions() == this.MLsettings.featureSizeTreshold))
+                            continue;
+                        newCandidate = new Feature(feature.ToString() + " * log10(" + basicFeature.ToString() + ")", basicFeature.getVariabilityModel());
+                        if (!currentModel.Contains(newCandidate))
+                            listOfCandidates.Add(newCandidate);
+                    }
                 }
             }
-
             return listOfCandidates;
         }
-        
+
+        /// <summary>
+        /// The method generates a list of candidates to be added to the current model. These candidates are later fitted using regression and rated for their accuracy in estimating the values of the validation set.
+        /// The basicFeatures comes from the pool of initial features (e.g., all configuration options of the variability model or predefined combinations of options).
+        /// Further candidates are combinations of the basic features. That is, we generate candidates as representatives of interactions or higher polynomial functions.
+        /// Which candidates (i.e. their maximum size) and polynomial degrees are generated depends on the parameters given in ML_settings.
+        /// </summary>
+        /// <param name="currentModel">The model containing the features found so far. These features are combined with the basic feature.</param>
+        /// <param name="basicFeatures">The features for which we generate new candidates.</param>
+        /// <returns>Returns a list of candidates that can be added to the current model.</returns>
+        protected List<Feature> generateBruteForceCandidates(List<Feature> currentModel, List<Feature> basicFeatures)
+        {
+            // Initialize brute force candidates.
+            if (!bruteForceCandidates.Any())
+            {
+                var listOfCombinations = new List<List<Feature>>();
+                if (this.MLsettings.withHierarchy)
+                {
+                    if (hierachyLevel <= MLsettings.featureSizeTreshold)
+                    {
+                        listOfCombinations = combinations(basicFeatures, hierachyLevel);
+                    }
+                }
+                else
+                {
+                    listOfCombinations = combinationsUpToN(basicFeatures, MLsettings.featureSizeTreshold);
+                }
+                foreach (var combination in listOfCombinations)
+                {
+                    Feature newCandidate = null;
+                    foreach (var feature in combination)
+                    {
+                        newCandidate = newCandidate == null ? new Feature(feature.ToString(), feature.getVariabilityModel()) : new Feature(newCandidate.ToString() + '*' + feature.ToString(), feature.getVariabilityModel());
+                    }
+                    bruteForceCandidates.Add(newCandidate);
+                }
+            }
+
+            // Remove candidates that are already in the model.
+            bruteForceCandidates.RemoveAll(currentModel.Contains);
+
+            return bruteForceCandidates;
+        }
+
+        /// <summary>
+        /// Generates combinations of length r > 2 from elements in iterable.
+        /// </summary>
+        /// <param name="pool">Elements for combinations.</param>
+        /// <param name="r">Length of combinations.</param>
+        /// <returns>An Enumerable containing combinations.</returns>
+        /// <typeparam name='T'>Elements' type.</typeparam>
+        List<List<T>> combinations<T>(List<T> pool, int r)
+        {
+            var currentCombinations = new List<List<T>>();
+            var n = pool.Count;
+            if (r > n)
+            {
+                return new List<List<T>>();
+                //yield break;
+            }
+            var indicies = Enumerable.Range(0, r).ToList();
+            currentCombinations.Add(indicies.Select(x => pool[x]).ToList());
+            //yield return indicies.Select(x => pool[x]);
+            while (true)
+            {
+                int i = -1;
+                foreach (int ii in Enumerable.Range(0, r).Reverse())
+                {
+                    if (indicies[ii] != ii + n - r)
+                    {
+                        i = ii;
+                        break;
+                    }
+                }
+                if (i == -1)
+                {
+                    break;
+                }
+                indicies[i]++;
+                foreach (int j in Enumerable.Range(i + 1, (r - i - 1)))
+                {
+                    indicies[j] = indicies[j - 1] + 1;
+                }
+                //yield return indicies.Select(x => pool[x]);
+                currentCombinations.Add(indicies.Select(x => pool[x]).ToList());
+            }
+            return currentCombinations;
+        }
+
+        /// <summary>
+        /// Given the elements in interable, generate combinations of them of the length up to n 
+        /// starting with length 1.
+        /// </summary>
+        /// <returns>Combinations up to the length n.</returns>
+        /// <param name='iterable'>Elements for combinations.</param>
+        /// <param name='n'>Maximum length of generated combinations.</param>
+        /// <typeparam name='T'>Elements' type.</typeparam>
+        List<List<T>> combinationsUpToN<T>(List<T> iterable, int n)
+        {
+            var allCombinations = new List<List<T>>();
+            for (int i = 1; i <= n; ++i)
+            {
+                var currentCombinations = combinations(iterable, i);
+                allCombinations.AddRange(currentCombinations);
+            }
+            return allCombinations;
+        }
+
 
         /// <summary>
         /// The backward steps aims at removing already learned features from the model if they have only a small impact on the prediction accuracy. 
@@ -383,7 +533,7 @@ namespace MachineLearning.Learning.Regression
                     List<Feature> tempSet = copyCombination(featureSet);
                     tempSet.Remove(toDelete);
                     double relativeError = 0;
-                    double error = computeModelError(tempSet,out relativeError);
+                    double error = computeModelError(tempSet, out relativeError);
                     if (error - this.MLsettings.backwardErrorDelta < current.validationError && error < roundError)
                     {
                         roundError = error;
@@ -475,8 +625,8 @@ namespace MachineLearning.Learning.Regression
                     continue;
                 }
                 else
-                 {
-                    double er =  Math.Abs(100 - ((estimatedValue * 100) / realValue));
+                {
+                    double er = Math.Abs(100 - ((estimatedValue * 100) / realValue));
                     relativeError += er;
                 }
                 double error = 0;
@@ -554,16 +704,16 @@ namespace MachineLearning.Learning.Regression
         /// </summary>
         /// <param name="current">The current state of learning (i.e., the current model).</param>
         /// <returns>True if we abort learning, false otherwise</returns>
-            protected bool abortLearning(LearningRound current, double oldRoundError)
+        protected bool abortLearning(LearningRound current, double oldRoundError)
         {
             if (current.round >= this.MLsettings.numberOfRounds)
                 return true;
             TimeSpan diff = DateTime.Now - this.startTime;
-            if (current.round > 30 && diff.Minutes > 60)
+            if (MLsettings.stopOnLongRound && current.round > 30 && diff.Minutes > 60)
                 return true;
             if (abortDueError(current))
                 return true;
-            if (current.validationError + this.MLsettings.minImprovementPerRound > oldRoundError)
+            if (current.validationError + minimalRequiredImprovement(current) > oldRoundError)
             {
                 if (this.MLsettings.withHierarchy)
                 {
@@ -576,6 +726,22 @@ namespace MachineLearning.Learning.Regression
             return false;
         }
 
+        /// <summary>
+        /// Calculates the required minimum improvement per round based on the user configuration 
+        /// settings.  If the improvement is less than required the learning will be aborted by the
+        /// abortLearnin() method.
+        /// </summary>
+        /// <returns>The required minimum improvement per round.</returns>
+        double minimalRequiredImprovement(LearningRound currentLearningRound)
+        {
+            double minimalRequiredImprovment = MLsettings.minImprovementPerRound;
+            if (MLsettings.candidateSizePenalty > 0)
+            {
+                int largestFeatureSize = currentLearningRound.FeatureSet.OrderBy(x => x.getNumberOfParticipatingOptions()).ToList().Last().getNumberOfParticipatingOptions();
+                minimalRequiredImprovment = MLsettings.minImprovementPerRound * MLsettings.candidateSizePenalty * largestFeatureSize;
+            }
+            return minimalRequiredImprovment;
+        }
 
         /// <summary>
         /// This method checks whether we should abort learning due to perfect prediction or worsening prediction.
@@ -616,7 +782,7 @@ namespace MachineLearning.Learning.Regression
 
         #endregion
 
-        
+
 
         #region set data set
         /// <summary>
@@ -633,7 +799,9 @@ namespace MachineLearning.Learning.Regression
                 try
                 {
                     val = measurements[i].GetNFPValue(GlobalState.currentNFP);
-                } catch(ArgumentException argEx) {
+                }
+                catch (ArgumentException argEx)
+                {
                     GlobalState.logError.log(argEx.Message);
                     val = measurements[i].GetNFPValue();
                 }
@@ -779,12 +947,12 @@ namespace MachineLearning.Learning.Regression
         }
 
         /// <summary>
-        /// This methids creates a system array based on an ILNumerics array.
+        /// This method creates a system array based on an ILNumerics array.
         /// </summary>
         /// <typeparam name="T">The type of the objects stored in the array.</typeparam>
         /// <param name="A">The ILNumerics array.</param>
         /// <returns>Returns the newly created system array contain the values of the ILNumerics array.</returns>
-        private static System.Array toSystemMatrix<T>(ILInArray<T> A)
+        public static System.Array toSystemMatrix<T>(ILInArray<T> A)
         {
             using (ILScope.Enter(A))
             {
