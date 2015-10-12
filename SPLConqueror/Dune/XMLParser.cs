@@ -13,7 +13,7 @@ namespace Dune
     class XMLParser
     {
 
-        static String[] blacklisted = { "Dune::YaspGrid::YGridLevel" };
+        static String[] blacklisted = { };//"Dune::YaspGrid::YGridLevel" };
 
         static List<DuneFeature> features = new List<DuneFeature>();
         static Dictionary<DuneFeature, String> templatesToAnalyze = new Dictionary<DuneFeature, string>();
@@ -64,7 +64,7 @@ namespace Dune
                 String template = extractTemplate(name);
                 name = convertName(name);
 
-                if (!(template == null))
+                if (template != null)
                 {
                     name += "<" + template + ">";
                 }
@@ -194,34 +194,43 @@ namespace Dune
 
             System.Console.WriteLine("Done!");
 
-            file = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\templates.txt");
+            //file = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\templates.txt");
 
-            dat = null;
+            //dat = null;
 
-            System.Console.WriteLine("Analyzing all templates and printing them out");
+            //System.Console.WriteLine("Analyzing all templates and printing them out");
+
             // analyze all templates
-            foreach (DuneFeature d in templatesToAnalyze.Keys)
-            {
-                String value;
-                if (templatesToAnalyze.TryGetValue(d,out value)) {
-                    analyzeTemplate(d, value);
-                    toRemove.Add(d);
-                }
-            }
 
-            while (toRemove.Count() > 0)
-            {
-                templatesToAnalyze.Remove(toRemove.ElementAt(0));
-                toRemove.RemoveAt(0);
-            }
-            toRemove.Clear();
+            //Dictionary<String, Tree> noFeatures = new Dictionary<String,Tree>();
+            //List<Tuple<Tree, String>> todo = new List<Tuple<Tree, String>>();
+            //foreach (DuneFeature d in templatesToAnalyze.Keys)
+            //{
+            //    String value;
+            //    if (templatesToAnalyze.TryGetValue(d,out value)) {
+            //        Tree newTree = new Tree(d);
+            //        d.setTemplateTree(newTree);
+            //        analyzeTemplate(d, value, newTree, ref noFeatures, ref todo);
+            //        toRemove.Add(d);
+            //    }
+            //}
 
-            printClassList();
-            file.Flush();
-            file.Close();
+            //while (toRemove.Count() > 0)
+            //{
+            //    templatesToAnalyze.Remove(toRemove.ElementAt(0));
+            //    toRemove.RemoveAt(0);
+            //}
+            //toRemove.Clear();
+
+            //printClassList();
+            //file.Flush();
+            //file.Close();
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
             findPotentialParents();
+
+            DuneFeature d = getFeature(new DuneFeature("", "Dune::PDELab::NoConstraints"));
+            System.Console.Write("");
 
         }
 
@@ -267,11 +276,46 @@ namespace Dune
                                 break;
                             }
                         }
+
                         if (isSubclassOf)
                         {
                             file.WriteLine(df.getClassName() + " -> " + comp.getClassName());
                         }
                     }
+                        // TODO remove the following lines
+                    //else if (df != comp)
+                    //{
+                    //    List<DuneFeature> parents = df.getParents();
+                    //    foreach (DuneFeature parent in parents)
+                    //    {
+                    //        if (parent.hasDirectChildRelationTo(comp))
+                    //        {
+                    //            Boolean isSubclassOf = true;
+                    //            Boolean hasMoreMethods = false;
+                    //            foreach (int methodHash in comp.getMethodHashes())
+                    //            {
+                    //                if (!df.containsMethodHash(methodHash))
+                    //                {
+                    //                    isSubclassOf = false;
+                    //                    break;
+                    //                }
+                    //            }
+                    //            foreach (int methodHash in df.getMethodHashes())
+                    //            {
+                    //                if (!comp.containsMethodHash(methodHash)) {
+                    //                    hasMoreMethods = true;
+                    //                    break;
+                    //                }
+                    //            }
+                    //            if (isSubclassOf && hasMoreMethods)
+                    //            {
+                    //                file.WriteLine(df.getClassName() + " > " + comp.getClassName());
+                    //                classCounter++;
+                    //            }
+                    //        }
+                    //    }
+                    //}
+
                 }
             }
             file.Flush();
@@ -387,7 +431,7 @@ namespace Dune
         /// </summary>
         /// <param name="f">the feature the template belongs to</param>
         /// <param name="template">the template to be analyzed</param>
-        private static void analyzeTemplate(DuneFeature f, String template)
+        private static void analyzeTemplate(DuneFeature f, String template, Tree root, ref Dictionary<String, Tree> nonIdentifiedNodes, ref List<Tuple<Tree, String>> todo)
         {
             template = template.Trim();
             int level = 0;
@@ -399,7 +443,8 @@ namespace Dune
             {
                 // The whole template is parsed and only the arguments in the upper layer(not containing another template) are important.
                 // The arguments in another template are analyzed recursively.
-                switch (template.ElementAt(i)) {
+                switch (template.ElementAt(i))
+                {
                     case '<':
                         if (level == 0)
                         {
@@ -417,17 +462,17 @@ namespace Dune
                         break;
                     case '>':
                         level--;
-                        if (n == null)
-                        {
-                            f.addUnknownTemplate(template.Substring(currentBeginning, i - currentBeginning).Trim());
-                        }
-                        else
-                        {
-                            f.addTemplateClass(n);
-                            
-                        }
-                      //  analyzeTemplate(n, template.Substring(from, i - from));
-                        
+                        //if (n == null)
+                        //{
+                        //    f.addUnknownTemplate(template.Substring(currentBeginning, i - currentBeginning).Trim());
+                        //}
+                        //else
+                        //{
+                        //    f.addTemplateClass(n);
+
+                        //}
+                        //  analyzeTemplate(n, template.Substring(from, i - from));
+
                         break;
                     case ',':
                         if (level != 0)
@@ -454,7 +499,7 @@ namespace Dune
                             // The last class contains no template
                             if (df != null)
                             {
-                                f.addTemplateClass(df);
+                                //f.addTemplateClass(df);
                             }
                         }
                         // There has to be one more classname which may also contain a template
@@ -470,6 +515,10 @@ namespace Dune
 
         }
 
+        /// <summary>
+        /// Adds the given className to the list of class names.
+        /// </summary>
+        /// <param name="className">the class name to add</param>
         private static void addToList(String className) {
             if (!classNames.Contains(className))
             {
@@ -477,6 +526,9 @@ namespace Dune
             }
         }
 
+        /// <summary>
+        /// Prints out the class names which are currently in the classNames list.
+        /// </summary>
         private static void printClassList()
         {
             foreach (String s in classNames)

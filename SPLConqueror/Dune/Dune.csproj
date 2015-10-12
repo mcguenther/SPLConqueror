@@ -76,12 +76,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TreeElement.cs" />
-    <Compile Include="Tree.cs" />
+    <Compile Include="Tree\Tree.cs" />
     <Compile Include="DuneFeature.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TreeNode.cs" />
     <Compile Include="XMLParser.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

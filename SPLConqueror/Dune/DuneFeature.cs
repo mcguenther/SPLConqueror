@@ -12,26 +12,32 @@ namespace Dune
         private String className;
         private List<DuneFeature> parents;
         private List<DuneFeature> children;
-        private List<DuneFeature> template;
-        private List<String> unknownTemplates;
+        private Tree template;
         private List<int> methodHashes;
         private Dictionary<String, List<String>> enums;
 
         /// <summary>
         /// Constructs a new DuneFeature with the given reference and the given className
         /// </summary>
-        /// <param name="reference">The reference of the class</param>
-        /// <param name="className">The name of the class</param>
+        /// <param name="reference">the reference of the class</param>
+        /// <param name="className">the name of the class</param>
         public DuneFeature(String reference, String className)
         {
             this.reference = reference;
             this.className = className;
             this.parents = new List<DuneFeature>();
             this.children = new List<DuneFeature>();
-            this.template = new List<DuneFeature>();
-            this.unknownTemplates = new List<String>();
             this.methodHashes = new List<int>();
             this.enums = new Dictionary<string, List<string>>();
+        }
+
+        /// <summary>
+        /// For debugging purpose. This method should be deleted
+        /// </summary>
+        /// <returns>a list containing the parent-nodes.</returns>
+        public List<DuneFeature> getParents()
+        {
+            return parents;
         }
 
         /// <summary>
@@ -101,6 +107,16 @@ namespace Dune
         }
 
         /// <summary>
+        /// This method returns <code>true</code> if the respective feature has the given feature as a child.
+        /// </summary>
+        /// <param name="df">the feature to search for</param>
+        /// <returns><code>true</code> if the respective feature has the given feature as a child; <code>false</code> otherwise</returns>
+        public Boolean hasDirectChildRelationTo(DuneFeature df)
+        {
+            return this.children.Contains(df);
+        }
+
+        /// <summary>
         /// Returns if the class has a relation(also considering the transitive hull) to the given class.
         /// </summary>
         /// <param name="df">the class, a relation should be searched to</param>
@@ -163,17 +179,12 @@ namespace Dune
         }
 
         /// <summary>
-        /// Adds a template class to the template
+        /// Sets the template tree of the <code>DuneFeature</code> to the given template tree.
         /// </summary>
-        /// <param name="d">the template class as a <code>DuneFeature</code> to add</param>
-        public void addTemplateClass(DuneFeature d)
+        /// <param name="t">the template tree to set to</param>
+        public void setTemplateTree(Tree t)
         {
-            this.template.Add(d);
-        }
-
-        public void addUnknownTemplate(String template) {
-
-            this.unknownTemplates.Add(template);
+            this.template = t;
         }
 
         /// <summary>
@@ -210,6 +221,15 @@ namespace Dune
         public String getClassName()
         {
             return this.className;
+        }
+
+        /// <summary>
+        /// Returns <code>true</code> if the features template tree was initialized.
+        /// </summary>
+        /// <returns><code>true</code> if the features template tree was initialised; <code>false</code> otherwise</returns>
+        public Boolean hasTree()
+        {
+            return template != null;
         }
 
         public override bool Equals(System.Object obj)
