@@ -43,6 +43,7 @@ namespace Dune
 
             // TODO Add the shell here
             // Needed for debugging purposes.
+            Shell.showShell();
             System.Console.WriteLine("Press a button to close the window.");
             System.Console.ReadKey();
         }

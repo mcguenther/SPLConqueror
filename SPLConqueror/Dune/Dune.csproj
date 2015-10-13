@@ -76,6 +76,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Shell.cs" />
     <Compile Include="Tree\Tree.cs" />
     <Compile Include="DuneFeature.cs" />
     <Compile Include="Program.cs" />

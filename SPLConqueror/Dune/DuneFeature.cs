@@ -53,10 +53,11 @@ namespace Dune
         /// <summary>
         /// Returns whether this feature has parents or not.
         /// </summary>
+        /// <param name="root">the root feature</param>
         /// <returns><code>true</code> if this feature has parents; <code>false</code> otherwise</returns>
-        public Boolean hasParents()
+        public Boolean hasParents(DuneFeature root)
         {
-            return parents.Any();
+            return parents.Contains(root) ? false : parents.Any();
         }
 
         /// <summary>

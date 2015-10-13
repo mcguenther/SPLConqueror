@@ -15,6 +15,9 @@ namespace Dune
 
         static String[] blacklisted = { };//"Dune::YaspGrid::YGridLevel" };
 
+        // The root of the whole feature-tree.
+        static DuneFeature root = new DuneFeature("", "root");
+
         static List<DuneFeature> features = new List<DuneFeature>();
         static Dictionary<DuneFeature, String> templatesToAnalyze = new Dictionary<DuneFeature, string>();
 
@@ -153,7 +156,7 @@ namespace Dune
 
                 // Now the classes/interfaces with no parents and no children are sorted
                 // in order to minimize the number of comparisons.
-                if (!df.hasParents() && df.getMethodHashes().Any() && !isBlacklisted(df.getClassName()))
+                if (!df.hasParents(root) && df.getMethodHashes().Any() && !isBlacklisted(df.getClassName()))
                 {
                     classesWithoutParents.Add(df);
                 }
@@ -167,8 +170,15 @@ namespace Dune
             List<DuneFeature> toRemove = new List<DuneFeature>();
             // The classes which no longer belong to these lists are removed
             foreach (DuneFeature df in classesWithoutParents) {
-                if (df.hasParents()) {
+                if (df.hasParents(root))
+                {
                     toRemove.Add(df);
+                }
+                else
+                {
+                    // Add the root as a parent, so every node has a common node as parent in the transitive closure
+                    df.addParent(root);
+                    root.addChildren(df);
                 }
             }
 
@@ -228,9 +238,7 @@ namespace Dune
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
             findPotentialParents();
-
-            DuneFeature d = getFeature(new DuneFeature("", "Dune::PDELab::NoConstraints"));
-            System.Console.Write("");
+            System.Console.WriteLine("Finished duck-typing");
 
         }
 
