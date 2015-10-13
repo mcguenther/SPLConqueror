@@ -79,6 +79,15 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns the number of method hashes which belong to the feature-object.
+        /// </summary>
+        /// <returns>the number of method hashes which belong to the feature-object</returns>
+        public int getNumberOfMethodHashes()
+        {
+            return this.methodHashes.Count;
+        }
+
+        /// <summary>
         /// Returns <code>true</code> iff the hash is included in the <code>methodHashes</code>-list.
         /// </summary>
         /// <param name="hash">the hash it is searched for</param>
@@ -122,9 +131,9 @@ namespace Dune
         /// </summary>
         /// <param name="df">the class, a relation should be searched to</param>
         /// <returns><code>true</code> if the class has a relation(also indirect) to the given class; <code>false</code> otherwise</returns>
-        public Boolean hasRelationTo(DuneFeature df)
+        public Boolean hasRelationTo(DuneFeature df, DuneFeature root)
         {
-            return hasRelationTo(df, new List<DuneFeature>());
+            return hasRelationTo(df, root, new List<DuneFeature>());
         }
 
         /// <summary>
@@ -133,7 +142,7 @@ namespace Dune
         /// <param name="df">the class, a relation should be searched to</param>
         /// <param name="analyzed">the list which contains the classes which were already analyzed</param>
         /// <returns><code>true</code> if the class has a relation(also indirect) to the given class; <code>false</code> otherwise</returns>
-        private Boolean hasRelationTo(DuneFeature df, List<DuneFeature> analyzed)
+        private Boolean hasRelationTo(DuneFeature df, DuneFeature root, List<DuneFeature> analyzed)
         {
             if (analyzed.Contains(this))
             {
@@ -150,14 +159,14 @@ namespace Dune
                 analyzed.Add(this);
                 foreach (DuneFeature p in parents)
                 {
-                    if (p.hasRelationTo(df, analyzed))
+                    if (p != root && p.hasRelationTo(df, root, analyzed))
                     {
                         return true;
                     }
                 }
                 foreach (DuneFeature c in children)
                 {
-                    if (c.hasRelationTo(df, analyzed))
+                    if (c.hasRelationTo(df, root, analyzed))
                     {
                         return true;
                     }

@@ -268,12 +268,13 @@ namespace Dune
             System.IO.StreamWriter file = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\inherits.txt");
 
             // The newer version with optimizations
-            foreach (DuneFeature df in classesWithoutChildren)
+            foreach (DuneFeature df in features)
             {
-                foreach (DuneFeature comp in classesWithoutParents)
+                System.Console.WriteLine(df.getClassName());
+                foreach (DuneFeature comp in features)
                 {
                     // If there is no transitive relation between the classes, the classes are analyzed
-                    if (df != comp && !df.hasRelationTo(comp))
+                    if (df != comp && !df.hasRelationTo(comp, root) && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes())
                     {
                         Boolean isSubclassOf = true;
                         foreach (int methodHash in comp.getMethodHashes())
@@ -290,39 +291,6 @@ namespace Dune
                             file.WriteLine(df.getClassName() + " -> " + comp.getClassName());
                         }
                     }
-                        // TODO remove the following lines
-                    //else if (df != comp)
-                    //{
-                    //    List<DuneFeature> parents = df.getParents();
-                    //    foreach (DuneFeature parent in parents)
-                    //    {
-                    //        if (parent.hasDirectChildRelationTo(comp))
-                    //        {
-                    //            Boolean isSubclassOf = true;
-                    //            Boolean hasMoreMethods = false;
-                    //            foreach (int methodHash in comp.getMethodHashes())
-                    //            {
-                    //                if (!df.containsMethodHash(methodHash))
-                    //                {
-                    //                    isSubclassOf = false;
-                    //                    break;
-                    //                }
-                    //            }
-                    //            foreach (int methodHash in df.getMethodHashes())
-                    //            {
-                    //                if (!comp.containsMethodHash(methodHash)) {
-                    //                    hasMoreMethods = true;
-                    //                    break;
-                    //                }
-                    //            }
-                    //            if (isSubclassOf && hasMoreMethods)
-                    //            {
-                    //                file.WriteLine(df.getClassName() + " > " + comp.getClassName());
-                    //                classCounter++;
-                    //            }
-                    //        }
-                    //    }
-                    //}
 
                 }
             }
