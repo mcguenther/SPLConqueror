@@ -10,6 +10,9 @@ namespace Dune
     {
         private String reference;
         private String className;
+        private String rawTemplate;
+        private Boolean isStruct = false;
+        private Boolean isAbstract = false;
         private List<DuneFeature> parents;
         private List<DuneFeature> children;
         private Tree template;
@@ -23,12 +26,34 @@ namespace Dune
         /// <param name="className">the name of the class</param>
         public DuneFeature(String reference, String className)
         {
+            // Separate the classname from the template
+            int index = className.IndexOf('<');
+            this.rawTemplate = "";
+            if (index > 0)
+            {
+                this.className = className.Substring(0, index);
+                this.rawTemplate = className.Substring(index, className.Length - index);
+            }
+            else
+            {
+                this.className = className;
+            }
+
             this.reference = reference;
-            this.className = className;
             this.parents = new List<DuneFeature>();
             this.children = new List<DuneFeature>();
             this.methodHashes = new List<int>();
-            this.enums = new Dictionary<string, List<string>>();
+            this.enums = new Dictionary<String, List<String>>();
+        }
+
+        /// <summary>
+        /// Sets the type of the feature. A feature may be an interface, an abstract class or a concrete class.
+        /// </summary>
+        /// <param name="isSTruct"><code>true</code>if the class is an struct; <code>false</code> otherwise</param>
+        /// <param name="isAbstract"><code>true</code> if the class is abstract; <code>false</code> otherwise</param>
+        public void setType(Boolean isStruct, Boolean isAbstract) {
+            this.isStruct = isStruct;
+            this.isAbstract = isAbstract;
         }
 
         /// <summary>
@@ -180,6 +205,46 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns the classes with which the current class may be replaced with.
+        /// </summary>
+        /// <param name="root">the root node which is excluded</param>
+        /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
+        public List<string> getVariability(DuneFeature root)
+        {
+            return getVariability(root, new List<DuneFeature>());
+        }
+
+        /// <summary>
+        /// Returns the classes with which the current class may be replaced with.
+        /// </summary>
+        /// <param name="root">the root node which is excluded</param>
+        /// <param name="analyzed">the list which contains the features that were analyzed already</param>
+        /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
+        private List<string> getVariability(DuneFeature root, List<DuneFeature> analyzed)
+        {
+            List<string> result = new List<string>();
+            result.Add(className);
+
+            if (analyzed.Contains(this))
+            {
+                return null;
+            }
+            
+            analyzed.Add(this);
+            foreach (DuneFeature p in children)
+            {
+                result.AddRange(p.getVariability(root, analyzed));
+            }
+
+            foreach (DuneFeature p in parents)
+            {
+                result.AddRange(p.getVariability(root, analyzed));
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Adds a parent feature.
         /// </summary>
         /// <param name="d">the parent feature</param>
@@ -225,13 +290,23 @@ namespace Dune
         }
 
         /// <summary>
-        /// Returns the reference.
+        /// Returns the name of the class with its template.
         /// </summary>
-        /// <returns>the reference of the feature/class</returns>
+        /// <returns>the name of the feature/class</returns>
         public String getClassName()
+        {
+            return this.className + this.rawTemplate;
+        }
+
+        /// <summary>
+        /// Returns the name of the class without its template.
+        /// </summary>
+        /// <returns>the name of the feature/class</returns>
+        public String getClassNameWithoutTemplate()
         {
             return this.className;
         }
+
 
         /// <summary>
         /// Returns <code>true</code> if the features template tree was initialized.
@@ -258,7 +333,7 @@ namespace Dune
             }
 
             // Return true if the fields match:
-            return this.className.Equals(p.className);
+            return (this.getClassName()).Equals(p.getClassName());
         }
 
         public override int GetHashCode()

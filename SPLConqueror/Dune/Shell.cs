@@ -39,7 +39,7 @@ namespace Dune
                 {
                     case "analyze":
                     case "a":
-
+                        XMLParser.getVariability(arguments);
                         break;
                     case "help":
                     case "?":

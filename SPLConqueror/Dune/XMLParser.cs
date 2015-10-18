@@ -21,13 +21,6 @@ namespace Dune
         static List<DuneFeature> features = new List<DuneFeature>();
         static Dictionary<DuneFeature, String> templatesToAnalyze = new Dictionary<DuneFeature, string>();
 
-        static List<DuneFeature> classesAndInterfaces = new List<DuneFeature>();
-        static List<DuneFeature> classes = new List<DuneFeature>();
-
-        static List<DuneFeature> classesWithoutParents = new List<DuneFeature>();
-        static List<DuneFeature> classesWithoutChildren = new List<DuneFeature>();
-
-
         static Dictionary<DuneFeature, String> classesToAnalyze = new Dictionary<DuneFeature, string>();
 
         // Is only here for debugging
@@ -90,29 +83,15 @@ namespace Dune
 
                 // This boolean indicates if the current child is an interface, an abstract class or a normal class.
                 Boolean structClass = child.Attributes.GetNamedItem("kind").Value.Equals("struct");
-                Boolean normalClass = structClass ||
-                    child.Attributes.GetNamedItem("abstract") == null;
-                Boolean interfaceOrNotAbstract = child.Attributes.GetNamedItem("kind") != null && 
-                    (normalClass);
 
-                if (interfaceOrNotAbstract)
-                {
-                    if (normalClass)
-                    {
-                        classes.Add(df);
-                    }
+                df.setType(structClass, child.Attributes.GetNamedItem("abstract") != null);
 
-                    // Save the enums in the feature
-                    saveEnums(child, df);
 
-                    // Save the methods in the feature
-                    saveMethods(child, df);
-                    classesAndInterfaces.Add(df);
-                }
-                else
-                {
-                    // TODO Relevant?
-                }
+                // Save the enums in the feature
+                saveEnums(child, df);
+
+                // Save the methods in the feature
+                saveMethods(child, df);
 
                 // Has to start from 1, because the child at position 0 is always the compoundname-tag containing the own name of the class as well as the template
                 int i = 1;
@@ -154,27 +133,13 @@ namespace Dune
                     i++;
                 }
 
-                // Now the classes/interfaces with no parents and no children are sorted
-                // in order to minimize the number of comparisons.
-                if (!df.hasParents(root) && df.getMethodHashes().Any() && !isBlacklisted(df.getClassName()))
-                {
-                    classesWithoutParents.Add(df);
-                }
-                if (!df.hasChildren() && !structClass)
-                { 
-                    classesWithoutChildren.Add(df); 
-                }
             }
 
 
             List<DuneFeature> toRemove = new List<DuneFeature>();
             // The classes which no longer belong to these lists are removed
-            foreach (DuneFeature df in classesWithoutParents) {
-                if (df.hasParents(root))
-                {
-                    toRemove.Add(df);
-                }
-                else
+            foreach (DuneFeature df in features) {
+                if (!df.hasParents(root))
                 {
                     // Add the root as a parent, so every node has a common node as parent in the transitive closure
                     df.addParent(root);
@@ -182,64 +147,40 @@ namespace Dune
                 }
             }
 
-            foreach (DuneFeature toRem in toRemove) {
-                classesWithoutParents.Remove(toRem);
-            }
-            toRemove.Clear();
-
-            foreach (DuneFeature df in classesWithoutChildren)
-            {
-                if (df.hasChildren())
-                {
-                    toRemove.Add(df);
-                }
-            }
-
-            foreach (DuneFeature toRem in toRemove)
-            {
-                classesWithoutChildren.Remove(toRem);
-            }
-
-            toRemove.Clear();
-
             System.Console.WriteLine("Done!");
-
-            //file = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\templates.txt");
-
-            //dat = null;
-
-            //System.Console.WriteLine("Analyzing all templates and printing them out");
-
-            // analyze all templates
-
-            //Dictionary<String, Tree> noFeatures = new Dictionary<String,Tree>();
-            //List<Tuple<Tree, String>> todo = new List<Tuple<Tree, String>>();
-            //foreach (DuneFeature d in templatesToAnalyze.Keys)
-            //{
-            //    String value;
-            //    if (templatesToAnalyze.TryGetValue(d,out value)) {
-            //        Tree newTree = new Tree(d);
-            //        d.setTemplateTree(newTree);
-            //        analyzeTemplate(d, value, newTree, ref noFeatures, ref todo);
-            //        toRemove.Add(d);
-            //    }
-            //}
-
-            //while (toRemove.Count() > 0)
-            //{
-            //    templatesToAnalyze.Remove(toRemove.ElementAt(0));
-            //    toRemove.RemoveAt(0);
-            //}
-            //toRemove.Clear();
-
-            //printClassList();
-            //file.Flush();
-            //file.Close();
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
             findPotentialParents();
             System.Console.WriteLine("Finished duck-typing");
 
+        }
+
+
+        /// <summary>
+        /// Returns all possible replacements according to the inheritance and the template analysis as a list of strings.
+        /// </summary>
+        /// <param name="feature">the feature to analyze</param>
+        /// <returns>a list of strings in which every element is a possible replacement for the given feature</returns>
+        public static List<String> getVariability(string feature)
+        {
+
+            // Extract the name and the template
+            string name;
+            string template = "";
+            int index = feature.IndexOf('<');
+            if (index > 0)
+            {
+                name = feature.Substring(0, index);
+                template = feature.Substring(index, feature.Length - index);
+            }
+            else
+            {
+                name = feature;
+            }
+
+            DuneFeature df = getFeature(new DuneFeature("", feature));
+
+            return df.getVariability(root);
         }
 
 
@@ -271,8 +212,14 @@ namespace Dune
             foreach (DuneFeature df in features)
             {
                 System.Console.WriteLine(df.getClassName());
+
                 foreach (DuneFeature comp in features)
                 {
+                    if (comp.getNumberOfMethodHashes() > 0)
+                    {
+                        continue;
+                    }
+
                     // If there is no transitive relation between the classes, the classes are analyzed
                     if (df != comp && !df.hasRelationTo(comp, root) && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes())
                     {
