@@ -10,12 +10,15 @@ namespace SPLConqueror_Core
     {
         private String name = "";
 
+        /// <summary>
+        /// The name of the configuration option.
+        /// </summary>
         public String Name
         {
             get { return name; }
             set {
                 if (!value.All(Char.IsLetter))
-                    this.name = removeInvalidChars(value);
+                    this.name = removeInvalidCharsFromName(value);
                 else
                     this.name = value;
                 }
@@ -83,6 +86,11 @@ namespace SPLConqueror_Core
         private ConfigurationOption parent = null;
         private String parentName = "";
 
+        public String ParentName
+        {
+            get { return parentName; }
+        }
+
         /// <summary>
         /// This options implies the selection of its parent (hence, it is also present in the implied_Options field
         /// </summary>
@@ -111,7 +119,7 @@ namespace SPLConqueror_Core
         {
             this.vm = vm;
             if (!name.All(Char.IsLetter))
-                this.name = removeInvalidChars(name);
+                this.name = removeInvalidCharsFromName(name);
             else
                 this.name = name;
         }
@@ -210,7 +218,8 @@ namespace SPLConqueror_Core
                 switch (xmlInfo.Name)
                 {
                     case "name":
-                        this.name = xmlInfo.InnerText;
+                        this.Name = xmlInfo.InnerText;
+                        
                         break;
                     case "outputString":
                         this.outputString = xmlInfo.InnerText;
@@ -304,12 +313,17 @@ namespace SPLConqueror_Core
             return false;
         }
 
-        private String removeInvalidChars(string s)
+        /// <summary>
+        /// This method removes all characters form the string that are neither a letter nor '_'. This is necessary because a valid mane for a configuration option should only contains this characters.  
+        /// </summary>
+        /// <param name="s">The desired name for a configuration option.</param>
+        /// <returns>A valid name for the configuration option.</returns>
+        public static String removeInvalidCharsFromName(string s)
         {
             StringBuilder sb = new StringBuilder();
             foreach (char c in s)
             {
-                if (!Char.IsLetter(c))
+                if (!Char.IsLetter(c) && !c.Equals('_') && !Char.IsNumber(c))
                     continue;
                 else
                     sb.Append(c);
