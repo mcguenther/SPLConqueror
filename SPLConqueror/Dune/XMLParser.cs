@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Collections;
+using System.Diagnostics;
 
 namespace Dune
 {
@@ -135,9 +136,7 @@ namespace Dune
 
             }
 
-
-            List<DuneFeature> toRemove = new List<DuneFeature>();
-            // The classes which no longer belong to these lists are removed
+            // Every class with no parent gets a connection to the root-node
             foreach (DuneFeature df in features) {
                 if (!df.hasParents(root))
                 {
@@ -150,8 +149,10 @@ namespace Dune
             System.Console.WriteLine("Done!");
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
+            Stopwatch stopwatch = Stopwatch.StartNew(); 
             findPotentialParents();
-            System.Console.WriteLine("Finished duck-typing");
+            stopwatch.Stop();
+            System.Console.WriteLine("Finished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
 
         }
 
@@ -177,10 +178,39 @@ namespace Dune
             {
                 name = feature;
             }
+            // If the last name begins with a lower character then it is part of an enum
+            Boolean isEnum = char.IsLower(name[name.LastIndexOf(':') + 1]);
 
-            DuneFeature df = getFeature(new DuneFeature("", feature));
+            DuneFeature df;
 
-            return df.getVariability(root);
+            if (isEnum)
+            {
+                string featureName = feature.Substring(0, feature.LastIndexOf(':') - 1);
+
+                df = searchForFeature(new DuneFeature("", featureName));
+
+                // If not found search only for the name
+                if (df == null)
+                {
+                    df = searchForFeatureName(new DuneFeature("", featureName));
+                }
+            } else
+            {
+                df = searchForFeature(new DuneFeature("", feature));
+            }
+
+            if (df != null && !isEnum)
+            {
+                return df.getVariability(root);
+            }
+            else if (df != null)
+            {
+                return df.getAlternativeEnums(feature.Substring(feature.LastIndexOf(':') + 1));
+            }
+            else
+            {
+                return null;
+            }
         }
 
 
@@ -211,11 +241,14 @@ namespace Dune
             // The newer version with optimizations
             foreach (DuneFeature df in features)
             {
-                System.Console.WriteLine(df.getClassName());
+                if (df.getNumberOfMethodHashes() == 0)
+                {
+                    continue;
+                }
 
                 foreach (DuneFeature comp in features)
                 {
-                    if (comp.getNumberOfMethodHashes() > 0)
+                    if (comp.getNumberOfMethodHashes() == 0)
                     {
                         continue;
                     }
@@ -303,13 +336,28 @@ namespace Dune
                             XmlNode type = getChild("type", c.ChildNodes);
                             XmlNode args = getChild("argsstring", c.ChildNodes);
                             XmlNode name = getChild("name", c.ChildNodes);
-                            df.addMethod(type.InnerText + " " + name.InnerText + args.InnerText);
+                            df.addMethod(type.InnerText + " " + name.InnerText + '(' + getCountOfArgs(args.InnerText) + ')');
                         }
                     }
                     break;
                 }
 
             }
+        }
+
+        /// <summary>
+        /// Returns the number of arguments in the given string. Arguments are separated by comma.
+        /// </summary>
+        /// <param name="args">a <code>string</code> which contains the arguments (with preceeding brackets or not)</param>
+        /// <returns>the number of arguments in the given string</returns>
+        private static int getCountOfArgs(string args)
+        {
+            int count = args.Count(f => f == ',') + 1;
+            if (args.Count(f => f == ' ') == 0)
+            {
+                count = 0;
+            }
+            return count;
         }
 
         /// <summary>
@@ -325,6 +373,41 @@ namespace Dune
                 if (child.Name.Equals(name))
                 {
                     return child;
+                }
+            }
+            return null;
+        }
+
+
+        /// <summary>
+        /// Returns the feature if it was found; <code>null</code> otherwise
+        /// </summary>
+        /// <param name="df">the feature to search for</param>
+        /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
+        private static DuneFeature searchForFeature(DuneFeature df) 
+        {
+            foreach (DuneFeature d in features)
+            {
+                if (d.getClassName().Equals(df.getClassName()))
+                {
+                    return d;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Returns the feature if it was found; <code>null</code> otherwise
+        /// </summary>
+        /// <param name="df">the feature to search for</param>
+        /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
+        private static DuneFeature searchForFeatureName(DuneFeature df)
+        {
+            foreach (DuneFeature d in features)
+            {
+                if (d.getClassNameWithoutTemplate().Equals(df.getClassNameWithoutTemplate()))
+                {
+                    return d;
                 }
             }
             return null;

@@ -32,14 +32,26 @@ namespace Dune
                 else
                 {
                     command = input.Substring(0, firstSpace);
-                    arguments = input.Substring(firstSpace, input.Length - firstSpace);
+                    arguments = input.Substring(firstSpace, input.Length - firstSpace).Trim();
                 }
 
                 switch (command.ToLower())
                 {
                     case "analyze":
                     case "a":
-                        XMLParser.getVariability(arguments);
+                        List<string> result = XMLParser.getVariability(arguments);
+                        if (result != null)
+                        {
+                            foreach (string s in result)
+                            {
+                                System.Console.WriteLine(s);
+                            }
+                            System.Console.WriteLine("Found " + result.Count + " possible alternative(s).");
+                        }
+                        else
+                        {
+                            System.Console.WriteLine("The class wasn't found.");
+                        }
                         break;
                     case "help":
                     case "?":

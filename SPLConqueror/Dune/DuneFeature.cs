@@ -205,6 +205,30 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns a list of strings containing the alternatives to the given enum.
+        /// </summary>
+        /// <param name="enumName">The name of the enum to search for</param>
+        /// <returns>a list of strings containing the alternatives to the given enum; if no alternatives then this list is empty</returns>
+        public List<string> getAlternativeEnums(string enumName) {
+            List<string> result = new List<string>();
+
+            foreach (KeyValuePair<string, List<string>> k in enums)
+            {
+                if (k.Value.Contains(enumName))
+                {
+                    foreach (string listEntry in k.Value)
+                    {
+                        result.Add(this.getClassName() + "::" + listEntry);
+                    }
+
+                    return result;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Returns the classes with which the current class may be replaced with.
         /// </summary>
         /// <param name="root">the root node which is excluded</param>
@@ -223,14 +247,14 @@ namespace Dune
         private List<string> getVariability(DuneFeature root, List<DuneFeature> analyzed)
         {
             List<string> result = new List<string>();
-            result.Add(className);
 
-            if (analyzed.Contains(this))
+            if (analyzed.Contains(this) || this.Equals(root))
             {
-                return null;
+                return result;
             }
             
             analyzed.Add(this);
+            result.Add(getClassName());
             foreach (DuneFeature p in children)
             {
                 result.AddRange(p.getVariability(root, analyzed));
@@ -241,7 +265,7 @@ namespace Dune
                 result.AddRange(p.getVariability(root, analyzed));
             }
 
-            return null;
+            return result;
         }
 
         /// <summary>
