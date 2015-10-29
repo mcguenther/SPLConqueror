@@ -58,8 +58,9 @@ namespace Dune
                     continue;
                 }
 
-                String template = extractTemplate(name);
+                String template = extractTemplate(child);
                 name = convertName(name);
+
 
                 if (template != null)
                 {
@@ -149,7 +150,7 @@ namespace Dune
             System.Console.WriteLine("Done!");
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
-            Stopwatch stopwatch = Stopwatch.StartNew(); 
+            Stopwatch stopwatch = Stopwatch.StartNew();
             findPotentialParents();
             stopwatch.Stop();
             System.Console.WriteLine("Finished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
@@ -241,6 +242,7 @@ namespace Dune
             // The newer version with optimizations
             foreach (DuneFeature df in features)
             {
+                System.Console.WriteLine(df.toString());
                 if (df.getNumberOfMethodHashes() == 0)
                 {
                     continue;
@@ -268,7 +270,9 @@ namespace Dune
 
                         if (isSubclassOf)
                         {
-                            file.WriteLine(df.getClassName() + " -> " + comp.getClassName());
+                            df.addParent(comp);
+                            comp.addChildren(df);
+                            file.WriteLine(df.ToString() + " -> " + comp.ToString());
                         }
                     }
 
@@ -350,7 +354,7 @@ namespace Dune
         /// </summary>
         /// <param name="args">a <code>string</code> which contains the arguments (with preceeding brackets or not)</param>
         /// <returns>the number of arguments in the given string</returns>
-        private static int getCountOfArgs(string args)
+        public static int getCountOfArgs(string args)
         {
             int count = args.Count(f => f == ',') + 1;
             if (args.Count(f => f == ' ') == 0)
@@ -563,19 +567,114 @@ namespace Dune
         /// <summary>
         /// This method extracts the information of the template.
         /// </summary>
-        /// <param name="toConv">the whole name of the class including the template</param>
+        /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
         /// <returns>the string containing the template</returns>
-        private static String extractTemplate(String toConv)
+        private static String extractTemplate(XmlNode child)
         {
-            if (!toConv.Contains("<"))
+
+            bool found = false;
+            bool tooFar = false;
+
+            // The searched tag cannot be at index 0.
+            int i = 1;
+
+            while (!found && !tooFar)
             {
-                return null;
+                 XmlNode c = child.ChildNodes.Item(i);
+                 if (c.Name.Equals("templateparamlist"))
+                 {
+                     found = true;
+                 }
+                 else if (!c.Name.Equals("includes") && !c.Name.Equals("basecompoundref") && !c.Name.Equals("innerclass"))
+                 {
+                     tooFar = true;
+                 }
+                 else
+                 {
+                     i++;
+                 }
             }
-            return toConv.Substring(toConv.IndexOf("<") + 1, toConv.LastIndexOf(">") - toConv.IndexOf("<") - 1);
+            string result = "";
+
+            if (found)
+            {
+                XmlNode cur = child.ChildNodes.Item(i);
+                for (int j = 0; j < cur.ChildNodes.Count; j++ )
+                {
+                    XmlNode c = cur.ChildNodes.Item(j);
+
+                    if (j > 0)
+                    {
+                        result += ", ";
+                    }
+
+                    result += c.FirstChild.InnerText;
+                }
+            }
+
+            return result;
+        }
+
+        ///// <summary>
+        ///// Used for debug-purposes and returns the template itself.
+        ///// </summary>
+        ///// <param name="toConv">the name which also contains the template</param>
+        ///// <returns>the template itself</returns>
+        //private static string extractTemplateInName(string toConv) {
+
+        //    if (!toConv.Contains("<"))
+        //    {
+        //        return null;
+        //    }
+        //    return toConv.Substring(toConv.IndexOf("<") + 1, toConv.LastIndexOf(">") - toConv.IndexOf("<") - 1);
+        //}
+
+        /// <summary>
+        /// This method extracts the information of the template.
+        /// </summary>
+        /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
+        /// <returns>the number of template arguments</returns>
+        private static int getCountOfTemplateArgs(XmlNode child)
+        {
+            //if (!toConv.Contains("<"))
+            //{
+            //    return null;
+            //}
+            //return toConv.Substring(toConv.IndexOf("<") + 1, toConv.LastIndexOf(">") - toConv.IndexOf("<") - 1);
+
+            bool found = false;
+            bool tooFar = false;
+
+            // The searched tag cannot be at index 0.
+            int i = 1;
+
+            while (!found && !tooFar)
+            {
+                XmlNode c = child.ChildNodes.Item(i);
+                if (c.Name.Equals("templateparamlist"))
+                {
+                    found = true;
+                }
+                else if (!c.Name.Equals("includes") && !c.Name.Equals("basecompoundred"))
+                {
+                    tooFar = true;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+
+            if (found)
+            {
+                return child.ChildNodes.Item(i).ChildNodes.Count;
+            } 
+
+            return 0;
         }
 
         /// <summary>
-        /// Extracts the name of the class without the content in "<>" 
+        /// Extracts the name of the class without the content within the template
         /// </summary>
         /// <param name="toConv">the name to convert</param>
         /// <returns>the name of the class</returns>

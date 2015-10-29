@@ -10,6 +10,7 @@ namespace Dune
     {
         private String reference;
         private String className;
+        private int templateArgumentCount;
         private String rawTemplate;
         private Boolean isStruct = false;
         private Boolean isAbstract = false;
@@ -33,10 +34,12 @@ namespace Dune
             {
                 this.className = className.Substring(0, index);
                 this.rawTemplate = className.Substring(index, className.Length - index);
+                this.templateArgumentCount = XMLParser.getCountOfArgs(this.rawTemplate);
             }
             else
             {
                 this.className = className;
+                this.templateArgumentCount = 0;
             }
 
             this.reference = reference;
@@ -72,6 +75,10 @@ namespace Dune
         /// <param name="enums">a list containing all enum-options</param>
         public void addEnum(String key, List<String> enums)
         {
+            if (this.enums.ContainsKey(key))
+            {
+                return;
+            }
             this.enums.Add(key, enums);
         }
 
@@ -254,7 +261,7 @@ namespace Dune
             }
             
             analyzed.Add(this);
-            result.Add(getClassName());
+            result.Add(toString());
             foreach (DuneFeature p in children)
             {
                 result.AddRange(p.getVariability(root, analyzed));
@@ -319,7 +326,7 @@ namespace Dune
         /// <returns>the name of the feature/class</returns>
         public String getClassName()
         {
-            return this.className + this.rawTemplate;
+            return this.className + '<' + this.templateArgumentCount + '>';
         }
 
         /// <summary>
@@ -329,6 +336,24 @@ namespace Dune
         public String getClassNameWithoutTemplate()
         {
             return this.className;
+        }
+
+        /// <summary>
+        /// Returns the <code>DuneFeature</code> as a string.
+        /// </summary>
+        /// <returns>the string according to the <code>DuneFeature</code></returns>
+        public virtual String toString()
+        {
+            return this.className + this.rawTemplate;
+        }
+
+        /// <summary>
+        /// Returns the <code>DuneFeature</code> as a string.
+        /// </summary>
+        /// <returns>the string according to the <code>DuneFeature</code></returns>
+        public virtual String ToString()
+        {
+            return this.className + this.rawTemplate;
         }
 
 
