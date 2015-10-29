@@ -176,11 +176,6 @@ namespace Dune
         /// <returns><code>true</code> if the class has a relation(also indirect) to the given class; <code>false</code> otherwise</returns>
         private Boolean hasRelationTo(DuneFeature df, DuneFeature root, List<DuneFeature> analyzed)
         {
-            if (analyzed.Contains(this))
-            {
-                return false;
-            }
-
             if (df == this)
             {
                 return true;
@@ -191,7 +186,7 @@ namespace Dune
                 analyzed.Add(this);
                 foreach (DuneFeature p in parents)
                 {
-                    if (p != root && p.hasRelationTo(df, root, analyzed))
+                    if (p != root && !analyzed.Contains(p) && p.hasRelationTo(df, root, analyzed))
                     {
                         return true;
                     }

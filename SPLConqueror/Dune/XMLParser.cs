@@ -239,24 +239,28 @@ namespace Dune
         {
             System.IO.StreamWriter file = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\inherits.txt");
 
-            // The newer version with optimizations
+            List<DuneFeature> featuresToCompare = new List<DuneFeature>();
+
+            // Compare only classes with at least one public method
             foreach (DuneFeature df in features)
             {
-                System.Console.WriteLine(df.toString());
-                if (df.getNumberOfMethodHashes() == 0)
+                if (df.getNumberOfMethodHashes() > 0)
                 {
-                    continue;
+                    featuresToCompare.Add(df);
                 }
+            }
 
-                foreach (DuneFeature comp in features)
+
+            // The newer version with optimizations
+            foreach (DuneFeature df in featuresToCompare)
+            {
+                System.Console.WriteLine(df.toString());
+
+                foreach (DuneFeature comp in featuresToCompare)
                 {
-                    if (comp.getNumberOfMethodHashes() == 0)
-                    {
-                        continue;
-                    }
 
                     // If there is no transitive relation between the classes, the classes are analyzed
-                    if (df != comp && !df.hasRelationTo(comp, root) && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes())
+                    if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes() && !df.hasRelationTo(comp, root))
                     {
                         Boolean isSubclassOf = true;
                         foreach (int methodHash in comp.getMethodHashes())
@@ -270,9 +274,9 @@ namespace Dune
 
                         if (isSubclassOf)
                         {
-                            df.addParent(comp);
-                            comp.addChildren(df);
-                            file.WriteLine(df.ToString() + " -> " + comp.ToString());
+                            //df.addParent(comp);
+                            //comp.addChildren(df);
+                            file.WriteLine(df.toString() + " -> " + comp.toString());
                         }
                     }
 
