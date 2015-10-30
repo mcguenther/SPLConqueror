@@ -9,6 +9,7 @@ namespace Dune
     class DuneFeature
     {
         private String reference;
+        private String fullClassName;
         private String className;
         private int templateArgumentCount;
         private String rawTemplate;
@@ -35,13 +36,16 @@ namespace Dune
                 this.className = className.Substring(0, index);
                 this.rawTemplate = className.Substring(index, className.Length - index);
                 this.templateArgumentCount = XMLParser.getCountOfArgs(this.rawTemplate);
+                this.fullClassName = this.className + "<" + this.templateArgumentCount + ">";
             }
             else
             {
                 this.className = className;
                 this.templateArgumentCount = 0;
+                this.fullClassName = this.className;
             }
 
+            
             this.reference = reference;
             this.parents = new List<DuneFeature>();
             this.children = new List<DuneFeature>();
@@ -321,7 +325,9 @@ namespace Dune
         /// <returns>the name of the feature/class</returns>
         public String getClassName()
         {
-            return this.className + '<' + this.templateArgumentCount + '>';
+            return this.fullClassName;
+            //return this.className + this.rawTemplate;
+            //return String.Concat(this.className, this.templateArgumentCount);
         }
 
         /// <summary>

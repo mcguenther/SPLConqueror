@@ -62,7 +62,7 @@ namespace Dune
                 name = convertName(name);
 
 
-                if (template != null)
+                if (template != null) //&& !template.Trim().Equals(""))
                 {
                     name += "<" + template + ">";
                 }
@@ -250,6 +250,8 @@ namespace Dune
                 }
             }
 
+            List<Tuple<DuneFeature, DuneFeature>> toInsert = new List<Tuple<DuneFeature, DuneFeature>>();
+
 
             // The newer version with optimizations
             foreach (DuneFeature df in featuresToCompare)
@@ -274,13 +276,19 @@ namespace Dune
 
                         if (isSubclassOf)
                         {
-                            //df.addParent(comp);
-                            //comp.addChildren(df);
+                            toInsert.Add(new Tuple<DuneFeature, DuneFeature>(comp, df));
                             file.WriteLine(df.toString() + " -> " + comp.toString());
                         }
                     }
 
                 }
+            }
+
+            // Only now the relations are added.
+            foreach (Tuple<DuneFeature, DuneFeature> t in toInsert)
+            {
+                t.Item1.addParent(t.Item2);
+                t.Item2.addChildren(t.Item1);
             }
             file.Flush();
             file.Close();
