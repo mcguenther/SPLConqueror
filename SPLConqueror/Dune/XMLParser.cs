@@ -200,7 +200,7 @@ namespace Dune
             {
                 df = searchForFeature(new DuneFeature("", feature));
 
-                if (df == null && template.Equals(""))
+                if (df == null || template.Equals(""))
                 {
                     df = searchForFeature(new DuneFeature("", feature + "<>"));
                 }
@@ -664,7 +664,7 @@ namespace Dune
 
                     if (j > 0)
                     {
-                        result += ", ";
+                        result += ",";
                     }
 
                     result += c.FirstChild.InnerText;

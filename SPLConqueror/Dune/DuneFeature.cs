@@ -42,7 +42,7 @@ namespace Dune
                 this.fullClassName = this.className;
                 if (this.templateArgumentCount > 0)
                 {
-                    this.fullClassName += "<" + this.templateArgumentCount + ">";
+                    this.fullClassName += this.templateForCode;
                 }
             }
             else
