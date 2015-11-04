@@ -62,7 +62,7 @@ namespace Dune
                 name = convertName(name);
 
 
-                if (template != null) //&& !template.Trim().Equals(""))
+                if (template != null || (template != null && !template.Trim().Equals(""))) //&& !template.Trim().Equals(""))
                 {
                     name += "<" + template + ">";
                 }
@@ -198,6 +198,11 @@ namespace Dune
             } else
             {
                 df = searchForFeature(new DuneFeature("", feature));
+
+                if (df == null && template.Equals(""))
+                {
+                    df = searchForFeature(new DuneFeature("", feature + "<>"));
+                }
             }
 
             if (df != null && !isEnum)
@@ -256,7 +261,7 @@ namespace Dune
             // The newer version with optimizations
             foreach (DuneFeature df in featuresToCompare)
             {
-                System.Console.WriteLine(df.toString());
+                System.Console.WriteLine(df.ToString());
 
                 foreach (DuneFeature comp in featuresToCompare)
                 {
@@ -277,7 +282,7 @@ namespace Dune
                         if (isSubclassOf)
                         {
                             toInsert.Add(new Tuple<DuneFeature, DuneFeature>(comp, df));
-                            file.WriteLine(df.toString() + " -> " + comp.toString());
+                            file.WriteLine(df.ToString() + " -> " + comp.ToString());
                         }
                     }
 
@@ -369,7 +374,7 @@ namespace Dune
         public static int getCountOfArgs(string args)
         {
             int count = args.Count(f => f == ',') + 1;
-            if (args.Count(f => f == ' ') == 0)
+            if (args.IndexOf(">") == args.IndexOf("<") + 1 || ((args.IndexOf(")") >= 0) && args.IndexOf(")") == args.IndexOf("(") + 1) || args.Trim().Equals(""))
             {
                 count = 0;
             }

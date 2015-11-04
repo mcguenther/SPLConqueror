@@ -31,12 +31,17 @@ namespace Dune
             // Separate the classname from the template
             int index = className.IndexOf('<');
             this.rawTemplate = "";
+
             if (index > 0)
             {
                 this.className = className.Substring(0, index);
                 this.rawTemplate = className.Substring(index, className.Length - index);
                 this.templateArgumentCount = XMLParser.getCountOfArgs(this.rawTemplate);
-                this.fullClassName = this.className + "<" + this.templateArgumentCount + ">";
+                this.fullClassName = this.className;
+                if (this.templateArgumentCount > 0)
+                {
+                    this.fullClassName += "<" + this.templateArgumentCount + ">";
+                }
             }
             else
             {
@@ -180,6 +185,11 @@ namespace Dune
         /// <returns><code>true</code> if the class has a relation(also indirect) to the given class; <code>false</code> otherwise</returns>
         private Boolean hasRelationTo(DuneFeature df, DuneFeature root, List<DuneFeature> analyzed)
         {
+            if (analyzed.Contains(this) || root == this)
+            {
+                return false;
+            }
+
             if (df == this)
             {
                 return true;
@@ -260,7 +270,7 @@ namespace Dune
             }
             
             analyzed.Add(this);
-            result.Add(toString());
+            result.Add(ToString());
             foreach (DuneFeature p in children)
             {
                 result.AddRange(p.getVariability(root, analyzed));
@@ -343,18 +353,16 @@ namespace Dune
         /// Returns the <code>DuneFeature</code> as a string.
         /// </summary>
         /// <returns>the string according to the <code>DuneFeature</code></returns>
-        public virtual String toString()
+        public override String ToString()
         {
-            return this.className + this.rawTemplate;
-        }
-
-        /// <summary>
-        /// Returns the <code>DuneFeature</code> as a string.
-        /// </summary>
-        /// <returns>the string according to the <code>DuneFeature</code></returns>
-        public virtual String ToString()
-        {
-            return this.className + this.rawTemplate;
+            if (this.templateArgumentCount > 0)
+            {
+                return this.className + this.rawTemplate;
+            }
+            else
+            {
+                return this.className;
+            }
         }
 
 

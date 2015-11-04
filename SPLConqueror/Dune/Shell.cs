@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 namespace Dune
 {
@@ -53,6 +54,55 @@ namespace Dune
                             System.Console.WriteLine("The class wasn't found.");
                         }
                         break;
+                    case "fileAnalyzation":
+                    case "f":
+                        StreamReader inputFile = new System.IO.StreamReader(@"D:\HiWi\DebugOutput\classesInDiffusion.txt");
+                        StreamReader compFile = new System.IO.StreamReader(@"D:\HiWi\DebugOutput\minimalSetClasses.txt");
+                        StreamWriter output = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\analyzation.txt");
+
+                        List<string> globalResult = new List<string>();
+
+                        while (!inputFile.EndOfStream)
+                        {
+                            String line = inputFile.ReadLine();
+                            if (!line.Trim().Equals(""))
+                            {
+                                List<string> analyzationResult = XMLParser.getVariability(line);
+                                if (analyzationResult != null)
+                                {
+                                    globalResult.AddRange(analyzationResult); 
+                                }
+                            }
+                        }
+
+                        while (!compFile.EndOfStream)
+                        {
+                            String l = compFile.ReadLine();
+                            if (!l.Trim().Equals(""))
+                            {
+                                //if (!globalResult.Contains(l))
+                                //{
+                                //    output.WriteLine(l);
+                                //}
+
+                                switch (containsName(l, globalResult))
+                                {
+                                    case 1:
+                                        break;
+                                    case 0:
+                                        output.WriteLine("This classes name was found: " + l);
+                                        break;
+                                    case -1:
+                                        output.WriteLine(l);
+                                        break;
+                                }
+                            }
+                        }
+                        output.Flush();
+                        output.Close();
+                        inputFile.Close();
+                        compFile.Close();
+                        break;
                     case "help":
                     case "?":
                         printHelp();
@@ -63,6 +113,42 @@ namespace Dune
                         break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Returns if the given name is included in the array either with the template or without.
+        /// </summary>
+        /// <param name="name">the name of the feature to search for</param>
+        /// <param name="array">the array to search in</param>
+        /// <returns><code>1</code> if the name is found in the array; <code>0</code> if only the name is found; <code>-1</code> otherwise</returns>
+        private static int containsName(string name, List<string> array)
+        {
+            if (array.Contains(name))
+            {
+                return 1;
+            }
+            else 
+            {
+                if (name.Contains('<'))
+                {
+                    name = name.Substring(0, name.IndexOf('<'));
+                }
+
+                foreach (string comp in array)
+                {
+                    if (comp == null || comp.Equals("") || !comp.Contains('<'))
+                    {
+                        continue;
+                    }
+
+                    string compName = comp.Substring(0, comp.IndexOf('<'));
+                    if (name.Equals(compName))
+                    {
+                        return 0;
+                    }
+                }
+            }
+            return -1;
         }
 
         static void printHelp()
