@@ -357,7 +357,7 @@ namespace Dune
                             XmlNode type = getChild("type", c.ChildNodes);
                             XmlNode args = getChild("argsstring", c.ChildNodes);
                             XmlNode name = getChild("name", c.ChildNodes);
-                            df.addMethod(type.InnerText + " " + name.InnerText + '(' + getCountOfArgs(args.InnerText) + ')');
+                            df.addMethod(type.InnerText + " " + name.InnerText + '(' + convertArgs(args.InnerText) + ')');
                         }
                     }
                     break;
@@ -379,6 +379,47 @@ namespace Dune
                 count = 0;
             }
             return count;
+        }
+
+        private static string convertArgs(string args)
+        {
+            string result = "";
+            if (args.IndexOf('(') >= 0)
+            {
+                args = args.Substring(args.IndexOf('(') + 1, args.IndexOf(')') - args.IndexOf('(') - 1);
+            }
+            else if (args.IndexOf('<') >= 0)
+            {
+                args = args.Substring(args.IndexOf('<') + 1, args.IndexOf('>') - args.IndexOf('<') - 1);
+            }
+
+            string[] splitted = args.Split(',');
+
+            foreach (string s in splitted)
+            {
+                string trimmed = s.Trim();
+
+                bool type = true;
+
+                foreach (char c in trimmed)
+                {
+                    switch (c)
+                    {
+                        case ' ':
+                            type = false;
+                            break;
+                        default:
+                            if (type)
+                            {
+                                result += c;
+                            }
+                            break;
+                    }
+                }
+
+            }
+            return result;
+
         }
 
         /// <summary>
