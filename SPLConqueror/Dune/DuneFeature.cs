@@ -12,7 +12,8 @@ namespace Dune
         private String fullClassName;
         private String className;
         private int templateArgumentCount;
-        private String rawTemplate;
+        private String templateForCode;
+        private String implementingTemplate;
         private Boolean isStruct = false;
         private Boolean isAbstract = false;
         private List<DuneFeature> parents;
@@ -30,13 +31,14 @@ namespace Dune
         {
             // Separate the classname from the template
             int index = className.IndexOf('<');
-            this.rawTemplate = "";
-
+            this.templateForCode = "";
+            this.implementingTemplate = "";
             if (index > 0)
             {
                 this.className = className.Substring(0, index);
-                this.rawTemplate = className.Substring(index, className.Length - index);
-                this.templateArgumentCount = XMLParser.getCountOfArgs(this.rawTemplate);
+                this.templateForCode = className.Substring(index, className.Length - index);
+                this.implementingTemplate = this.templateForCode;
+                this.templateArgumentCount = XMLParser.getCountOfArgs(this.templateForCode);
                 this.fullClassName = this.className;
                 if (this.templateArgumentCount > 0)
                 {
@@ -51,6 +53,53 @@ namespace Dune
             }
 
             
+            this.reference = reference;
+            this.parents = new List<DuneFeature>();
+            this.children = new List<DuneFeature>();
+            this.methodHashes = new List<int>();
+            this.enums = new Dictionary<String, List<String>>();
+        }
+
+        /// <summary>
+        /// Constructs a new DuneFeature with the given reference and the given className
+        /// </summary>
+        /// <param name="reference">the reference of the class</param>
+        /// <param name="className">the name of the class</param>
+        /// <param name="template">the template of the class</param>
+        /// <param name="templateInName">the template in the name of the class (may be null)</param>
+        public DuneFeature(String reference, String className, String template, String templateInName)
+        {
+            this.templateForCode = "";
+            this.implementingTemplate = "";
+
+            if (template != null && !template.Equals(""))
+            {
+                this.className = className;
+                this.implementingTemplate = template;
+                this.templateArgumentCount = XMLParser.getCountOfArgs(this.implementingTemplate);
+                if (templateInName == null)
+                {
+                    this.fullClassName = this.className + template;
+                    this.templateForCode = this.implementingTemplate;
+                }
+                else
+                {
+                    this.fullClassName = this.className + templateInName;
+                    this.templateForCode = templateInName;
+                }
+                if (this.templateArgumentCount > 0)
+                {
+                    this.fullClassName += "<" + this.templateArgumentCount + ">";
+                }
+            }
+            else
+            {
+                this.className = className;
+                this.templateArgumentCount = 0;
+                this.fullClassName = this.className;
+            }
+
+
             this.reference = reference;
             this.parents = new List<DuneFeature>();
             this.children = new List<DuneFeature>();
@@ -84,10 +133,10 @@ namespace Dune
         /// <param name="enums">a list containing all enum-options</param>
         public void addEnum(String key, List<String> enums)
         {
-            if (this.enums.ContainsKey(key))
-            {
-                return;
-            }
+            //if (this.enums.ContainsKey(key))
+            //{
+            //    return;
+            //}
             this.enums.Add(key, enums);
         }
 
@@ -357,7 +406,7 @@ namespace Dune
         {
             if (this.templateArgumentCount > 0)
             {
-                return this.className + this.rawTemplate;
+                return this.className + "<" + this.implementingTemplate + ">";
             }
             else
             {

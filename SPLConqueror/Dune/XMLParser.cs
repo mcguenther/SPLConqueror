@@ -58,18 +58,19 @@ namespace Dune
                     continue;
                 }
 
+                String templateInName = extractTemplateInName(name);
                 String template = extractTemplate(child);
                 name = convertName(name);
 
 
-                if (template != null || (template != null && !template.Trim().Equals(""))) //&& !template.Trim().Equals(""))
-                {
-                    name += "<" + template + ">";
-                }
+                //if (template != null || (template != null && !template.Trim().Equals(""))) //&& !template.Trim().Equals(""))
+                //{
+                //    name += "<" + template + ">";
+                //}
 
-
-
-                DuneFeature df = getFeature(new DuneFeature(refId, name));
+                DuneFeature df;
+                df = getFeature(new DuneFeature(refId, name, template, templateInName));
+                
 
                 if (df.getReference() == null && refId != null)
                 {
@@ -643,7 +644,7 @@ namespace Dune
                  {
                      found = true;
                  }
-                 else if (!c.Name.Equals("includes") && !c.Name.Equals("basecompoundref") && !c.Name.Equals("innerclass"))
+                 else if (!c.Name.Equals("includes") && !c.Name.Equals("derivedcompoundref") && !c.Name.Equals("basecompoundref") && !c.Name.Equals("innerclass"))
                  {
                      tooFar = true;
                  }
@@ -673,19 +674,20 @@ namespace Dune
             return result;
         }
 
-        ///// <summary>
-        ///// Used for debug-purposes and returns the template itself.
-        ///// </summary>
-        ///// <param name="toConv">the name which also contains the template</param>
-        ///// <returns>the template itself</returns>
-        //private static string extractTemplateInName(string toConv) {
+        /// <summary>
+        /// Used for debug-purposes and returns the template itself.
+        /// </summary>
+        /// <param name="toConv">the name which also contains the template</param>
+        /// <returns>the template itself</returns>
+        private static string extractTemplateInName(string toConv)
+        {
 
-        //    if (!toConv.Contains("<"))
-        //    {
-        //        return null;
-        //    }
-        //    return toConv.Substring(toConv.IndexOf("<") + 1, toConv.LastIndexOf(">") - toConv.IndexOf("<") - 1);
-        //}
+            if (!toConv.Contains("<"))
+            {
+                return null;
+            }
+            return toConv.Substring(toConv.IndexOf("<") + 1, toConv.LastIndexOf(">") - toConv.IndexOf("<") - 1);
+        }
 
         /// <summary>
         /// This method extracts the information of the template.
