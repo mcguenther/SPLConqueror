@@ -358,7 +358,8 @@ namespace Dune
                             XmlNode type = getChild("type", c.ChildNodes);
                             XmlNode args = getChild("argsstring", c.ChildNodes);
                             XmlNode name = getChild("name", c.ChildNodes);
-                            df.addMethod(type.InnerText + " " + name.InnerText + '(' + convertArgs(args.InnerText) + ')');
+                            System.Console.WriteLine(args.InnerText + " -> " + convertMethodArgs(args.InnerText));
+                            df.addMethod(type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText));
                         }
                     }
                     break;
@@ -382,43 +383,58 @@ namespace Dune
             return count;
         }
 
-        private static string convertArgs(string args)
+        private static string convertMethodArgs(string args)
         {
+            if (args.Equals("") || args.Equals("()"))
+            {
+                return args;
+            }
+
             string result = "";
+            string sufix = "";
+            bool paranthesis = false;
             if (args.IndexOf('(') >= 0)
             {
+                paranthesis = true;
+                sufix = args.Substring(args.IndexOf(')') + 1, args.Length - args.IndexOf(')') - 1);
                 args = args.Substring(args.IndexOf('(') + 1, args.IndexOf(')') - args.IndexOf('(') - 1);
-            }
-            else if (args.IndexOf('<') >= 0)
-            {
-                args = args.Substring(args.IndexOf('<') + 1, args.IndexOf('>') - args.IndexOf('<') - 1);
             }
 
             string[] splitted = args.Split(',');
 
-            foreach (string s in splitted)
+            for (int i = 0; i < splitted.Length; i++)
             {
+                string s = splitted[i];
+
+                if (i > 0)
+                {
+                    result += ",";
+                }
+
                 string trimmed = s.Trim();
 
-                bool type = true;
+                bool name = true;
 
-                foreach (char c in trimmed)
+                for (int j = trimmed.Length - 1; j >= 0; j--)
                 {
-                    switch (c)
+                    char c = trimmed[j];
+                    if (c.Equals(' '))
                     {
-                        case ' ':
-                            type = false;
-                            break;
-                        default:
-                            if (type)
-                            {
-                                result += c;
-                            }
-                            break;
+                        name = false;
+                    }
+                    else if (!name)
+                    {
+                        result += trimmed.Substring(0, j + 1);
+                        break;
                     }
                 }
 
             }
+            if (paranthesis)
+            {
+                result = "(" + result + ")";
+            }
+            result += sufix;
             return result;
 
         }
