@@ -40,6 +40,9 @@ namespace Dune
             XmlElement current = dat.DocumentElement;
             XmlNodeList childList = current.ChildNodes;
             System.Console.WriteLine("Parsing the file...");
+
+            List<Tuple<DuneFeature, DuneFeature>> relations = new List<Tuple<DuneFeature, DuneFeature>>();
+
             foreach (XmlNode child in childList)
             {
                 //            XmlNode child = current.ChildNodes.Item(0);
@@ -69,7 +72,8 @@ namespace Dune
                 //}
 
                 DuneFeature df;
-                df = getFeature(new DuneFeature(refId, name, template, templateInName));
+                df = new DuneFeature(refId, name, template, templateInName);
+                features.Add(df);
                 
 
                 if (df.getReference() == null && refId != null)
@@ -131,11 +135,34 @@ namespace Dune
                     
                     DuneFeature newDF = getFeature(new DuneFeature(refNew, nameNew));
 
-                    df.addParent(newDF);
-                    newDF.addChildren(df);
+                    if (newDF != null)
+                    {
+
+                        df.addParent(newDF);
+                        newDF.addChildren(df);
+                    }
+                    else
+                    {
+                        relations.Add(new Tuple<DuneFeature, DuneFeature>(new DuneFeature(refNew, nameNew), df));
+                    }
                     i++;
                 }
 
+            }
+
+            int notFound = 0;
+            foreach (Tuple<DuneFeature, DuneFeature> t in relations)
+            {
+                DuneFeature newDF = getFeature(t.Item1);
+                if (newDF != null)
+                {
+                    newDF.addChildren(t.Item2);
+                    t.Item2.addParent(newDF);
+                }
+                else
+                {
+                    notFound++;
+                }
             }
 
             // Every class with no parent gets a connection to the root-node
@@ -358,7 +385,6 @@ namespace Dune
                             XmlNode type = getChild("type", c.ChildNodes);
                             XmlNode args = getChild("argsstring", c.ChildNodes);
                             XmlNode name = getChild("name", c.ChildNodes);
-                            System.Console.WriteLine(args.InnerText + " -> " + convertMethodArgs(args.InnerText));
                             df.addMethod(type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText));
                         }
                     }
@@ -502,13 +528,13 @@ namespace Dune
             int indx = XMLParser.features.IndexOf(df);
             if (indx >= 0)
             {
-                df = XMLParser.features[indx];
+                return df = XMLParser.features[indx];
             }
-            else
-            {
-                XMLParser.features.Add(df);
-            }
-            return df;
+            //else
+            //{
+            //    XMLParser.features.Add(df);
+            //}
+            return null;
         }
 
         /// <summary>
