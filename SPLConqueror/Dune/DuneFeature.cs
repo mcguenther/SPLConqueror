@@ -36,13 +36,13 @@ namespace Dune
             if (index > 0)
             {
                 this.className = className.Substring(0, index);
-                this.templateForCode = className.Substring(index, className.Length - index);
+                this.templateForCode = className.Substring(index + 1, className.Length - index - 2);
                 this.implementingTemplate = this.templateForCode;
                 this.templateArgumentCount = XMLParser.getCountOfArgs(this.templateForCode);
                 this.fullClassName = this.className;
                 if (this.templateArgumentCount > 0)
                 {
-                    this.fullClassName += this.templateForCode;
+                    this.fullClassName += "<" + this.templateForCode + ">";
                 }
             }
             else
@@ -79,17 +79,13 @@ namespace Dune
                 this.templateArgumentCount = XMLParser.getCountOfArgs(this.implementingTemplate);
                 if (templateInName == null)
                 {
-                    this.fullClassName = this.className + template;
+                    this.fullClassName = this.className + "<" + template + ">";
                     this.templateForCode = this.implementingTemplate;
                 }
                 else
                 {
-                    this.fullClassName = this.className + templateInName;
+                    this.fullClassName = this.className + "<" + templateInName + ">";
                     this.templateForCode = templateInName;
-                }
-                if (this.templateArgumentCount > 0)
-                {
-                    this.fullClassName += "<" + this.templateArgumentCount + ">";
                 }
             }
             else
