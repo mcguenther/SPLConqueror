@@ -458,6 +458,12 @@ namespace Dune
                 return false;
             }
 
+            // If both objects have references then match them by reference
+            if (this.reference != null && !this.reference.Equals("") && p.reference != null && !p.reference.Equals(""))
+            {
+                return this.reference.Equals(p.reference);
+            }
+
             // Return true if the fields match:
             return (this.getClassName()).Equals(p.getClassName());
         }
