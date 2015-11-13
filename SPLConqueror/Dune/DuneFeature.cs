@@ -57,7 +57,7 @@ namespace Dune
             this.parents = new List<DuneFeature>();
             this.children = new List<DuneFeature>();
             this.methodHashes = new List<int>();
-            this.enums = new Dictionary<String, List<String>>();
+            this.enums = null;
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace Dune
             this.parents = new List<DuneFeature>();
             this.children = new List<DuneFeature>();
             this.methodHashes = new List<int>();
-            this.enums = new Dictionary<String, List<String>>();
+            this.enums = null;
         }
 
         /// <summary>
@@ -134,6 +134,20 @@ namespace Dune
             //    return;
             //}
             this.enums.Add(key, enums);
+        }
+
+        /// <summary>
+        /// Sets the enums of the <code>DuneFeature</code> to the given argument.
+        /// </summary>
+        /// <param name="enums">the <code>Dictionary</code> containing the enums of the class</param>
+        public void setEnum(Dictionary<String, List<String>> enums)
+        {
+            // Should never be the case...
+            if (this.enums != null)
+            {
+                System.Console.Write("");
+            }
+            this.enums = enums;
         }
 
         /// <summary>
@@ -190,6 +204,15 @@ namespace Dune
         public void addMethod(String methodSig)
         {
             this.methodHashes.Add(methodSig.GetHashCode());
+        }
+
+        /// <summary>
+        /// Sets the method hash list to the given argument.
+        /// </summary>
+        /// <param name="methods">the list containing the method hashes of the class</param>
+        public void setMethods(List<int> methods)
+        {
+            this.methodHashes = methods;
         }
 
         /// <summary>

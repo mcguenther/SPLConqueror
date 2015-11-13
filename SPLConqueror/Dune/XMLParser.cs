@@ -5,6 +5,7 @@ using System.Text;
 using System.Xml;
 using System.Collections;
 using System.Diagnostics;
+using System.IO;
 
 namespace Dune
 {
@@ -24,6 +25,8 @@ namespace Dune
 
         static Dictionary<DuneFeature, String> classesToAnalyze = new Dictionary<DuneFeature, string>();
 
+        static List<Tuple<DuneFeature, DuneFeature>> relations = new List<Tuple<DuneFeature, DuneFeature>>();
+
         // Is only here for debugging
         static System.IO.StreamWriter file;
         static List<String> classNames = new List<String>();
@@ -41,115 +44,12 @@ namespace Dune
             XmlNodeList childList = current.ChildNodes;
             System.Console.WriteLine("Parsing the file...");
 
-            List<Tuple<DuneFeature, DuneFeature>> relations = new List<Tuple<DuneFeature, DuneFeature>>();
-
             foreach (XmlNode child in childList)
             {
-                //            XmlNode child = current.ChildNodes.Item(0);
-                String refId = child.Attributes["id"].Value.ToString();
-
-                String name = child.FirstChild.InnerText.ToString();
-
-                if (refId == null)
-                {
-                    refId = name;
-                }
-                
-                // Helper classes are skipped
-                if (name.Contains("Helper") || name.Contains("helper"))
-                {
-                    continue;
-                }
-
-                String templateInName = extractTemplateInName(name);
-                String template = extractTemplate(child);
-                name = convertName(name);
-
-
-                //if (template != null || (template != null && !template.Trim().Equals(""))) //&& !template.Trim().Equals(""))
-                //{
-                //    name += "<" + template + ">";
-                //}
-
-                DuneFeature df;
-                df = new DuneFeature(refId, name, template, templateInName);
-                features.Add(df);
-                
-
-                if (df.getReference() == null && refId != null)
-                {
-                    df.setReference(refId);
-                }
-
-
-                if (template != null && !templatesToAnalyze.ContainsKey(df))
-                {
-                    // Add the class and the template to the list of templates to be analyzed
-                    templatesToAnalyze.Add(df, template);
-                }
-
-                // This boolean indicates if the current child is an interface, an abstract class or a normal class.
-                Boolean structClass = child.Attributes.GetNamedItem("kind").Value.Equals("struct");
-
-                df.setType(structClass, child.Attributes.GetNamedItem("abstract") != null);
-
-
-                // Save the enums in the feature
-                saveEnums(child, df);
-
-                // Save the methods in the feature
-                saveMethods(child, df);
-
-                // Has to start from 1, because the child at position 0 is always the compoundname-tag containing the own name of the class as well as the template
-                int i = 1;
-
-                // This boolean indicates if there are another basecompoundref-elements
-                Boolean anotherBase = true;
-
-                // The features in the basecompoundref-elements are the children of the respective feature
-                while (anotherBase)
-                {
-                    XmlNode c = child.ChildNodes.Item(i);
-                    if (!c.Name.Equals("basecompoundref"))
-                    {
-                        anotherBase = false;
-                        i++;
-                        continue;
-                    }
-
-                    String refNew = null;
-                    String nameNew = convertName(c.InnerText.ToString());
-
-                    if (c.Attributes["refid"] == null)
-                    {
-                        if (nameNew.Contains("std") && !Program.INCLUDE_CLASSES_FROM_STD)
-                        {
-                            i++;
-                            continue;
-                        }
-                    }
-                    else
-                    {
-                        refNew = c.Attributes["refid"].Value.ToString();
-                    }
-                    
-                    DuneFeature newDF = getFeature(new DuneFeature(refNew, nameNew));
-
-                    if (newDF != null)
-                    {
-
-                        df.addParent(newDF);
-                        newDF.addChildren(df);
-                    }
-                    else
-                    {
-                        relations.Add(new Tuple<DuneFeature, DuneFeature>(new DuneFeature(refNew, nameNew), df));
-                    }
-                    i++;
-                }
-
+                DuneFeature df = extractFeature(child);
             }
 
+            StreamWriter output = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\notFound.txt");
             int notFound = 0;
             foreach (Tuple<DuneFeature, DuneFeature> t in relations)
             {
@@ -162,11 +62,14 @@ namespace Dune
                 else
                 {
                     notFound++;
+                    output.WriteLine(t.Item1);
                 }
             }
+            output.Flush();
 
             // Every class with no parent gets a connection to the root-node
-            foreach (DuneFeature df in features) {
+            foreach (DuneFeature df in features)
+            {
                 if (!df.hasParents(root))
                 {
                     // Add the root as a parent, so every node has a common node as parent in the transitive closure
@@ -183,6 +86,114 @@ namespace Dune
             stopwatch.Stop();
             System.Console.WriteLine("Finished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
 
+        }
+
+        /// <summary>
+        /// Extracts the information needed for a <code>DuneFeature</code> and also constructs one.
+        /// </summary>
+        /// <param name="child">the node in the xml-file pointing on the <code>compounddef</code> tag</param>
+        /// <returns>the constructed <code>DuneFeature</code> with all its properties</returns>
+        private static DuneFeature extractFeature(XmlNode child)
+        {
+            DuneFeature df = null;
+            String template = "";
+            String refId = child.Attributes["id"].Value.ToString();
+            String name = "";
+            String templateInName = "";
+            Dictionary<String, List<String>> enums = null;
+            List<int> methods = null;
+            List<DuneFeature> inherits = new List<DuneFeature>();
+
+            foreach (XmlNode node in child.ChildNodes)
+            {
+                switch (node.Name)
+                {
+                    case "compoundname":
+                        name = node.InnerText.ToString();
+                        templateInName = extractTemplateInName(name);
+                        name = convertName(name);
+                        if (name.Contains("Helper") || name.Contains("helper"))
+                        {
+                            return null;
+                        }
+                        break;
+                    case "basecompoundref":
+                        String refNew = null;
+                        String nameNew = node.InnerText.ToString();
+
+                        if (node.Attributes["refid"] == null)
+                        {
+                            if (nameNew.Contains("std") && !Program.INCLUDE_CLASSES_FROM_STD)
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            refNew = node.Attributes["refid"].Value.ToString();
+                        }
+
+                        DuneFeature newDF = getFeature(new DuneFeature(refNew, nameNew));
+
+                        inherits.Add(newDF);
+                        break;
+                    case "sectiondef":
+                        if (node.Attributes.GetNamedItem("kind") != null)
+                        {
+                            switch (node.Attributes.GetNamedItem("kind").Value)
+                            {
+                                // Only the public types are crucial for saving enums
+                                case "public-type":
+                                    // Save the enums in the feature
+                                    enums = saveEnums(node);
+                                    break;
+                                // Only the public functions are crucial for saving methods
+                                case "public-func":
+                                    methods = saveMethods(node);
+                                    break;
+                            }
+                        }
+                        break;
+                    case "templateparamlist":
+                        template = extractTemplate(node);
+                        break;
+                }
+            }
+
+            df = new DuneFeature(refId, name, template, templateInName);
+            features.Add(df);
+
+            // This boolean indicates if the current child is an interface, an abstract class or a normal class.
+            Boolean structClass = child.Attributes.GetNamedItem("kind").Value.Equals("struct");
+
+            df.setType(structClass, child.Attributes.GetNamedItem("abstract") != null);
+
+            if (enums != null)
+            {
+                df.setEnum(enums);
+            }
+
+            if (methods != null)
+            {
+                df.setMethods(methods);
+            }
+
+            // Now add all relations
+            foreach (DuneFeature newDF in inherits)
+            {
+                if (newDF != null)
+                {
+
+                    df.addParent(newDF);
+                    newDF.addChildren(df);
+                }
+                else
+                {
+                    relations.Add(new Tuple<DuneFeature, DuneFeature>(newDF, df));
+                }
+            }
+
+            return df;
         }
 
 
@@ -223,7 +234,8 @@ namespace Dune
                 {
                     df = searchForFeatureName(new DuneFeature("", featureName));
                 }
-            } else
+            }
+            else
             {
                 df = searchForFeature(new DuneFeature("", feature));
 
@@ -331,67 +343,59 @@ namespace Dune
         /// This method saves the enums of the respective class in the corresponding Dictionary-element from the DuneFeature-class.
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
-        /// <param name="df">the feature-object the enums should be added to</param>
-        private static void saveEnums(XmlNode node, DuneFeature df)
+        /// <returns>a <code>Dictionary</code> which contains the enums and its elements</returns>
+        private static Dictionary<String, List<String>> saveEnums(XmlNode node)
         {
-            foreach (XmlNode child in node.ChildNodes)
+            Dictionary<String, List<String>> result = new Dictionary<String, List<String>>();
+            // Access memberdefs and search for the value of the definition tag
+            foreach (XmlNode c in node.ChildNodes)
             {
-                // Only the public types are crucial
-                if (child.Name.Equals("sectiondef") && child.Attributes.GetNamedItem("kind") != null && child.Attributes.GetNamedItem("kind").Value.Equals("public-type"))
+                if (c.Name.Equals("memberdef") && c.Attributes.GetNamedItem("kind") != null && c.Attributes.GetNamedItem("kind").Value.Equals("enum"))
                 {
-                    // Access memberdefs and search for the value of the definition tag
-                    foreach (XmlNode c in child.ChildNodes)
+                    XmlNode name = getChild("name", c.ChildNodes);
+                    List<String> enumNames = new List<String>();
+
+                    // Extract the enum-options
+                    foreach (XmlNode enumvalue in c.ChildNodes)
                     {
-                        if (c.Name.Equals("memberdef") && c.Attributes.GetNamedItem("kind") != null && c.Attributes.GetNamedItem("kind").Value.Equals("enum"))
+                        if (enumvalue.Name.Equals("enumvalue"))
                         {
-                            XmlNode name = getChild("name", c.ChildNodes);
-                            List<String> enumNames = new List<String>();
+                            enumNames.Add(getChild("name", enumvalue.ChildNodes).InnerText);
 
-                            // Extract the enum-options
-                            foreach (XmlNode enumvalue in c.ChildNodes)
-                            {
-                                if (enumvalue.Name.Equals("enumvalue"))
-                                {
-                                    enumNames.Add(getChild("name", enumvalue.ChildNodes).InnerText);
-
-                                }
-                            }
-
-                            df.addEnum(name.InnerText, enumNames);
                         }
                     }
-                    break;
+
+                    result.Add(name.InnerText, enumNames);
                 }
             }
+
+            return result;
+
         }
 
         /// <summary>
         /// Saves the methods of the class/interface
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
-        /// <param name="df">the feature-object the methods should be added to</param>
-        private static void saveMethods(XmlNode node, DuneFeature df)
+        /// <returns>a list containing the method hashes</returns>
+        private static List<int> saveMethods(XmlNode node)
         {
-
-            foreach (XmlNode child in node.ChildNodes)
+            List<int> result = new List<int>();
+            // Access memberdefs and search for the value of the definition tag
+            foreach (XmlNode c in node.ChildNodes)
             {
-                // Only the public functions are crucial
-                if (child.Name.Equals("sectiondef") && child.Attributes.GetNamedItem("kind") != null && child.Attributes.GetNamedItem("kind").Value.Equals("public-func")) {
-                    
-                    // Access memberdefs and search for the value of the definition tag
-                    foreach (XmlNode c in child.ChildNodes)
-                    {
-                        if (c.Name.Equals("memberdef")) {
-                            XmlNode type = getChild("type", c.ChildNodes);
-                            XmlNode args = getChild("argsstring", c.ChildNodes);
-                            XmlNode name = getChild("name", c.ChildNodes);
-                            df.addMethod(type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText));
-                        }
-                    }
-                    break;
+                if (c.Name.Equals("memberdef"))
+                {
+                    XmlNode type = getChild("type", c.ChildNodes);
+                    XmlNode args = getChild("argsstring", c.ChildNodes);
+                    XmlNode name = getChild("name", c.ChildNodes);
+                    //df.addMethod(type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText));
+                    result.Add((type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText)).GetHashCode());
                 }
-
             }
+
+            return result;
+
         }
 
         /// <summary>
@@ -489,7 +493,7 @@ namespace Dune
         /// </summary>
         /// <param name="df">the feature to search for</param>
         /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
-        private static DuneFeature searchForFeature(DuneFeature df) 
+        private static DuneFeature searchForFeature(DuneFeature df)
         {
             foreach (DuneFeature d in features)
             {
@@ -630,7 +634,8 @@ namespace Dune
         /// Adds the given className to the list of class names.
         /// </summary>
         /// <param name="className">the class name to add</param>
-        private static void addToList(String className) {
+        private static void addToList(String className)
+        {
             if (!classNames.Contains(className))
             {
                 classNames.Add(className);
@@ -673,45 +678,47 @@ namespace Dune
         private static String extractTemplate(XmlNode child)
         {
 
-            bool found = false;
-            bool tooFar = false;
+            //bool found = false;
+            //bool tooFar = false;
 
-            // The searched tag cannot be at index 0.
-            int i = 1;
+            //// The searched tag cannot be at index 0.
+            //int i = 1;
 
-            while (!found && !tooFar)
-            {
-                 XmlNode c = child.ChildNodes.Item(i);
-                 if (c.Name.Equals("templateparamlist"))
-                 {
-                     found = true;
-                 }
-                 else if (!c.Name.Equals("includes") && !c.Name.Equals("derivedcompoundref") && !c.Name.Equals("basecompoundref") && !c.Name.Equals("innerclass"))
-                 {
-                     tooFar = true;
-                 }
-                 else
-                 {
-                     i++;
-                 }
-            }
+            //while (!found && !tooFar)
+            //{
+            //     XmlNode c = child.ChildNodes.Item(i);
+            //     if (c.Name.Equals("templateparamlist"))
+            //     {
+            //         found = true;
+            //     }
+            //     else if (!c.Name.Equals("includes") && !c.Name.Equals("derivedcompoundref") && !c.Name.Equals("basecompoundref") && !c.Name.Equals("innerclass"))
+            //     {
+            //         tooFar = true;
+            //     }
+            //     else
+            //     {
+            //         i++;
+            //     }
+            //}
             string result = "";
 
-            if (found)
+            //if (found)
+            //{
+            //XmlNode cur = child.ChildNodes.Item(i);
+            //for (int j = 0; j < cur.ChildNodes.Count; j++ )
+            for (int j = 0; j < child.ChildNodes.Count; j++)
             {
-                XmlNode cur = child.ChildNodes.Item(i);
-                for (int j = 0; j < cur.ChildNodes.Count; j++ )
+                // XmlNode c = cur.ChildNodes.Item(j);
+                XmlNode c = child.ChildNodes.Item(j);
+
+                if (j > 0)
                 {
-                    XmlNode c = cur.ChildNodes.Item(j);
-
-                    if (j > 0)
-                    {
-                        result += ",";
-                    }
-
-                    result += c.FirstChild.InnerText;
+                    result += ",";
                 }
+
+                result += c.FirstChild.InnerText;
             }
+            //}
 
             return result;
         }
@@ -770,7 +777,7 @@ namespace Dune
             if (found)
             {
                 return child.ChildNodes.Item(i).ChildNodes.Count;
-            } 
+            }
 
             return 0;
         }
