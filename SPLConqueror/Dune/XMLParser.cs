@@ -133,7 +133,7 @@ namespace Dune
                             refNew = node.Attributes["refid"].Value.ToString();
                         }
 
-                        DuneFeature newDF = getFeature(new DuneFeature(refNew, nameNew));
+                        DuneFeature newDF = new DuneFeature(refNew, nameNew);
 
                         inherits.Add(newDF);
                         break;
@@ -179,8 +179,9 @@ namespace Dune
             }
 
             // Now add all relations
-            foreach (DuneFeature newDF in inherits)
+            foreach (DuneFeature inherit in inherits)
             {
+                DuneFeature newDF = getFeature(inherit);
                 if (newDF != null)
                 {
 
@@ -189,7 +190,7 @@ namespace Dune
                 }
                 else
                 {
-                    relations.Add(new Tuple<DuneFeature, DuneFeature>(newDF, df));
+                    relations.Add(new Tuple<DuneFeature, DuneFeature>(inherit, df));
                 }
             }
 
