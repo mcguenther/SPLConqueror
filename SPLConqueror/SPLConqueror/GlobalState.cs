@@ -106,7 +106,20 @@ namespace SPLConqueror_Core
 
         // TODO: switch from non-normalized configurations to normalized configurations
 
-
+        /*
+        /// <summary>
+        /// This function gets a list of configurations and checks in the global state whether this configuration has a measured value and returns it if so.
+        /// </summary>
+        /// <param name="list">The list of configurations for which we want a measured value.</param>
+        /// <returns>A list of configurations containinga measured value. Might be empty.</returns>
+        public static List<Configuration> getMeasuredConfigsNew(List<Configuration> list)
+        {
+            List<Configuration> configsWithValues = new List<Configuration>();
+            foreach (var c in list)
+            {
+                if()
+            }
+        }*/
 
         /// <summary>
         /// This function gets a list of configurations and checks in the global state whether this configuration has a measured value and returns it if so.
