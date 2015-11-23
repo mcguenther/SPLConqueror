@@ -7,7 +7,7 @@ namespace SPLConqueror_Core
 {
     public class Configuration : IEquatable<Configuration>
     {
-
+        private double[] compactRepresentation;
         private static String DEFAULT_SEPARATOR = "%;%";
 
         private Dictionary<BinaryOption, BinaryOption.BinaryValue> binaryOptions = new Dictionary<BinaryOption, BinaryOption.BinaryValue>();
@@ -44,9 +44,7 @@ namespace SPLConqueror_Core
         /// <param name="measuremements">Measured values of non functional properties, such as performance or footprint.</param>
         public Configuration(Dictionary<BinaryOption, BinaryOption.BinaryValue> binarySelection, Dictionary<NumericOption, double> numericSelection, Dictionary<NFProperty, double> measuremements)
         {
-            binaryOptions = binarySelection;
-            if (numericSelection != null)
-                numericOptions = numericSelection;
+            initConfigurationOptions(binarySelection, numericSelection);
             nfpValues = measuremements;
             identifier = generateIdentifier(DEFAULT_SEPARATOR);
         }
@@ -59,13 +57,13 @@ namespace SPLConqueror_Core
         /// <param name="numericSelection">A valid selection of values of numeric options.</param>
         public Configuration(Dictionary<BinaryOption, BinaryOption.BinaryValue> binarySelection, Dictionary<NumericOption, double> numericSelection)
         {
-            binaryOptions = binarySelection;
-            if (numericSelection != null)
-                numericOptions = numericSelection;
+            initConfigurationOptions(binarySelection, numericSelection);
             identifier = generateIdentifier(DEFAULT_SEPARATOR);
         }
 
-
+        /// <summary>
+        /// Updates the identifier of a configuration (e.g., when the configuration has changed)
+        /// </summary>
         public void update()
         {
             identifier = generateIdentifier(DEFAULT_SEPARATOR);
@@ -77,10 +75,18 @@ namespace SPLConqueror_Core
         /// <param name="binaryConfig">A set of SELECTED binary configuration options</param>
         public Configuration(List<BinaryOption> binaryConfig)
         {
+            Dictionary<BinaryOption,BinaryOption.BinaryValue> binarySelection = new Dictionary<BinaryOption,BinaryOption.BinaryValue>();
+            Dictionary<NumericOption,double> numericSelection = new Dictionary<NumericOption,double>();
             foreach (BinaryOption opt in binaryConfig)
             {
-                binaryOptions.Add(opt, BinaryOption.BinaryValue.Selected);
+                if (binaryConfig.Contains(opt))
+                    binarySelection.Add(opt, BinaryOption.BinaryValue.Selected);
+                else
+                    binarySelection.Add(opt, BinaryOption.BinaryValue.Deselected);
             }
+            foreach (var num in GlobalState.varModel.NumericOptions)
+                numericSelection.Add(num, num.DefaultValue);
+            initConfigurationOptions(binarySelection, numericSelection);
             identifier = generateIdentifier(DEFAULT_SEPARATOR);
         }
 
@@ -91,16 +97,64 @@ namespace SPLConqueror_Core
         /// <param name="numConf">A set numeric configuration options with the values selected in this configuration.</param>
         public Configuration(List<BinaryOption> binConfig, Dictionary<NumericOption, double> numConf)
         {
-            foreach (BinaryOption opt in binConfig)
+            Dictionary<BinaryOption, BinaryOption.BinaryValue> binarySelection = new Dictionary<BinaryOption, BinaryOption.BinaryValue>();
+            foreach (BinaryOption opt in GlobalState.varModel.BinaryOptions)
             {
-                binaryOptions.Add(opt, BinaryOption.BinaryValue.Selected);
+                if (binConfig.Contains(opt))
+                    binarySelection.Add(opt, BinaryOption.BinaryValue.Selected);
+                else
+                    binarySelection.Add(opt, BinaryOption.BinaryValue.Deselected);
             }
-            if(numConf!=null)
-                numericOptions = numConf;
-
+            initConfigurationOptions(binarySelection, numConf);
             identifier = generateIdentifier(DEFAULT_SEPARATOR);
         }
-
+        private void initConfigurationOptions(Dictionary<BinaryOption, BinaryOption.BinaryValue> binarySelection, Dictionary<NumericOption, double> numericSelection)
+        {
+            if (binarySelection != null && binarySelection.Keys.Count == GlobalState.varModel.BinaryOptions.Count)
+                this.binaryOptions = binarySelection;
+            else
+            {
+                foreach (var bin in GlobalState.varModel.BinaryOptions)
+                {
+                    if (binarySelection != null && binarySelection.Keys.Contains(bin) && binarySelection[bin] == BinaryOption.BinaryValue.Selected)
+                        this.binaryOptions.Add(bin, BinaryOption.BinaryValue.Selected);
+                    else
+                        this.binaryOptions.Add(bin, BinaryOption.BinaryValue.Deselected);
+                }
+            }
+            if (numericSelection != null && numericSelection.Keys.Count == GlobalState.varModel.NumericOptions.Count)
+                numericOptions = numericSelection;
+            else
+            {
+                foreach (var num in GlobalState.varModel.NumericOptions)
+                {
+                    if (numericSelection != null && numericSelection.Keys.Contains(num))
+                        this.numericOptions.Add(num, numericSelection[num]);
+                    else
+                        numericOptions.Add(num, num.DefaultValue);
+                }
+            }
+            initCompactRepresentation();
+        }
+        private void initCompactRepresentation()
+        {
+            this.compactRepresentation = new double[GlobalState.varModel.BinaryOptions.Count + GlobalState.varModel.NumericOptions.Count];
+            var order = GlobalState.varModel.OrderOfConfigOptions;
+            foreach (var bin in GlobalState.varModel.BinaryOptions)
+            {
+                if (this.binaryOptions.Keys.Contains(bin) && this.binaryOptions[bin] == BinaryOption.BinaryValue.Selected)
+                    this.compactRepresentation[order[bin]] = 1.0f;
+                else
+                    this.compactRepresentation[order[bin]] = 0.0f;
+            }
+            foreach (var num in GlobalState.varModel.NumericOptions)
+            {
+                if (this.numericOptions != null && this.numericOptions.Keys.Contains(num))
+                    this.compactRepresentation[order[num]] = this.numericOptions[num];
+                else
+                    this.compactRepresentation[order[num]] = num.DefaultValue;
+            }
+        }
 
         /// <summary>
         /// Returns an identifier describing the choice of binary configuration options and numeric configuration-option values of the configuration. 
@@ -201,7 +255,6 @@ namespace SPLConqueror_Core
         {
             if (other == null)
                 return false;
-
             return this.Equals((Configuration)other);
         }
 
@@ -212,7 +265,15 @@ namespace SPLConqueror_Core
         /// <returns>States whether the two configurations desribes the same configuration option selection.</returns>
         public bool Equals(Configuration other)
         {
-            return this.identifier.Replace("root%;%", "").Equals(other.identifier.Replace("root%;%", ""));
+            if (this.compactRepresentation.Length != other.compactRepresentation.Length)
+                return false;
+            for (int i = 0; i < this.compactRepresentation.Length; i++)
+            {
+                if (this.compactRepresentation[i] != other.compactRepresentation[i])
+                    return false;
+            }
+            return true;
+            //return this.identifier.Replace("root%;%", "").Equals(other.identifier.Replace("root%;%", ""));
         }
 
         /// <summary>
@@ -250,8 +311,14 @@ namespace SPLConqueror_Core
         public static Configuration getConfiguration(List<BinaryOption> selectedBinaryOptions, Dictionary<NumericOption, double> numericOptions)
         {
             Configuration result = new Configuration(selectedBinaryOptions);
-            if(numericOptions != null)
-                result.numericOptions = numericOptions;
+            Dictionary<BinaryOption, BinaryOption.BinaryValue> binarySelection = new Dictionary<BinaryOption, BinaryOption.BinaryValue>();
+            foreach (BinaryOption opt in GlobalState.varModel.BinaryOptions)
+            {
+                if (selectedBinaryOptions.Contains(opt))
+                    binarySelection.Add(opt, BinaryOption.BinaryValue.Selected);
+                else
+                    binarySelection.Add(opt, BinaryOption.BinaryValue.Deselected);
+            }
             result.update();
             return result;
         }
@@ -274,9 +341,7 @@ namespace SPLConqueror_Core
             }
 
 
-            Configuration result = new Configuration(selectedBinaryOptions);
-            if (numericOptions != null)
-                result.numericOptions = numericOptions;
+            Configuration result = new Configuration(selectedBinaryOptions, numericOptions);
             result.update();
             return result;
         }

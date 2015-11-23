@@ -12,8 +12,21 @@ namespace SPLConqueror_Core
     /// </summary>
     public class VariabilityModel
     {
+        private Dictionary<ConfigurationOption, int> orderOfConfigOptions = new Dictionary<ConfigurationOption, int>();
+        
+        /// <summary>
+        /// Returns a dictionary, in which a key represents a configuration option and the corresponding int-value represents the position of the configured value of that option within a configuration.
+        /// </summary>
+        public Dictionary<ConfigurationOption, int> OrderOfConfigOptions
+        {
+            get { return orderOfConfigOptions; }
+        }
+
         private List<NumericOption> numericOptions = new List<NumericOption>();
 
+        /// <summary>
+        /// Returns a List of all numeric configuration options
+        /// </summary>
         public List<NumericOption> NumericOptions
         {
             get { return numericOptions; }
@@ -22,12 +35,18 @@ namespace SPLConqueror_Core
 
         private List<BinaryOption> binaryOptions = new List<BinaryOption>();
 
+        /// <summary>
+        /// Returns a list of all binary configuration options
+        /// </summary>
         public List<BinaryOption> BinaryOptions
         {
             get { return binaryOptions; }
           //  set { binaryOptions = value; }
         }
 
+        /// <summary>
+        /// A dictionary that represents all parent (key) - child (list of configuration options) relations
+        /// </summary>
         public Dictionary<ConfigurationOption, List<ConfigurationOption>> parentChildRelationships = new Dictionary<ConfigurationOption, List<ConfigurationOption>>();
         
         String name = "empty";
@@ -41,7 +60,7 @@ namespace SPLConqueror_Core
             set { name = value; }
         }
 
-        String path = "";
+        private String path = "";
 
         /// <summary>
         /// Local path, in which the model is located
