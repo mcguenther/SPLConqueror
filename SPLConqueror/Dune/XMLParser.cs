@@ -149,7 +149,7 @@ namespace Dune
                                     break;
                                 // Only the public functions are crucial for saving methods
                                 case "public-func":
-                                    methods = saveMethods(node);
+                                    methods = saveMethods(node, name);
                                     break;
                             }
                         }
@@ -379,8 +379,15 @@ namespace Dune
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
         /// <returns>a list containing the method hashes</returns>
-        private static List<int> saveMethods(XmlNode node)
+        private static List<int> saveMethods(XmlNode node, String classname)
         {
+            // The pure class name (e.g. 'x' in 'Dune::y::x') is needed in order to identify the constructor
+            int indx = classname.LastIndexOf(':');
+            String pureClassName = null;
+            if (indx >= 0) {
+                pureClassName = classname.Substring(indx + 1, classname.Length - indx - 1);
+            }
+
             List<int> result = new List<int>();
             // Access memberdefs and search for the value of the definition tag
             foreach (XmlNode c in node.ChildNodes)
@@ -391,7 +398,17 @@ namespace Dune
                     XmlNode args = getChild("argsstring", c.ChildNodes);
                     XmlNode name = getChild("name", c.ChildNodes);
                     //df.addMethod(type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText));
-                    result.Add((type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText)).GetHashCode());
+
+                    // In case that the method is a constructor...
+                    if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
+                    {
+                        // add only the arguments
+                        result.Add(convertMethodArgs(args.InnerText).GetHashCode());
+                    }
+                    else
+                    {
+                        result.Add((type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText)).GetHashCode());
+                    }
                 }
             }
 
