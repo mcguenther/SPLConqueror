@@ -96,6 +96,15 @@ namespace Dune
         private static DuneFeature extractFeature(XmlNode child)
         {
             DuneFeature df = null;
+
+            // Ignore structs and private classes
+            String prot = child.Attributes.GetNamedItem("prot") == null ? null : child.Attributes.GetNamedItem("prot").Value;
+            String kind = child.Attributes.GetNamedItem("kind") == null ? null : child.Attributes.GetNamedItem("kind").Value;
+            if (prot != null && prot.Equals("private") || kind != null && kind.Equals("struct"))
+            {
+                return df;
+            }
+
             String template = "";
             String refId = child.Attributes["id"].Value.ToString();
             String name = "";
