@@ -411,8 +411,12 @@ namespace Dune
                     // In case that the method is a constructor...
                     if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
                     {
-                        // add only the arguments
-                        result.Add(convertMethodArgs(args.InnerText).GetHashCode());
+                        String methodArgs = convertMethodArgs(args.InnerText);
+                        
+                        // add only the constructor WITH arguments. 
+                        if (!methodArgs.Equals("()")) {
+                            result.Add(methodArgs.GetHashCode());
+                        }
                     }
                     else
                     {
