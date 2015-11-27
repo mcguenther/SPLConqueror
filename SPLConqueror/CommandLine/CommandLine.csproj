@@ -8,10 +8,11 @@
     <ProjectGuid>{FE44070A-24E6-4A10-820F-854FF74C0DFB}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CommandLine</RootNamespace>
+    <RootNamespace>MachineLearning</RootNamespace>
     <AssemblyName>CommandLine</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
@@ -81,7 +82,6 @@
   <ItemGroup>
     <Compile Include="CommandLine.cs" />
     <Compile Include="Commands.cs" />
-    <Compile Include="ExperimentState.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Script.cs" />
@@ -118,6 +118,9 @@
       <Project>{1F035958-15B1-450A-BFC5-BEBD95376C40}</Project>
       <Name>SPLConqueror_Core</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

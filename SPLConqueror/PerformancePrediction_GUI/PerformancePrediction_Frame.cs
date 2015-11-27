@@ -7,8 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using SPLConqueror_Core;
-using CommandLine;
 using MachineLearning;
+using CommandLine;
 using System.Reflection;
 using System.Collections.Specialized;
 using MachineLearning.Learning.Regression;
@@ -168,8 +168,7 @@ namespace PerformancePrediction_GUI
         private void startLearning()
         {
             
-
-            cmd.exp.learning.LearningHistory.CollectionChanged += new NotifyCollectionChangedEventHandler(roundFinished);
+            cmd.exp.models[0].LearningHistory.CollectionChanged += new NotifyCollectionChangedEventHandler(roundFinished);
 
             cmd.performOneCommand(Commands.COMMAND_START_LEARNING);
         }
@@ -182,7 +181,7 @@ namespace PerformancePrediction_GUI
         {
             termToIndex = new Dictionary<string, int>();
 
-            perfInfGridView.ColumnCount = cmd.exp.mlSettings.numberOfRounds * 2;
+            perfInfGridView.ColumnCount = cmd.exp.info.mlSettings.numberOfRounds * 2;
             perfInfGridView.Columns[0].Name = "Round";
             perfInfGridView.Columns[1].Name = "Learning error";
             perfInfGridView.Columns[2].Name = "Global error";
@@ -190,11 +189,11 @@ namespace PerformancePrediction_GUI
 
         private void UpdateDataGridView(MachineLearning.Learning.Regression.LearningRound lastRound)
         {
-            string[] row = new string[cmd.exp.mlSettings.numberOfRounds * 2];
+            string[] row = new string[cmd.exp.info.mlSettings.numberOfRounds * 2];
             row[0] = lastRound.round.ToString();
             row[1] = lastRound.learningError.ToString();
             double relativeError = 0.0;
-            cmd.exp.learning.computeError(lastRound.FeatureSet, GlobalState.allMeasurements.Configurations, out relativeError);
+            cmd.exp.models[0].computeError(lastRound.FeatureSet, GlobalState.allMeasurements.Configurations, out relativeError);
             row[2] = relativeError.ToString();
 
 
