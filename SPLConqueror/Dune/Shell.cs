@@ -67,7 +67,7 @@ namespace Dune
                         StreamReader compFile = new System.IO.StreamReader(@"D:\HiWi\DebugOutput\minimalSetClasses.txt");
                         StreamWriter output = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\analyzation.txt");
 
-                        List<string> globalResult = new List<string>();
+                        List<List<string>> globalResult = new List<List<string>>();
 
                         while (!inputFile.EndOfStream)
                         {
@@ -77,14 +77,20 @@ namespace Dune
                                 List<string> analyzationResult = XMLParser.getVariability(line);
                                 if (analyzationResult != null)
                                 {
-                                    globalResult.AddRange(analyzationResult); 
+                                    globalResult.Add(analyzationResult);
+                                }
+                                else
+                                {
+                                    globalResult.Add(new List<string>());
                                 }
                             }
                         }
 
+                        int c = 0;
                         while (!compFile.EndOfStream)
                         {
                             String l = compFile.ReadLine();
+
                             if (!l.Trim().Equals(""))
                             {
                                 //if (!globalResult.Contains(l))
@@ -92,7 +98,7 @@ namespace Dune
                                 //    output.WriteLine(l);
                                 //}
 
-                                switch (containsName(l, globalResult))
+                                switch (containsName(l, globalResult.ElementAt(c)))
                                 {
                                     case 1:
                                         break;
@@ -103,6 +109,10 @@ namespace Dune
                                         output.WriteLine(l);
                                         break;
                                 }
+                            }
+                            else
+                            {
+                                c++;
                             }
                         }
                         output.Flush();
@@ -127,7 +137,7 @@ namespace Dune
         /// </summary>
         /// <param name="name">the name of the feature to search for</param>
         /// <param name="array">the array to search in</param>
-        /// <returns><code>1</code> if the name is found in the array; <code>0</code> if only the name is found; <code>-1</code> otherwise</returns>
+        /// <returns><code>1</code> if the name including the template is found in the array; <code>0</code> if only the name is found; <code>-1</code> otherwise</returns>
         private static int containsName(string name, List<string> array)
         {
             if (array.Contains(name))
