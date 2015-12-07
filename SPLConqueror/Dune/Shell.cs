@@ -38,6 +38,13 @@ namespace Dune
 
                 switch (command.ToLower())
                 {
+                    case "getClassesWithName":
+                    case "g":
+                        foreach (DuneFeature f in XMLParser.getClassesWithName(arguments))
+                        {
+                            System.Console.WriteLine(f.getClassName());
+                        }
+                        break;
                     case "analyze":
                     case "a":
                         List<string> result = XMLParser.getVariability(arguments);

@@ -702,6 +702,24 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns a list containing all classes which are known with this name.
+        /// </summary>
+        /// <param name="name">the name of the class to search for</param>
+        /// <returns>a list containing all classes which are known with the given name</returns>
+        public static List<DuneFeature> getClassesWithName(String name)
+        {
+            List<DuneFeature> result = new List<DuneFeature>();
+            foreach (DuneFeature f in features)
+            {
+                if (f.getClassNameWithoutTemplate().Equals(name))
+                {
+                    result.Add(f);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
         /// This method extracts the information of the template.
         /// </summary>
         /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
@@ -825,6 +843,7 @@ namespace Dune
             {
                 toConv = toConv.Substring(0, index);
             }
+            // needed in order to work on a copy of the string
             else
             {
                 toConv = toConv.Substring(0);
