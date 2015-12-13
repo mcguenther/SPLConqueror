@@ -19,7 +19,13 @@ namespace Dune
         private List<DuneFeature> parents;
         private List<DuneFeature> children;
         private Tree template;
+
+        private List<string> methodArguments;
+        private List<List<int>> replaceableArguments;
+
         private List<int> methodHashes;
+        private List<int> methodNameHashes;
+        private List<int> methodArgumentCount;
         private Dictionary<String, List<String>> enums;
 
         /// <summary>
@@ -104,11 +110,61 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns a list containing all method arguments which match to the given method name hash and the argument count.
+        /// </summary>
+        /// <param name="name">the name of the method as a hash</param>
+        /// <param name="methodArgCount">the number of arguments the method has</param>
+        /// <returns></returns>
+        public List<Tuple<string, List<int>>> getMethodArgumentsWithNameAndCount(int methodNameHash, int methodArgCount)
+        {
+            List<Tuple<string, List<int>>> result = new List<Tuple<string, List<int>>>();
+            for (int i = 0; i < methodNameHashes.Count; i++)
+            {
+                if (methodNameHashes[i].Equals(methodNameHash) && methodArgumentCount[i].Equals(methodArgCount))
+                {
+                    result.Add(new Tuple<string,List<int>> (methodArguments[i], replaceableArguments[i]));
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Returns the hashed name of the method.
+        /// </summary>
+        /// <param name="index">the index in the local list</param>
+        /// <returns>the hashed name of the method</returns>
+        public int getMethodNameHash(int index)
+        {
+            return methodNameHashes[index];
+        }
+
+        /// <summary>
+        /// Returns the method arguments of the method in the local list on the given index.
+        /// </summary>
+        /// <param name="index">the index in the local list</param>
+        /// <returns>the method arguments of the method in the local list on the given index</returns>
+        public string getMethodArguments(int index)
+        {
+            return methodArguments[index];
+        }
+
+        /// <summary>
+        /// Returns the argument count of the method on the given index.
+        /// </summary>
+        /// <param name="index">the index in the local list</param>
+        /// <returns>the argument count of the method on the given index</returns>
+        public int getMethodArgumentCount(int index)
+        {
+            return methodArgumentCount[index];
+        }
+
+        /// <summary>
         /// Sets the type of the feature. A feature may be an interface, an abstract class or a concrete class.
         /// </summary>
         /// <param name="isSTruct"><code>true</code>if the class is an struct; <code>false</code> otherwise</param>
         /// <param name="isAbstract"><code>true</code> if the class is abstract; <code>false</code> otherwise</param>
-        public void setType(Boolean isStruct, Boolean isAbstract) {
+        public void setType(Boolean isStruct, Boolean isAbstract)
+        {
             this.isStruct = isStruct;
             this.isAbstract = isAbstract;
         }
@@ -216,6 +272,24 @@ namespace Dune
         }
 
         /// <summary>
+        /// Sets the hash list of the method names to the given argument.
+        /// </summary>
+        /// <param name="methodNames">the list containing the method name hashes of the class</param>
+        public void setMethodNameHashes(List<int> methodNames)
+        {
+            this.methodNameHashes = methodNames;
+        }
+
+        /// <summary>
+        /// Sets the list of the method argument count to the given argument.
+        /// </summary>
+        /// <param name="methodArgumentCount">the list containing the number of the method arguments</param>
+        public void setMethodArgumentCount(List<int> methodArgumentCount)
+        {
+            this.methodArgumentCount = methodArgumentCount;
+        }
+
+        /// <summary>
         /// Returns <code>true</code> if the specific class has a direct relation to the given feature; <code>false</code> otherwise.
         /// </summary>
         /// <param name="df">the feature a relation is searched to</param>
@@ -223,6 +297,24 @@ namespace Dune
         public Boolean hasDirectRelationTo(DuneFeature df)
         {
             return this.parents.Contains(df) || this.children.Contains(df);
+        }
+
+        /// <summary>
+        /// Sets the list containing the method's arguments in order to improve duck-typing.
+        /// </summary>
+        /// <param name="methodArgs">the list containing the method's arguments.</param>
+        public void setMethodArguments(List<string> methodArgs)
+        {
+            this.methodArguments = methodArgs;
+        }
+
+        /// <summary>
+        /// Sets the list containing the number of arguments which are replaceable.
+        /// </summary>
+        /// <param name="replaceable">the list containing the number of method arguments which are replaceable</param>
+        public void setReplaceableMethodArguments(List<List<int>> replaceable)
+        {
+            this.replaceableArguments = replaceable;
         }
 
         /// <summary>

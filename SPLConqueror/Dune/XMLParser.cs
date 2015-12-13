@@ -110,7 +110,7 @@ namespace Dune
             String name = "";
             String templateInName = "";
             Dictionary<String, List<String>> enums = null;
-            List<int> methods = null;
+            Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>> methods = null;
             List<DuneFeature> inherits = new List<DuneFeature>();
 
             foreach (XmlNode node in child.ChildNodes)
@@ -121,6 +121,10 @@ namespace Dune
                         name = node.InnerText.ToString();
                         templateInName = extractTemplateInName(name);
                         name = convertName(name);
+                        if (name.StartsWith("Dune::ALUGrid"))
+                        {
+                            System.Console.Write("");
+                        }
                         if (name.Contains("Helper") || name.Contains("helper"))
                         {
                             return null;
@@ -184,7 +188,11 @@ namespace Dune
 
             if (methods != null)
             {
-                df.setMethods(methods);
+                df.setMethods(methods.Item1);
+                df.setMethodNameHashes(methods.Item2);
+                df.setMethodArgumentCount(methods.Item3);
+                df.setMethodArguments(methods.Item4);
+                df.setReplaceableMethodArguments(methods.Item5);
             }
 
             // Now add all relations
@@ -315,14 +323,19 @@ namespace Dune
 
                 foreach (DuneFeature comp in featuresToCompare)
                 {
+                    if (df.getClassName().StartsWith("Dune::PDELab::NoConstraints") && comp.getClassName().StartsWith("Dune::PDELab::ConformingDirichletConstraints"))
+                    {
+                        System.Console.Write("");
+                    }
 
                     // If there is no transitive relation between the classes, the classes are analyzed
                     if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes() && !df.hasRelationTo(comp, root))
                     {
                         Boolean isSubclassOf = true;
-                        foreach (int methodHash in comp.getMethodHashes())
+                        for (int i = 0; i < comp.getMethodHashes().Count; i++)
                         {
-                            if (!df.containsMethodHash(methodHash))
+                            int methodHash = comp.getMethodHashes()[i];
+                            if (!df.containsMethodHash(methodHash) && !variableSubmethod(df, comp, i))
                             {
                                 isSubclassOf = false;
                                 break;
@@ -347,6 +360,93 @@ namespace Dune
             }
             file.Flush();
             file.Close();
+        }
+
+        /// <summary>
+        /// This method makes an improved check if the method with the given number of <code>df</code> may be inherited from the <code>comp</code> feature.
+        /// </summary>
+        /// <param name="df"></param>
+        /// <param name="comp"></param>
+        /// <param name="index"></param>
+        /// <returns><code>true</code> iff one or more of the method's arguments differ only in the concrete classes; <code>false</code> otherwise</returns>
+        private static bool variableSubmethod(DuneFeature df, DuneFeature comp, int index)
+        {
+            List<Tuple<string, List<int>>> potentialMethods = df.getMethodArgumentsWithNameAndCount(comp.getMethodNameHash(index), comp.getMethodArgumentCount(index));
+            foreach (Tuple<string, List<int>> t in potentialMethods)
+            {
+                if (isSubmethod(t, comp.getMethodArguments(index)) )
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="potentialMethod"></param>
+        /// <param name="compMethod"></param>
+        /// <returns></returns>
+        private static bool isSubmethod(Tuple<string, List<int>> potentialMethod, string compMethod)
+        {
+            string dfMethod = potentialMethod.Item1;
+            List<int> rechangeable = potentialMethod.Item2;
+
+            string localDfMethod = dfMethod.Substring(1, dfMethod.IndexOf(')') - 1);
+            string localCompMethod = compMethod.Substring(1, compMethod.IndexOf(')') - 1);
+
+            List<string> dfArgs = splitArgs(localDfMethod);
+            List<string> compArgs = splitArgs(localCompMethod);
+
+            for (int i = 0; i < dfArgs.Count; i++)
+            {
+                // If the current argument is not marked as rechangeable
+                if (!rechangeable.Contains(i) && !dfArgs[i].Equals(compArgs[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="toSplit"></param>
+        /// <returns></returns>
+        private static List<string> splitArgs(string toSplit)
+        {
+            List<string> args = new List<string>();
+            int level = 0;
+            int startPos = 0;
+            for (int i = 0; i < toSplit.Length; i++)
+            {
+                switch (toSplit[i])
+                {
+                    case '<':
+                        level++;
+                        break;
+                    case '>':
+                        level--;
+                        break;
+                    case ',':
+                        if (level == 0)
+                        {
+                            args.Add(toSplit.Substring(startPos, i - startPos));
+                            startPos = i + 1;
+                        }
+                        break;
+                }
+            }
+
+            // Add also the last argument
+            args.Add(toSplit.Substring(startPos, toSplit.Length - startPos));
+
+
+            return args;
         }
 
         /// <summary>
@@ -387,8 +487,8 @@ namespace Dune
         /// Saves the methods of the class/interface
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
-        /// <returns>a list containing the method hashes</returns>
-        private static List<int> saveMethods(XmlNode node, String classname)
+        /// <returns>a tuple with a list containing the method hashes, a list containing the hash of the method names and a list containing the count of the arguments (in this order)</returns>
+        private static Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>> saveMethods(XmlNode node, String classname)
         {
             // The pure class name (e.g. 'x' in 'Dune::y::x') is needed in order to identify the constructor
             int indx = classname.LastIndexOf(':');
@@ -397,35 +497,72 @@ namespace Dune
                 pureClassName = classname.Substring(indx + 1, classname.Length - indx - 1);
             }
 
-            List<int> result = new List<int>();
+            Tuple<List<int>,List<int>,List<int>, List<string>, List<List<int>>> result;
+            List<int> methodHashes = new List<int>();
+            List<int> methodNameHashes = new List<int>();
+            List<int> argumentCount = new List<int>();
+            List<string> methodArguments = new List<string>();
+            List<List<int>> replaceableArgs = new List<List<int>>();
+
             // Access memberdefs and search for the value of the definition tag
             foreach (XmlNode c in node.ChildNodes)
             {
                 if (c.Name.Equals("memberdef"))
                 {
+                    List<XmlNode> parameters = getChildren("param", c.ChildNodes);
                     XmlNode type = getChild("type", c.ChildNodes);
                     XmlNode args = getChild("argsstring", c.ChildNodes);
                     XmlNode name = getChild("name", c.ChildNodes);
+
+                    //// Retrieve the number of arguments and the name of the method 
+                    //int methodCount = getCountOfArgs(args.InnerText);
+                    argumentCount.Add(getCountOfArgs(args.InnerText));
+
+                    String methodName = name.InnerText;
+
                     //df.addMethod(type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText));
+
+                    List<int> replaceableArguments = new List<int>();
+                    replaceableArgs.Add(replaceableArguments);
+
+                    if (parameters.Count > 0)
+                    {
+                        // Check if one of the method's arguments is a concrete class
+                        for (int i = 0; i < parameters.Count; i++)
+                        {
+                            XmlNode param = parameters[i];
+                            // The parameter contains a reference to another concrete Dune class if the ref-tag is within the type-tag
+                            if (getChild("ref", getChild("type", param.ChildNodes).ChildNodes) != null)
+                            {
+                                replaceableArguments.Add(i);
+                            }
+                        }
+                    }
+
+                    String methodArgs = convertMethodArgs(args.InnerText, true);
+                    methodArguments.Add(convertMethodArgs(args.InnerText, false));
 
                     // In case that the method is a constructor...
                     if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
                     {
-                        String methodArgs = convertMethodArgs(args.InnerText);
+                        
                         
                         // add only the constructor WITH arguments. 
                         if (!methodArgs.Equals("()")) {
-                            result.Add(methodArgs.GetHashCode());
+                            // In case of a constructor, the name remains empty
+                            methodNameHashes.Add("".GetHashCode());
+                            methodHashes.Add(methodArgs.GetHashCode());
                         }
                     }
                     else
                     {
-                        result.Add((type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText)).GetHashCode());
+                        methodNameHashes.Add(methodName.GetHashCode());
+                        methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
                     }
                 }
             }
 
-            return result;
+            return new Tuple<List<int>,List<int>,List<int>, List<string>, List<List<int>>>(methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs);
 
         }
 
@@ -436,15 +573,36 @@ namespace Dune
         /// <returns>the number of arguments in the given string</returns>
         public static int getCountOfArgs(string args)
         {
-            int count = args.Count(f => f == ',') + 1;
             if (args.IndexOf(">") == args.IndexOf("<") + 1 || ((args.IndexOf(")") >= 0) && args.IndexOf(")") == args.IndexOf("(") + 1) || args.Trim().Equals(""))
             {
-                count = 0;
+                return 0;
+            }
+
+            int count = 1;
+
+            int level = 0;
+            for (int i = 0; i < args.Length; i++)
+            {
+                switch (args[i])
+                {
+                    case '<':
+                        level++;
+                        break;
+                    case '>':
+                        level--;
+                        break;
+                    case ',':
+                        if (level == 0)
+                        {
+                            count++;
+                        }
+                        break;
+                }
             }
             return count;
         }
 
-        private static string convertMethodArgs(string args)
+        private static string convertMethodArgs(string args, bool withSufix)
         {
             if (args.Equals("") || args.Equals("()"))
             {
@@ -457,13 +615,13 @@ namespace Dune
             if (args.IndexOf('(') >= 0)
             {
                 paranthesis = true;
-                sufix = args.Substring(args.IndexOf(')') + 1, args.Length - args.IndexOf(')') - 1);
-                args = args.Substring(args.IndexOf('(') + 1, args.IndexOf(')') - args.IndexOf('(') - 1);
+                sufix = args.Substring(args.LastIndexOf(')') + 1, args.Length - args.LastIndexOf(')') - 1);
+                args = args.Substring(args.IndexOf('(') + 1, args.LastIndexOf(')') - args.IndexOf('(') - 1);
             }
 
-            string[] splitted = args.Split(',');
+            List<string> splitted = splitArgs(args);
 
-            for (int i = 0; i < splitted.Length; i++)
+            for (int i = 0; i < splitted.Count; i++)
             {
                 string s = splitted[i];
 
@@ -479,14 +637,13 @@ namespace Dune
                 for (int j = trimmed.Length - 1; j >= 0; j--)
                 {
                     char c = trimmed[j];
-                    if (c.Equals(' '))
-                    {
-                        name = false;
-                    }
-                    else if (!name)
+                    if (!name)
                     {
                         result += trimmed.Substring(0, j + 1);
                         break;
+                    } else if (c.Equals(' '))
+                    {
+                        name = false;
                     }
                 }
 
@@ -495,7 +652,10 @@ namespace Dune
             {
                 result = "(" + result + ")";
             }
-            result += sufix;
+            if (withSufix)
+            {
+                result += sufix;
+            }
             return result;
 
         }
@@ -516,6 +676,25 @@ namespace Dune
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Returns a list of all nodes with the given name.
+        /// </summary>
+        /// <param name="name">the name of the tag to be searched for</param>
+        /// <param name="list">the list which contains all children nodes</param>
+        /// <returns>the list containing the nodes with the given name</returns>
+        private static List<XmlNode> getChildren(String name, XmlNodeList list)
+        {
+            List<XmlNode> result = new List<XmlNode>();
+            foreach (XmlNode child in list)
+            {
+                if (child.Name.Equals(name))
+                {
+                    result.Add(child);
+                }
+            }
+            return result;
         }
 
 
