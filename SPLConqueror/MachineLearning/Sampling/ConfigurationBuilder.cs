@@ -14,7 +14,7 @@ namespace MachineLearning.Sampling
         public static int binaryThreshold = 0;
         public static int binaryModulu = 0;
         public static Dictionary<SamplingStrategies, List<NumericOption>> optionsToConsider = new Dictionary<SamplingStrategies, List<NumericOption>>();
-        public static Dictionary<SamplingStrategies, Dictionary<String, String>> parametersOfExpDesigns = new Dictionary<SamplingStrategies, Dictionary<string, string>>();
+        public static Dictionary<SamplingStrategies, List<Dictionary<String, String>>> parametersOfExpDesigns = new Dictionary<SamplingStrategies, List<Dictionary<string, string>>>();
 
         public static List<Configuration> buildConfigs(VariabilityModel vm, List<SamplingStrategies> strategies)
         {
@@ -37,7 +37,7 @@ namespace MachineLearning.Sampling
                         break;
                     case SamplingStrategies.OPTIONWISE:
                         FeatureWise fw = new FeatureWise();
-                        binaryConfigs.AddRange(fw.generateFeatureWiseConfigsCSP(GlobalState.varModel));
+                        binaryConfigs.AddRange(fw.generateFeatureWiseConfigurations(GlobalState.varModel));
                         break;
                     case SamplingStrategies.PAIRWISE:
                         PairWise pw = new PairWise();
@@ -54,71 +54,103 @@ namespace MachineLearning.Sampling
                             design = new BoxBehnkenDesign(optionsToConsider[SamplingStrategies.BOXBEHNKEN]);
                         else
                             design = new BoxBehnkenDesign(vm.NumericOptions);
-                        design.computeDesign(parametersOfExpDesigns[SamplingStrategies.BOXBEHNKEN]);
-                        numericConfigs.AddRange(design.SelectedConfigurations);
+
+                        foreach (Dictionary<string, string> expDesignParamSet in parametersOfExpDesigns[SamplingStrategies.BOXBEHNKEN])
+                        {
+                            design.computeDesign(expDesignParamSet);
+                            numericConfigs.AddRange(design.SelectedConfigurations);
+                        }
                         break;
 
                     case SamplingStrategies.CENTRALCOMPOSITE:
                         if (optionsToConsider.ContainsKey(SamplingStrategies.CENTRALCOMPOSITE))
-                            design = new BoxBehnkenDesign(optionsToConsider[SamplingStrategies.CENTRALCOMPOSITE]);
-                            else
-                                design = new BoxBehnkenDesign(vm.NumericOptions);
-                        design.computeDesign(parametersOfExpDesigns[SamplingStrategies.CENTRALCOMPOSITE]);
-                        numericConfigs.AddRange(design.SelectedConfigurations);
+                            design = new CentralCompositeInscribedDesign(optionsToConsider[SamplingStrategies.CENTRALCOMPOSITE]);
+                        else
+                            design = new CentralCompositeInscribedDesign(vm.NumericOptions);
+
+                        foreach (Dictionary<string, string> expDesignParamSet in parametersOfExpDesigns[SamplingStrategies.CENTRALCOMPOSITE])
+                        {
+                            design.computeDesign(expDesignParamSet);
+                            numericConfigs.AddRange(design.SelectedConfigurations);
+                        }   
                         break;
 
                     case SamplingStrategies.FULLFACTORIAL:
                         if (optionsToConsider.ContainsKey(SamplingStrategies.FULLFACTORIAL))
-                            design = new BoxBehnkenDesign(optionsToConsider[SamplingStrategies.FULLFACTORIAL]);
-                            else
-                                design = new BoxBehnkenDesign(vm.NumericOptions);
-                        design.computeDesign(parametersOfExpDesigns[SamplingStrategies.FULLFACTORIAL]);
-                        numericConfigs.AddRange(design.SelectedConfigurations);
+                            design = new FullFactorialDesign(optionsToConsider[SamplingStrategies.FULLFACTORIAL]);
+                        else
+                            design = new FullFactorialDesign(vm.NumericOptions);
+
+                        foreach (Dictionary<string, string> expDesignParamSet in parametersOfExpDesigns[SamplingStrategies.FULLFACTORIAL])
+                        {
+                            design.computeDesign(expDesignParamSet);
+                            numericConfigs.AddRange(design.SelectedConfigurations);
+                        }   
+
                         break;
 
                     case SamplingStrategies.HYPERSAMPLING:
                         if (optionsToConsider.ContainsKey(SamplingStrategies.HYPERSAMPLING))
-                            design = new BoxBehnkenDesign(optionsToConsider[SamplingStrategies.HYPERSAMPLING]);
-                                else
-                                    design = new BoxBehnkenDesign(vm.NumericOptions);
-                        design.computeDesign(parametersOfExpDesigns[SamplingStrategies.HYPERSAMPLING]);
-                        numericConfigs.AddRange(design.SelectedConfigurations);
+                            design = new HyperSampling(optionsToConsider[SamplingStrategies.HYPERSAMPLING]);
+                        else
+                            design = new HyperSampling(vm.NumericOptions);
+                        foreach (Dictionary<string, string> expDesignParamSet in parametersOfExpDesigns[SamplingStrategies.HYPERSAMPLING])
+                        {
+                            design.computeDesign(expDesignParamSet);
+                            numericConfigs.AddRange(design.SelectedConfigurations);
+                        }   
                         break;
 
                     case SamplingStrategies.ONEFACTORATATIME:
                         if (optionsToConsider.ContainsKey(SamplingStrategies.ONEFACTORATATIME))
-                            design = new BoxBehnkenDesign(optionsToConsider[SamplingStrategies.ONEFACTORATATIME]);
+                            design = new OneFactorAtATime(optionsToConsider[SamplingStrategies.ONEFACTORATATIME]);
                         else
-                            design = new BoxBehnkenDesign(vm.NumericOptions);
-                        design.computeDesign(parametersOfExpDesigns[SamplingStrategies.ONEFACTORATATIME]);
-                        numericConfigs.AddRange(design.SelectedConfigurations);
+                            design = new OneFactorAtATime(vm.NumericOptions);
+
+                        foreach (Dictionary<string, string> expDesignParamSet in parametersOfExpDesigns[SamplingStrategies.ONEFACTORATATIME])
+                        {
+                            design.computeDesign(expDesignParamSet);
+                            numericConfigs.AddRange(design.SelectedConfigurations);
+                        }
                         break;
 
                     case SamplingStrategies.KEXCHANGE:
                         if (optionsToConsider.ContainsKey(SamplingStrategies.KEXCHANGE))
-                            design = new BoxBehnkenDesign(optionsToConsider[SamplingStrategies.KEXCHANGE]);
+                            design = new KExchangeAlgorithm(optionsToConsider[SamplingStrategies.KEXCHANGE]);
                         else
-                            design = new BoxBehnkenDesign(vm.NumericOptions);
-                        design.computeDesign(parametersOfExpDesigns[SamplingStrategies.KEXCHANGE]);
-                        numericConfigs.AddRange(design.SelectedConfigurations);
+                            design = new KExchangeAlgorithm(vm.NumericOptions);
+
+                        foreach (Dictionary<string, string> expDesignParamSet in parametersOfExpDesigns[SamplingStrategies.KEXCHANGE])
+                        {
+                            design.computeDesign(expDesignParamSet);
+                            numericConfigs.AddRange(design.SelectedConfigurations);
+                        }
                         break;
 
                     case SamplingStrategies.PLACKETTBURMAN:
                         if (optionsToConsider.ContainsKey(SamplingStrategies.PLACKETTBURMAN))
-                            design = new BoxBehnkenDesign(optionsToConsider[SamplingStrategies.PLACKETTBURMAN]);
+                            design = new PlackettBurmanDesign(optionsToConsider[SamplingStrategies.PLACKETTBURMAN]);
                         else
-                            design = new BoxBehnkenDesign(vm.NumericOptions);
-                        design.computeDesign(parametersOfExpDesigns[SamplingStrategies.PLACKETTBURMAN]);
-                        numericConfigs.AddRange(design.SelectedConfigurations);
+                            design = new PlackettBurmanDesign(vm.NumericOptions);
+
+                        foreach (Dictionary<string, string> expDesignParamSet in parametersOfExpDesigns[SamplingStrategies.PLACKETTBURMAN])
+                        {
+                            design.computeDesign(expDesignParamSet);
+                            numericConfigs.AddRange(design.SelectedConfigurations);
+                        }    
                         break;
 
                     case SamplingStrategies.RANDOM:
                         if (optionsToConsider.ContainsKey(SamplingStrategies.RANDOM))
-                            design = new BoxBehnkenDesign(optionsToConsider[SamplingStrategies.RANDOM]);
+                            design = new RandomSampling(optionsToConsider[SamplingStrategies.RANDOM]);
                         else
-                            design = new BoxBehnkenDesign(vm.NumericOptions);
-                        design.computeDesign(parametersOfExpDesigns[SamplingStrategies.RANDOM]);
-                        numericConfigs.AddRange(design.SelectedConfigurations);
+                            design = new RandomSampling(vm.NumericOptions);
+
+                        foreach (Dictionary<string, string> expDesignParamSet in parametersOfExpDesigns[SamplingStrategies.RANDOM])
+                        {
+                            design.computeDesign(expDesignParamSet);
+                            numericConfigs.AddRange(design.SelectedConfigurations);
+                        }    
                         break;
                 }
             }
@@ -138,6 +170,23 @@ namespace MachineLearning.Sampling
             }
 
             return result.Distinct().ToList();
+        }
+
+        public static void printSelectetedConfigurations_expDesign(List<Dictionary<NumericOption, double>> configurations)
+        {
+            GlobalState.varModel.NumericOptions.ForEach(x => GlobalState.logInfo.log(x.Name+" | "));
+            GlobalState.logInfo.log("\n");
+            foreach (Dictionary<NumericOption, double> configuration in configurations)
+            {
+                GlobalState.varModel.NumericOptions.ForEach(x =>
+                {
+                    if (configuration.ContainsKey(x))
+                        GlobalState.logInfo.log(configuration[x] + " | ");
+                    else
+                        GlobalState.logInfo.log("\t | ");
+                });
+                GlobalState.logInfo.log("\n");
+            }
         }
     }
 }

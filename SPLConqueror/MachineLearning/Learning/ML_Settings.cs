@@ -26,7 +26,7 @@ namespace MachineLearning.Learning
         /// <summary>
         /// Turns the bagging functionality (ensemble learning) on. This functionality relies on parallelization (requires probably larger amount of memory).
         /// </summary>
-        public bool bagging = true;
+        public bool bagging = false;
 
         /// <summary>
         /// Specifies how often an influence model is learned based on a subset of the measurement data
@@ -75,6 +75,12 @@ namespace MachineLearning.Learning
         /// </summary>
         public bool learn_logFunction = false;
 
+        public bool learn_asymFunction = false;
+
+        public bool learn_ratioFunction = false;
+
+        public bool learn_mirrowedFunction = true;
+
         /// <summary>
         /// Defines the number of rounds the learning process have to be performed. 
         /// </summary>
@@ -115,7 +121,23 @@ namespace MachineLearning.Learning
         /// </summary>
         public bool stopOnLongRound = true;
 
-        public double candidateSizePenalty = 0;
+        /// <summary>
+        /// If true, the candidate score (which is an average reduction of the 
+        /// prediction error the candidate induces) is made dependent on its size.
+        /// See FeatureSubsetSelection.learn() for scroe calculation.
+        /// </summary>
+        public bool candidateSizePenalty = true;
+
+        /// <summary>
+        /// Defines the time limit for the learning process. If 0, no time limit. Format: HH:MM:SS
+        /// </summary>
+        public TimeSpan learnTimeLimit = new TimeSpan(0);
+
+        public enum ScoreMeasure {RELERROR, INFLUENCE};
+        /// <summary>
+        /// Defines which mesure is used to select the best candidate and to compute the score of a candidate. See ScoreMeasure enum for the available measures.
+        /// </summary>
+        public ScoreMeasure scoreMeasure = ScoreMeasure.RELERROR;
 
         /// <summary>
         /// Returns a new settings object with the settings specified in the file as key value pair. Settings not beeing specified in this file will have the default value. 
@@ -134,7 +156,7 @@ namespace MachineLearning.Learning
                 string[] nameAndValue = settingArray[i].Split(new char[] { ':' }, 2);
                 if (!mls.setSetting(nameAndValue[0], nameAndValue[1]))
                 {
-                    GlobalState.logError.log("MlSetting " + nameAndValue[0] + " not found!");
+                    GlobalState.logError.logLine("MlSetting " + nameAndValue[0] + " not found!");
                 }
 
             }
@@ -152,7 +174,7 @@ namespace MachineLearning.Learning
             ML_Settings mls = new ML_Settings();
             if (System.IO.File.Exists(settingLocation) == false)
             {
-                GlobalState.logError.log("Could not load ML settings file! File (" + settingLocation + ") does not exit.");
+                GlobalState.logError.logLine("Could not load ML settings file! File (" + settingLocation + ") does not exit.");
                 return mls;
             }
             System.IO.StreamReader file = new System.IO.StreamReader(settingLocation);
@@ -162,7 +184,7 @@ namespace MachineLearning.Learning
                 string[] nameAndValue = line.Split(new char[] { ' ' }, 2);
                 if (!mls.setSetting(nameAndValue[0], nameAndValue[1]))
                 {
-                    GlobalState.logError.log("MlSetting " + nameAndValue[0] + " not found!");
+                    GlobalState.logError.logLine("MlSetting " + nameAndValue[0] + " not found!");
                 }
             }
             file.Close();
@@ -265,6 +287,33 @@ namespace MachineLearning.Learning
                     return false;
                 }
 
+            }
+            if (fi.FieldType.FullName.Equals("System.TimeSpan"))
+            {
+                TimeSpan n;
+                bool isValid = TimeSpan.TryParse(value, out n);
+
+                if (isValid)
+                {
+                    fi.SetValue(this, n);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            if (fi.FieldType.FullName.Equals("MachineLearning.Learning.ML_Settings+ScoreMeasure"))
+            {
+                ScoreMeasure parsedValue;
+                try {
+                    parsedValue = (ScoreMeasure) Enum.Parse(typeof(ScoreMeasure), value.ToUpperInvariant());
+                }
+                catch (ArgumentException) {
+                    return false;
+                }
+                fi.SetValue(this, parsedValue);
+                return true;
             }
 
 
