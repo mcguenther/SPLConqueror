@@ -87,6 +87,8 @@ namespace Dune
                         }
 
                         int c = 0;
+                        int foundMin = 0;
+                        int notFound = 0;
                         while (!compFile.EndOfStream)
                         {
                             String l = compFile.ReadLine();
@@ -101,17 +103,23 @@ namespace Dune
                                 switch (containsName(l, globalResult.ElementAt(c)))
                                 {
                                     case 1:
+                                        foundMin++;
                                         break;
                                     case 0:
+                                        foundMin++;
                                         output.WriteLine("This classes name was found: " + l);
                                         break;
                                     case -1:
+                                        notFound++;
                                         output.WriteLine(l);
                                         break;
                                 }
                             }
                             else
                             {
+                                output.WriteLine(foundMin + "; " + globalResult.ElementAt(c).Capacity + "; " + notFound);
+                                foundMin = 0;
+                                notFound = 0;
                                 c++;
                             }
                         }

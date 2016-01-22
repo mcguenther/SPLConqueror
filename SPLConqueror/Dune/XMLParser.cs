@@ -335,7 +335,7 @@ namespace Dune
                         for (int i = 0; i < comp.getMethodHashes().Count; i++)
                         {
                             int methodHash = comp.getMethodHashes()[i];
-                            if (!df.containsMethodHash(methodHash) && !variableSubmethod(df, comp, i))
+                            if (!df.containsMethodHash(methodHash)) //&& !variableSubmethod(df, comp, i))
                             {
                                 isSubclassOf = false;
                                 break;
