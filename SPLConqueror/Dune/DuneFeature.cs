@@ -411,7 +411,7 @@ namespace Dune
         /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
         public List<string> getVariability(DuneFeature root)
         {
-            return getVariability(root, new List<DuneFeature>());
+            return getVariability(root, new List<DuneFeature>(), this);
         }
 
         /// <summary>
@@ -419,12 +419,13 @@ namespace Dune
         /// </summary>
         /// <param name="root">the root node which is excluded</param>
         /// <param name="analyzed">the list which contains the features that were analyzed already</param>
+        /// <param name="baseClass">the class the variability is searched for</param>
         /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
-        private List<string> getVariability(DuneFeature root, List<DuneFeature> analyzed)
+        private List<string> getVariability(DuneFeature root, List<DuneFeature> analyzed, DuneFeature baseClass)
         {
             List<string> result = new List<string>();
 
-            if (analyzed.Contains(this) || this.Equals(root))
+            if (analyzed.Contains(this) || this.Equals(root) || this.methodNameHashes == null || this.methodNameHashes.Capacity < baseClass.methodHashes.Capacity)
             {
                 return result;
             }
@@ -433,12 +434,13 @@ namespace Dune
             result.Add(ToString());
             foreach (DuneFeature p in children)
             {
-                result.AddRange(p.getVariability(root, analyzed));
+                result.AddRange(p.getVariability(root, analyzed, baseClass));
             }
 
             foreach (DuneFeature p in parents)
             {
-                result.AddRange(p.getVariability(root, analyzed));
+                result.AddRange(p.getVariability(root, analyzed, baseClass));
+                
             }
 
             return result;
