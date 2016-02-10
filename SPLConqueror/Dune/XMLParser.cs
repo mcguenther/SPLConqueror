@@ -103,7 +103,7 @@ namespace Dune
 
             System.Console.Write("Writing the classes with no normal methods in a file...");
             printClassesWithNoNormalMethods();
-            System.Console.Write("Finished!");
+            System.Console.WriteLine("Finished!");
 
         }
 
@@ -114,6 +114,8 @@ namespace Dune
             {
                 output.WriteLine(df);
             }
+            output.Flush();
+            output.Close();
         }
 
         /// <summary>
@@ -226,6 +228,10 @@ namespace Dune
                 {
                     classesWithNoNormalMethods.Add(df);
                 }
+            }
+            else
+            {
+                classesWithNoNormalMethods.Add(df);
             }
 
             // Now add all relations
