@@ -117,7 +117,7 @@ namespace Dune
                             }
                             else
                             {
-                                output.WriteLine(foundMin + "; " + globalResult.ElementAt(c).Capacity + "; " + notFound);
+                                output.WriteLine(foundMin + "; " + notFound + "; " + globalResult.ElementAt(c).Capacity);
                                 foundMin = 0;
                                 notFound = 0;
                                 c++;

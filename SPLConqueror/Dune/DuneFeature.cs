@@ -28,6 +28,8 @@ namespace Dune
         private List<int> methodArgumentCount;
         private Dictionary<String, List<String>> enums;
 
+        private bool ignoreDuckTyping = false;
+
         /// <summary>
         /// Constructs a new DuneFeature with the given reference and the given className
         /// </summary>
@@ -191,6 +193,25 @@ namespace Dune
             //}
             this.enums.Add(key, enums);
         }
+
+        /// <summary>
+        /// Sets the boolean variable <code>ignoreDuckTyping</code> to the given value.
+        /// </summary>
+        /// <param name="ignore">the boolean value the variable <code>ignoreDuckTyping</code> should be set to</param>
+        public void ignoreAtDuckTyping(bool ignore)
+        {
+            this.ignoreDuckTyping = ignore;
+        }
+
+        /// <summary>
+        /// Returns <code>true</code> if this class should be ignored.
+        /// </summary>
+        /// <returns><code>true</code> if this class should be ignored at Duck Typing; <code>false</code> otherwise</returns>
+        public bool isIgnored()
+        {
+            return ignoreDuckTyping;
+        }
+
 
         /// <summary>
         /// Sets the enums of the <code>DuneFeature</code> to the given argument.
@@ -425,13 +446,18 @@ namespace Dune
         {
             List<string> result = new List<string>();
 
-            if (analyzed.Contains(this) || this.Equals(root) || this.methodNameHashes == null || this.methodNameHashes.Capacity < baseClass.methodHashes.Capacity)
+            if (analyzed.Contains(this) || this.Equals(root))
             {
                 return result;
             }
             
             analyzed.Add(this);
-            result.Add(ToString());
+
+            if (this.methodNameHashes != null && (baseClass.isPotentialSubclassOff(this) || this.isPotentialSubclassOff(baseClass))) //this.methodNameHashes.Capacity >= baseClass.methodHashes.Capacity)
+            {
+                result.Add(ToString());
+            }
+
             foreach (DuneFeature p in children)
             {
                 result.AddRange(p.getVariability(root, analyzed, baseClass));
@@ -444,6 +470,24 @@ namespace Dune
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Returns <code>true</code> if the class could be a subclass of the given class(duck typing).
+        /// </summary>
+        /// <param name="f">the class to be subclass of</param>
+        /// <returns><code>true</code> if this class is a subclass of the other class; <code>false</code> otherwise</returns>
+        public bool isPotentialSubclassOff(DuneFeature f)
+        {
+            for (int i = 0; i < f.getMethodHashes().Count; i++)
+            {
+                int methodHash = f.getMethodHashes()[i];
+                if (!this.containsMethodHash(methodHash))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
@@ -489,6 +533,15 @@ namespace Dune
         public String getReference()
         {
             return this.reference;
+        }
+
+        /// <summary>
+        /// Returns the number of template arguments.
+        /// </summary>
+        /// <returns>the number of template arguments</returns>
+        public int getTemplateArgumentCount()
+        {
+            return this.templateArgumentCount;
         }
 
         /// <summary>

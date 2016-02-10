@@ -27,6 +27,8 @@ namespace Dune
 
         static List<Tuple<DuneFeature, DuneFeature>> relations = new List<Tuple<DuneFeature, DuneFeature>>();
 
+        static List<DuneFeature> classesWithNoNormalMethods = new List<DuneFeature>();
+
         // Is only here for debugging
         static System.IO.StreamWriter file;
         static List<String> classNames = new List<String>();
@@ -50,10 +52,19 @@ namespace Dune
             }
 
             StreamWriter output = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\notFound.txt");
+            List<DuneFeature> featuresNotFound = new List<DuneFeature>();
             int notFound = 0;
             foreach (Tuple<DuneFeature, DuneFeature> t in relations)
             {
+
                 DuneFeature newDF = getFeature(t.Item1);
+
+                // If the class is still not found, it will be matched by name.
+                if (newDF == null)
+                {
+                    newDF = getFeatureByName(t.Item1);
+                }
+
                 if (newDF != null)
                 {
                     newDF.addChildren(t.Item2);
@@ -61,8 +72,12 @@ namespace Dune
                 }
                 else
                 {
-                    notFound++;
-                    output.WriteLine(t.Item1);
+                    if (!featuresNotFound.Contains(t.Item1))
+                    {
+                        featuresNotFound.Add(t.Item1);
+                        notFound++;
+                        output.WriteLine(t.Item1);
+                    }
                 }
             }
             output.Flush();
@@ -86,6 +101,19 @@ namespace Dune
             stopwatch.Stop();
             System.Console.WriteLine("Finished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
 
+            System.Console.Write("Writing the classes with no normal methods in a file...");
+            printClassesWithNoNormalMethods();
+            System.Console.Write("Finished!");
+
+        }
+
+        private static void printClassesWithNoNormalMethods()
+        {
+            StreamWriter output = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\classesWithNoNormalMethods.txt");
+            foreach (DuneFeature df in classesWithNoNormalMethods)
+            {
+                output.WriteLine(df);
+            }
         }
 
         /// <summary>
@@ -110,7 +138,7 @@ namespace Dune
             String name = "";
             String templateInName = "";
             Dictionary<String, List<String>> enums = null;
-            Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>> methods = null;
+            Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool> methods = null;
             List<DuneFeature> inherits = new List<DuneFeature>();
 
             foreach (XmlNode node in child.ChildNodes)
@@ -121,7 +149,7 @@ namespace Dune
                         name = node.InnerText.ToString();
                         templateInName = extractTemplateInName(name);
                         name = convertName(name);
-                        if (name.StartsWith("Dune::ALUGrid"))
+                        if (name.StartsWith("Dune::PDELab::ISTLBackend_SEQ_CG_ILU0"))
                         {
                             System.Console.Write("");
                         }
@@ -193,6 +221,11 @@ namespace Dune
                 df.setMethodArgumentCount(methods.Item3);
                 df.setMethodArguments(methods.Item4);
                 df.setReplaceableMethodArguments(methods.Item5);
+                df.ignoreAtDuckTyping(methods.Item6);
+                if (methods.Item6)
+                {
+                    classesWithNoNormalMethods.Add(df);
+                }
             }
 
             // Now add all relations
@@ -319,13 +352,17 @@ namespace Dune
             // The newer version with optimizations
             foreach (DuneFeature df in featuresToCompare)
             {
+                if (df.isIgnored())
+                {
+                    continue;
+                }
                 System.Console.WriteLine(df.ToString());
 
                 foreach (DuneFeature comp in featuresToCompare)
                 {
-                    if (df.getClassName().StartsWith("Dune::PDELab::NoConstraints") && comp.getClassName().StartsWith("Dune::PDELab::ConformingDirichletConstraints"))
+                    if (df.isIgnored())
                     {
-                        System.Console.Write("");
+                        continue;
                     }
 
                     // If there is no transitive relation between the classes, the classes are analyzed
@@ -335,7 +372,7 @@ namespace Dune
                         for (int i = 0; i < comp.getMethodHashes().Count; i++)
                         {
                             int methodHash = comp.getMethodHashes()[i];
-                            if (!df.containsMethodHash(methodHash)) //&& !variableSubmethod(df, comp, i))
+                            if (!df.containsMethodHash(methodHash))// && !variableSubmethod(df, comp, i))
                             {
                                 isSubclassOf = false;
                                 break;
@@ -488,7 +525,7 @@ namespace Dune
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
         /// <returns>a tuple with a list containing the method hashes, a list containing the hash of the method names and a list containing the count of the arguments (in this order)</returns>
-        private static Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>> saveMethods(XmlNode node, String classname)
+        private static Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool> saveMethods(XmlNode node, String classname)
         {
             // The pure class name (e.g. 'x' in 'Dune::y::x') is needed in order to identify the constructor
             int indx = classname.LastIndexOf(':');
@@ -503,6 +540,8 @@ namespace Dune
             List<int> argumentCount = new List<int>();
             List<string> methodArguments = new List<string>();
             List<List<int>> replaceableArgs = new List<List<int>>();
+
+            bool hasNormalMethods = false;
 
             // Access memberdefs and search for the value of the definition tag
             foreach (XmlNode c in node.ChildNodes)
@@ -543,26 +582,25 @@ namespace Dune
                     methodArguments.Add(convertMethodArgs(args.InnerText, false));
 
                     // In case that the method is a constructor...
-                    if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
-                    {
-                        
-                        
-                        // add only the constructor WITH arguments. 
-                        if (!methodArgs.Equals("()")) {
-                            // In case of a constructor, the name remains empty
-                            methodNameHashes.Add("".GetHashCode());
-                            methodHashes.Add(methodArgs.GetHashCode());
-                        }
+                   if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
+                   {   
+                     // add only the constructor WITH arguments. 
+                     if (!methodArgs.Equals("()")) {
+                        // In case of a constructor, the name remains empty
+                        methodNameHashes.Add("".GetHashCode());
+                        methodHashes.Add(methodArgs.GetHashCode());
                     }
-                    else
-                    {
-                        methodNameHashes.Add(methodName.GetHashCode());
-                        methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
-                    }
+                  }
+                  else
+                  {
+                      hasNormalMethods = true;
+                      methodNameHashes.Add(methodName.GetHashCode());
+                      methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
+                  }
                 }
             }
 
-            return new Tuple<List<int>,List<int>,List<int>, List<string>, List<List<int>>>(methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs);
+            return new Tuple<List<int>,List<int>,List<int>, List<string>, List<List<int>>, bool>(methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs, !hasNormalMethods);
 
         }
 
@@ -748,6 +786,24 @@ namespace Dune
             //{
             //    XMLParser.features.Add(df);
             //}
+            return null;
+        }
+
+        /// <summary>
+        /// Searches the list of all features for the feature with the given name.
+        /// </summary>
+        /// <param name="df">the feature containing the name to search for</param>
+        /// <returns>the feature with the given name; <code>null</code> if no feature is found</returns>
+        private static DuneFeature getFeatureByName(DuneFeature df)
+        {
+            String name = df.getClassName();
+            foreach (DuneFeature d in features)
+            {
+                if (d.getClassNameWithoutTemplate().Equals(df.getClassNameWithoutTemplate()))  //&& d.getTemplateArgumentCount() == df.getTemplateArgumentCount())
+                {
+                    return d;
+                }
+            }
             return null;
         }
 
