@@ -212,7 +212,6 @@ namespace Dune
             return ignoreDuckTyping;
         }
 
-
         /// <summary>
         /// Sets the enums of the <code>DuneFeature</code> to the given argument.
         /// </summary>
@@ -319,6 +318,9 @@ namespace Dune
         {
             return this.parents.Contains(df) || this.children.Contains(df);
         }
+
+
+        
 
         /// <summary>
         /// Sets the list containing the method's arguments in order to improve duck-typing.

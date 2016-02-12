@@ -97,7 +97,7 @@ namespace Dune
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
             Stopwatch stopwatch = Stopwatch.StartNew();
-            findPotentialParents();
+            //findPotentialParents();
             stopwatch.Stop();
             System.Console.WriteLine("Finished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
 
@@ -107,6 +107,9 @@ namespace Dune
 
         }
 
+        /// <summary>
+        /// This method prints the classes in the list <code>classesWithNoNormalMethods</code>.
+        /// </summary>
         private static void printClassesWithNoNormalMethods()
         {
             StreamWriter output = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\classesWithNoNormalMethods.txt");
@@ -127,13 +130,14 @@ namespace Dune
         {
             DuneFeature df = null;
 
-            // Ignore structs and private classes
+            // Ignore private classes
             String prot = child.Attributes.GetNamedItem("prot") == null ? null : child.Attributes.GetNamedItem("prot").Value;
             String kind = child.Attributes.GetNamedItem("kind") == null ? null : child.Attributes.GetNamedItem("kind").Value;
-            if (prot != null && prot.Equals("private") || kind != null && kind.Equals("struct"))
+            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("group") || kind.Equals("namespace") || kind.Equals("page")))
             {
                 return df;
             }
+
 
             String template = "";
             String refId = child.Attributes["id"].Value.ToString();
@@ -151,18 +155,15 @@ namespace Dune
                         name = node.InnerText.ToString();
                         templateInName = extractTemplateInName(name);
                         name = convertName(name);
-                        if (name.StartsWith("Dune::PDELab::ISTLBackend_SEQ_CG_ILU0"))
-                        {
-                            System.Console.Write("");
-                        }
-                        if (name.Contains("Helper") || name.Contains("helper"))
-                        {
-                            return null;
-                        }
+
+                        //if (name.Contains("Helper") || name.Contains("helper"))
+                        //{
+                        //    return null;
+                        //}
                         break;
                     case "basecompoundref":
                         String refNew = null;
-                        String nameNew = node.InnerText.ToString();
+                        String nameNew = node.InnerText.ToString().Replace(" ", "");
 
                         if (node.Attributes["refid"] == null)
                         {
@@ -803,9 +804,10 @@ namespace Dune
         private static DuneFeature getFeatureByName(DuneFeature df)
         {
             String name = df.getClassName();
+            
             foreach (DuneFeature d in features)
             {
-                if (d.getClassNameWithoutTemplate().Equals(df.getClassNameWithoutTemplate()))  //&& d.getTemplateArgumentCount() == df.getTemplateArgumentCount())
+                if (d.getClassNameWithoutTemplate().Equals(df.getClassNameWithoutTemplate()) && d.getTemplateArgumentCount() == df.getTemplateArgumentCount())
                 {
                     return d;
                 }
