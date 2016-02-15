@@ -51,7 +51,7 @@ namespace Dune
                 DuneFeature df = extractFeature(child);
             }
 
-            StreamWriter output = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\notFound.txt");
+            StreamWriter output = new System.IO.StreamWriter(Program.DEBUG_PATH + "notFound.txt");
             List<DuneFeature> featuresNotFound = new List<DuneFeature>();
             int notFound = 0;
             foreach (Tuple<DuneFeature, DuneFeature> t in relations)
@@ -112,7 +112,7 @@ namespace Dune
         /// </summary>
         private static void printClassesWithNoNormalMethods()
         {
-            StreamWriter output = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\classesWithNoNormalMethods.txt");
+            StreamWriter output = new System.IO.StreamWriter(Program.DEBUG_PATH + "classesWithNoNormalMethods.txt");
             foreach (DuneFeature df in classesWithNoNormalMethods)
             {
                 output.WriteLine(df);
@@ -153,13 +153,19 @@ namespace Dune
                 {
                     case "compoundname":
                         name = node.InnerText.ToString();
+
+                        //if (name.Contains("Dune::GridDefaultImplementation"))
+                        //{
+                        //    Console.Write("");
+                        //}
+                        //if (name.Contains("Dune::AlbertaGridLeafIntersection"))
+                        //{
+                        //    Console.Write("");
+                        //}
+   
+
                         templateInName = extractTemplateInName(name);
                         name = convertName(name);
-
-                        //if (name.Contains("Helper") || name.Contains("helper"))
-                        //{
-                        //    return null;
-                        //}
                         break;
                     case "basecompoundref":
                         String refNew = null;
@@ -340,7 +346,7 @@ namespace Dune
         /// </summary>
         private static void findPotentialParents()
         {
-            System.IO.StreamWriter file = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\inherits.txt");
+            System.IO.StreamWriter file = new System.IO.StreamWriter(Program.DEBUG_PATH + "inherits.txt");
 
             List<DuneFeature> featuresToCompare = new List<DuneFeature>();
 

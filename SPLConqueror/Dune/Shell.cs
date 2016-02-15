@@ -63,9 +63,9 @@ namespace Dune
                         break;
                     case "fileAnalyzation":
                     case "f":
-                        StreamReader inputFile = new System.IO.StreamReader(@"D:\HiWi\DebugOutput\classesInDiffusion.txt");
-                        StreamReader compFile = new System.IO.StreamReader(@"D:\HiWi\DebugOutput\minimalSetClasses.txt");
-                        StreamWriter output = new System.IO.StreamWriter(@"D:\HiWi\DebugOutput\analyzation.txt");
+                        StreamReader inputFile = new System.IO.StreamReader(Program.DEBUG_PATH + "classesInDiffusion.txt");
+                        StreamReader compFile = new System.IO.StreamReader(Program.DEBUG_PATH + "minimalSetClasses.txt");
+                        StreamWriter output = new System.IO.StreamWriter(Program.DEBUG_PATH + "analyzation.txt");
 
                         List<List<string>> globalResult = new List<List<string>>();
 

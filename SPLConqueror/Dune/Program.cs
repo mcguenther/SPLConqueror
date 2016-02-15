@@ -14,8 +14,7 @@ namespace Dune
         // Please adjust it, as I have not found a solution not to do so...
         static String PATH = @"D:\owncloud\all1.xml";
 
-        // Should be no longer needed
-        const String XML_LOCATION = @"doc\doxygen\xml\";
+        public static String DEBUG_PATH = @"D:\HiWi\DebugOutput";
 
         public const bool INCLUDE_CLASSES_FROM_STD = false;
 
@@ -26,19 +25,25 @@ namespace Dune
         {
             Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
 
-            // If the path was not specified until now, the path is taken from the arguments
-            if (PATH.Equals(@""))
+
+            // If the path is not given as argument, use the path specified in this file.
+            if (args.Length > 0)
             {
-                if (args.Length > 0)
+                PATH = args[0];
+                if (args.Length > 1)
                 {
-                    PATH = args[0];
+                    DEBUG_PATH = args[1];
                 }
-                else
-                {
-                    System.Console.WriteLine("No path passed as argument. Aborting...");
-                    return;
-                }
+
             }
+            else
+            {
+                System.Console.WriteLine("No path passed as argument. Aborting...");
+                return;
+            }
+
+
+            
             XMLParser.parse(PATH);
 
             // TODO Add the shell here
