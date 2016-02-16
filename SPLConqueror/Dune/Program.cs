@@ -18,6 +18,10 @@ namespace Dune
 
         public const bool INCLUDE_CLASSES_FROM_STD = false;
 
+
+        public static bool USE_DUCK_TYPING = false;
+
+
         /// <summary>
         /// The main-method of the Dune-plugin. This calls the corresponding <code>XMLParser</code>-methods.
         /// </summary>
