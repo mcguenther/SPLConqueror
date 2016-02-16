@@ -33,6 +33,9 @@ namespace Dune
                 if (args.Length > 1)
                 {
                     DEBUG_PATH = args[1];
+
+                    // Add an additional directory separator if it was not included by the user.
+                    DEBUG_PATH = DEBUG_PATH.EndsWith(Path.DirectorySeparatorChar) ? DEBUG_PATH : DEBUG_PATH + Path.DirectorySeparatorChar;
                 }
 
             }
@@ -46,7 +49,6 @@ namespace Dune
             
             XMLParser.parse(PATH);
 
-            // TODO Add the shell here
             // Needed for debugging purposes.
             Shell.showShell();
             System.Console.WriteLine("Press a button to close the window.");
