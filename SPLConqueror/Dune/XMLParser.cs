@@ -97,7 +97,8 @@ namespace Dune
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
             Stopwatch stopwatch = Stopwatch.StartNew();
-            findPotentialParents();
+            if(Program.USE_DUCK_TYPING)
+                findPotentialParents();
             stopwatch.Stop();
             System.Console.WriteLine("\rFinished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
 
