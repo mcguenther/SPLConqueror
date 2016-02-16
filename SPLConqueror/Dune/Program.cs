@@ -35,7 +35,7 @@ namespace Dune
                     DEBUG_PATH = args[1];
 
                     // Add an additional directory separator if it was not included by the user.
-                    DEBUG_PATH = DEBUG_PATH.EndsWith(Path.DirectorySeparatorChar) ? DEBUG_PATH : DEBUG_PATH + Path.DirectorySeparatorChar;
+                    DEBUG_PATH = DEBUG_PATH.EndsWith(Path.DirectorySeparatorChar.ToString()) ? DEBUG_PATH : DEBUG_PATH + Path.DirectorySeparatorChar;
                 }
 
             }

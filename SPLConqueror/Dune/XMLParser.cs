@@ -99,7 +99,7 @@ namespace Dune
             Stopwatch stopwatch = Stopwatch.StartNew();
             findPotentialParents();
             stopwatch.Stop();
-            System.Console.WriteLine("Finished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
+            System.Console.WriteLine("\rFinished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
 
             System.Console.Write("Writing the classes with no normal methods in a file...");
             printClassesWithNoNormalMethods();
@@ -361,15 +361,20 @@ namespace Dune
 
             List<Tuple<DuneFeature, DuneFeature>> toInsert = new List<Tuple<DuneFeature, DuneFeature>>();
 
-
+            int total = featuresToCompare.Count;
+            int finished = 0;
             // The newer version with optimizations
             foreach (DuneFeature df in featuresToCompare)
             {
+                finished++;
                 if (df.isIgnored())
                 {
                     continue;
                 }
-                System.Console.WriteLine(df.ToString());
+                //System.Console.WriteLine(df.ToString());
+
+                // Show the progress bar:
+                Console.Write("\r{0}%   ", finished * 100 / total);
 
                 foreach (DuneFeature comp in featuresToCompare)
                 {
