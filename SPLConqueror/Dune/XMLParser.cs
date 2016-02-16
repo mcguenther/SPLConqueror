@@ -603,7 +603,7 @@ namespace Dune
                         // In case of a constructor, the name remains empty
                         methodNameHashes.Add("".GetHashCode());
                         methodHashes.Add(methodArgs.GetHashCode());
-                    }
+                     }
                   }
                   else
                   {
