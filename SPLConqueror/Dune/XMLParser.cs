@@ -97,7 +97,7 @@ namespace Dune
 
             System.Console.WriteLine("Now finding potential parents(duck-typing)");
             Stopwatch stopwatch = Stopwatch.StartNew();
-            //findPotentialParents();
+            findPotentialParents();
             stopwatch.Stop();
             System.Console.WriteLine("Finished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
 
@@ -596,7 +596,7 @@ namespace Dune
                         // In case of a constructor, the name remains empty
                         methodNameHashes.Add("".GetHashCode());
                         methodHashes.Add(methodArgs.GetHashCode());
-                    }
+                     }
                   }
                   else
                   {
