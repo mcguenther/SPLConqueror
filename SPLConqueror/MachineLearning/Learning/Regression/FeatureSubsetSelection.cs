@@ -56,7 +56,7 @@ namespace MachineLearning.Learning.Regression
             infModel = null;
             learningHistory = new ObservableCollection<LearningRound>();
             hierachyLevel = 1;
-            currentRound = null;
+            //currentRound = null;
             initialFeatures = new List<Feature>();
             strictlyMandatoryFeatures = new List<Feature>();
             MLsettings = null;
