@@ -260,6 +260,24 @@ namespace Dune
             return df;
         }
 
+        /// <summary>
+        /// Returns the variability of the given <code>DuneFeature</code>.
+        /// </summary>
+        /// <param name="df">the class to return the variability</param>
+        /// <param name="enumString">the string of the enum if there is one. If there is no enum, this variable is empty string</param>
+        /// <returns>the variability of the class or enum</returns>
+        public static List<String> getVariability(DuneFeature df, String enumString)
+        {
+            if (enumString.Equals(""))
+            {
+                return df.getVariability(root);
+            }
+            else 
+            {
+                return df.getAlternativeEnums(enumString);
+            }
+        }
+
 
         /// <summary>
         /// Returns all possible replacements according to the inheritance and the template analysis as a list of strings.
@@ -283,7 +301,7 @@ namespace Dune
                 name = feature;
             }
             // If the last name begins with a lower character then it is part of an enum
-            Boolean isEnum = char.IsLower(name[name.LastIndexOf(':') + 1]);
+            Boolean isEnum = name.LastIndexOf(':') > 0 && name.LastIndexOf('>') < name.LastIndexOf(':') && char.IsLower(name[name.LastIndexOf(':') + 1]);
 
             DuneFeature df;
 
@@ -346,7 +364,7 @@ namespace Dune
         /// </summary>
         private static void findPotentialParents()
         {
-            System.IO.StreamWriter file = new System.IO.StreamWriter(Program.DEBUG_PATH + "inherits.txt");
+            file = new System.IO.StreamWriter(Program.DEBUG_PATH + "inherits.txt");
 
             List<DuneFeature> featuresToCompare = new List<DuneFeature>();
 
@@ -552,7 +570,6 @@ namespace Dune
                 pureClassName = classname.Substring(indx + 1, classname.Length - indx - 1);
             }
 
-            Tuple<List<int>,List<int>,List<int>, List<string>, List<List<int>>> result;
             List<int> methodHashes = new List<int>();
             List<int> methodNameHashes = new List<int>();
             List<int> argumentCount = new List<int>();
@@ -789,6 +806,24 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns the found features in a list. Note that this list is empty if there are no matches.
+        /// </summary>
+        /// <param name="df">the feature to search for</param>
+        /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
+        private static List<DuneFeature> searchForAllFeatureNames(DuneFeature df)
+        {
+            List<DuneFeature> dfs = new List<DuneFeature>();
+            foreach (DuneFeature d in features)
+            {
+                if (d.getClassNameWithoutTemplate().Equals(df.getClassNameWithoutTemplate()))
+                {
+                    dfs.Add(d);
+                }
+            }
+            return dfs;
+        }
+
+        /// <summary>
         /// Returns the given DuneFeature if the feature is not already in the features-list; the feature in the features-list is returned otherwise.
         /// </summary>
         /// <param name="df">the feature to search for</param>
@@ -824,6 +859,66 @@ namespace Dune
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Returns a list containing all features that match by the name.
+        /// </summary>
+        /// <param name="feature">the feature to search for</param>
+        /// <returns>a list containing all features that match by the given name</returns>
+        public static List<DuneFeature> getAllFeaturesByName(String feature)
+        {
+            // Extract the name and the template
+            string name;
+            string template = "";
+            int index = feature.IndexOf('<');
+            if (index > 0)
+            {
+                name = feature.Substring(0, index);
+                template = feature.Substring(index, feature.Length - index);
+            }
+            else
+            {
+                name = feature;
+            }
+            // If the last name begins with a lower character then it is part of an enum
+            Boolean isEnum = char.IsLower(name[name.LastIndexOf(':') + 1]);
+
+            DuneFeature df;
+
+            if (isEnum)
+            {
+                string featureName = feature.Substring(0, feature.LastIndexOf(':') - 1);
+
+                df = searchForFeature(new DuneFeature("", featureName));
+
+                // If not found search only for the name
+                if (df == null)
+                {
+                    return searchForAllFeatureNames(new DuneFeature("", featureName));
+                }
+                else
+                {
+                    List<DuneFeature> dfs = new List<DuneFeature>();
+                    dfs.Add(df);
+                    return dfs;
+                }
+            }
+            else
+            {
+                df = searchForFeature(new DuneFeature("", feature));
+
+                if (df == null || template.Equals(""))
+                {
+                    return searchForAllFeatureNames(new DuneFeature("", feature + "<>"));
+                }
+                else
+                {
+                    List<DuneFeature> dfs = new List<DuneFeature>();
+                    dfs.Add(df);
+                    return dfs;
+                }
+            }
         }
 
         /// <summary>

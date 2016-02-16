@@ -116,7 +116,7 @@ namespace Dune
         /// </summary>
         /// <param name="name">the name of the method as a hash</param>
         /// <param name="methodArgCount">the number of arguments the method has</param>
-        /// <returns></returns>
+        /// <returns>a list containing tuples. These tuples have the method argument names as well as their count. Note that the count may be variable</returns>
         public List<Tuple<string, List<int>>> getMethodArgumentsWithNameAndCount(int methodNameHash, int methodArgCount)
         {
             List<Tuple<string, List<int>>> result = new List<Tuple<string, List<int>>>();

@@ -47,7 +47,12 @@ namespace Dune
                         break;
                     case "analyze":
                     case "a":
-                        List<string> result = XMLParser.getVariability(arguments);
+                        Boolean isEnum = arguments.LastIndexOf(':') > 0 && arguments.LastIndexOf('>') < arguments.LastIndexOf(':') && char.IsLower(arguments[arguments.LastIndexOf(':') + 1]);
+                        String enumString = isEnum ? arguments.Substring(arguments.LastIndexOf(":") + 1) : "";
+
+                        DuneFeature df = findFeature(arguments);
+                        List<string> result = XMLParser.getVariability(df, enumString);
+
                         if (result != null)
                         {
                             foreach (string s in result)
@@ -138,6 +143,51 @@ namespace Dune
                         break;
                 }
             }
+        }
+
+        /// <summary>
+        /// This method tries to find the right class. If multiple classes are found, the user has to select one. This method returns <code>null</code> if no class has been found or the input is invalid.
+        /// </summary>
+        /// <param name="feature">the class to search for</param>
+        /// <returns>the selected <code>DuneFeature</code>. <code>null</code> is returned if no class has been found or the input is invalid</returns>
+        private static DuneFeature findFeature(string feature)
+        {
+            List<DuneFeature> dfs = XMLParser.getAllFeaturesByName(feature);
+
+            if (dfs.Count == 0)
+            {
+                return null;
+            }
+
+            // If there is only one choice, the selection is obvious
+            if (dfs.Count == 1)
+            {
+                return dfs.ElementAt(0);
+            }
+
+            System.Console.WriteLine("Multiple classes were found. Please select one by entering the number.");
+
+            int count = 0;
+            // In this case multiple classes were found
+            foreach (DuneFeature df in dfs) {
+                System.Console.WriteLine(count + ": " + df.getClassName());
+                count++;
+            }
+
+            System.Console.Write("Which one do you want to choose? ");
+            string input = System.Console.ReadLine().Trim();
+            int selected = 0;
+            if (Int32.TryParse(input, out selected) && selected >= 0 && selected < count)
+            {
+                return dfs.ElementAt(selected);
+            }
+            else
+            {
+                System.Console.WriteLine("Selection not valid...aborting.");
+                return null;
+            }
+
+
         }
 
         /// <summary>
