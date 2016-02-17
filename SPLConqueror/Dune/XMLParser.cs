@@ -29,6 +29,8 @@ namespace Dune
 
         static List<DuneFeature> classesWithNoNormalMethods = new List<DuneFeature>();
 
+        static Dictionary<string, string> typeMapping = new Dictionary<string, string>();
+
         // Is only here for debugging
         static System.IO.StreamWriter file;
         static List<String> classNames = new List<String>();
@@ -571,6 +573,11 @@ namespace Dune
                 pureClassName = classname.Substring(indx + 1, classname.Length - indx - 1);
             }
 
+            if (pureClassName != null && (pureClassName.Equals("GridDefaultImplementation") || pureClassName.Equals("UGGrid")))
+            {
+                System.Console.Write("");
+            }
+
             List<int> methodHashes = new List<int>();
             List<int> methodNameHashes = new List<int>();
             List<int> argumentCount = new List<int>();
@@ -584,21 +591,17 @@ namespace Dune
             {
                 if (c.Name.Equals("memberdef"))
                 {
+                    XmlNode template = getChild("templateparamlist", c.ChildNodes);
                     List<XmlNode> parameters = getChildren("param", c.ChildNodes);
                     XmlNode type = getChild("type", c.ChildNodes);
                     XmlNode args = getChild("argsstring", c.ChildNodes);
                     XmlNode name = getChild("name", c.ChildNodes);
-
-                    //// Retrieve the number of arguments and the name of the method 
-                    //int methodCount = getCountOfArgs(args.InnerText);
-                    argumentCount.Add(getCountOfArgs(args.InnerText));
 
                     String methodName = name.InnerText;
 
                     //df.addMethod(type.InnerText + " " + name.InnerText + convertMethodArgs(args.InnerText));
 
                     List<int> replaceableArguments = new List<int>();
-                    replaceableArgs.Add(replaceableArguments);
 
                     if (parameters.Count > 0)
                     {
@@ -615,7 +618,6 @@ namespace Dune
                     }
 
                     String methodArgs = convertMethodArgs(args.InnerText, true);
-                    methodArguments.Add(convertMethodArgs(args.InnerText, false));
 
                     // In case that the method is a constructor...
                    if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
@@ -625,19 +627,65 @@ namespace Dune
                         // In case of a constructor, the name remains empty
                         methodNameHashes.Add("".GetHashCode());
                         methodHashes.Add(methodArgs.GetHashCode());
+                        methodArguments.Add(convertMethodArgs(args.InnerText, false));
+                        // Retrieve the number of arguments and the name of the method 
+                        argumentCount.Add(getCountOfArgs(args.InnerText));
+                        replaceableArgs.Add(replaceableArguments);
                      }
                   }
                   else
                   {
                       hasNormalMethods = true;
                       methodNameHashes.Add(methodName.GetHashCode());
-                      methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
+                      //methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
+                      string typename = retrieveType(type, template);
+                      methodHashes.Add((typename + " " + name.InnerText + methodArgs).GetHashCode());
+                      methodArguments.Add(convertMethodArgs(args.InnerText, false));
+                      // Retrieve the number of arguments and the name of the method 
+                      argumentCount.Add(getCountOfArgs(args.InnerText));
+                      replaceableArgs.Add(replaceableArguments);
                   }
                 }
             }
 
             return new Tuple<List<int>,List<int>,List<int>, List<string>, List<List<int>>, bool>(methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs, !hasNormalMethods);
 
+        }
+
+        /// <summary>
+        /// Returns the text in between the type-tag. In this method, the template parameter are replaced by their types for better results in duck typing.
+        /// </summary>
+        /// <param name="type">the node with the type tag of the xml file</param>
+        /// <param name="template">the node with the templateparamlist</param>
+        /// <returns>the string in between the type tag where the name of the template parameter are replaced by their types</returns>
+        private static string retrieveType(XmlNode type, XmlNode template)
+        {
+            // If no template is present then nothing has to be done
+            string text = type.InnerText;
+            if (template == null)
+            {
+                return text;
+            }
+
+            // Firstly, retrieve the mapping from the template parameter
+            foreach (XmlNode templateParam in template.ChildNodes) {
+                XmlNode declname = getChild("declname", templateParam.ChildNodes);
+                XmlNode typeNode = getChild("type", templateParam.ChildNodes);
+
+                if (declname != null && typeNode != null && !typeMapping.ContainsKey(declname.InnerText)) {
+                    typeMapping.Add(declname.InnerText, typeNode.InnerText);
+                }
+            }
+
+            // Afterwards, apply the mapping on the inner text of the type node
+            foreach (string key in typeMapping.Keys)
+            {
+                string val;
+                typeMapping.TryGetValue(key, out val);
+                text = text.Replace(" " + key + " ", " " + val  + " ");
+                text = text.Replace(" " + key + ",", " " + val + ",");
+            }
+            return text;
         }
 
         /// <summary>

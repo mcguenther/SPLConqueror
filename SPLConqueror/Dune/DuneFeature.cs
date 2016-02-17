@@ -455,10 +455,10 @@ namespace Dune
             
             analyzed.Add(this);
 
-            //if (this.methodNameHashes != null && (baseClass.isPotentialSubclassOff(this) || this.isPotentialSubclassOff(baseClass))) //this.methodNameHashes.Capacity >= baseClass.methodHashes.Capacity)
-            //{
-            result.Add(ToString());
-            //}
+            if (this.methodNameHashes != null && (baseClass.isPotentialSubclassOff(this) || this.isPotentialSubclassOff(baseClass))) //this.methodNameHashes.Capacity >= baseClass.methodHashes.Capacity)
+            {
+                result.Add(ToString());
+            }
 
             foreach (DuneFeature p in children)
             {
@@ -572,14 +572,15 @@ namespace Dune
         /// <returns>the string according to the <code>DuneFeature</code></returns>
         public override String ToString()
         {
-            if (this.templateArgumentCount > 0)
-            {
-                return this.className + "<" + this.implementingTemplate + ">";
-            }
-            else
-            {
-                return this.className;
-            }
+            //if (this.templateArgumentCount > 0)
+            //{
+            //    return this.className + "<" + this.implementingTemplate + ">";
+            //}
+            //else
+            //{
+            //    return this.className;
+            //}
+            return fullClassName;
         }
 
 
