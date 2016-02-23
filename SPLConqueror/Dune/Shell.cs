@@ -71,6 +71,7 @@ namespace Dune
                         StreamReader inputFile = new System.IO.StreamReader(Program.DEBUG_PATH + "classesInDiffusion.txt");
                         StreamReader compFile = new System.IO.StreamReader(Program.DEBUG_PATH + "minimalSetClasses.txt");
                         StreamWriter output = new System.IO.StreamWriter(Program.DEBUG_PATH + "analyzation.txt");
+                        StreamWriter positives = new System.IO.StreamWriter(Program.DEBUG_PATH + "positives.txt");
 
                         List<List<string>> globalResult = new List<List<string>>();
 
@@ -100,11 +101,6 @@ namespace Dune
 
                             if (!l.Trim().Equals(""))
                             {
-                                //if (!globalResult.Contains(l))
-                                //{
-                                //    output.WriteLine(l);
-                                //}
-
                                 switch (containsName(l, globalResult.ElementAt(c)))
                                 {
                                     case 1:
@@ -122,16 +118,29 @@ namespace Dune
                             }
                             else
                             {
-                                output.WriteLine(foundMin + "; " + notFound + "; " + globalResult.ElementAt(c).Capacity);
+                                output.WriteLine(foundMin + "; " + notFound + "; " + globalResult.ElementAt(c).Count);
                                 foundMin = 0;
                                 notFound = 0;
                                 c++;
                             }
                         }
+
+                        // Write the whole set of positives in a file
+                        foreach (List<string> results in globalResult)
+                        {
+                            foreach (string localResult in results)
+                            {
+                                positives.WriteLine(localResult);
+                            }
+                            positives.WriteLine();
+                        }
+
                         output.Flush();
                         output.Close();
                         inputFile.Close();
                         compFile.Close();
+                        positives.Flush();
+                        positives.Close();
                         break;
                     case "help":
                     case "?":

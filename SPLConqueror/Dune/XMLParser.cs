@@ -35,6 +35,11 @@ namespace Dune
         static System.IO.StreamWriter file;
         static List<String> classNames = new List<String>();
 
+        static List<DuneFeature> featuresNotFound = new List<DuneFeature>();
+
+        static StreamWriter output;
+        static int notFound = 0;
+
         /// <summary>
         /// Parses the xml-file containing all the other files(please use the combine.xslt-file in order to combine these if not done so).
         /// </summary>
@@ -50,39 +55,15 @@ namespace Dune
 
             foreach (XmlNode child in childList)
             {
-                DuneFeature df = extractFeature(child);
+                extractFeatures(child);
             }
 
-            StreamWriter output = new System.IO.StreamWriter(Program.DEBUG_PATH + "notFound.txt");
-            List<DuneFeature> featuresNotFound = new List<DuneFeature>();
-            int notFound = 0;
-            foreach (Tuple<DuneFeature, DuneFeature> t in relations)
+            initFoundOutput();
+            foreach (XmlNode child in childList)
             {
-
-                DuneFeature newDF = getFeature(t.Item1);
-
-                // If the class is still not found, it will be matched by name.
-                if (newDF == null)
-                {
-                    newDF = getFeatureByName(t.Item1);
-                }
-
-                if (newDF != null)
-                {
-                    newDF.addChildren(t.Item2);
-                    t.Item2.addParent(newDF);
-                }
-                else
-                {
-                    if (!featuresNotFound.Contains(t.Item1))
-                    {
-                        featuresNotFound.Add(t.Item1);
-                        notFound++;
-                        output.WriteLine(t.Item1);
-                    }
-                }
+                buildRelations(child);
             }
-            output.Flush();
+            closeFoundOutput();
 
             // Every class with no parent gets a connection to the root-node
             foreach (DuneFeature df in features)
@@ -111,6 +92,23 @@ namespace Dune
         }
 
         /// <summary>
+        /// Initializes the output to the file including the classes which were not found.
+        /// </summary>
+        private static void initFoundOutput()
+        {
+            output = new System.IO.StreamWriter(Program.DEBUG_PATH + "notFound.txt");
+        }
+
+        /// <summary>
+        /// Closes the output stream to the file including the classes which were not found.
+        /// </summary>
+        private static void closeFoundOutput()
+        {
+            output.Flush();
+            output.Close();
+        }
+
+        /// <summary>
         /// This method prints the classes in the list <code>classesWithNoNormalMethods</code>.
         /// </summary>
         private static void printClassesWithNoNormalMethods()
@@ -128,8 +126,7 @@ namespace Dune
         /// Extracts the information needed for a <code>DuneFeature</code> and also constructs one.
         /// </summary>
         /// <param name="child">the node in the xml-file pointing on the <code>compounddef</code> tag</param>
-        /// <returns>the constructed <code>DuneFeature</code> with all its properties</returns>
-        private static DuneFeature extractFeature(XmlNode child)
+        private static void extractFeatures(XmlNode child)
         {
             DuneFeature df = null;
 
@@ -138,7 +135,7 @@ namespace Dune
             String kind = child.Attributes.GetNamedItem("kind") == null ? null : child.Attributes.GetNamedItem("kind").Value;
             if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("group") || kind.Equals("namespace") || kind.Equals("page")))
             {
-                return df;
+                return;
             }
 
 
@@ -147,8 +144,6 @@ namespace Dune
             String name = "";
             String templateInName = "";
             Dictionary<String, List<String>> enums = null;
-            Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool> methods = null;
-            List<DuneFeature> inherits = new List<DuneFeature>();
 
             foreach (XmlNode node in child.ChildNodes)
             {
@@ -156,39 +151,8 @@ namespace Dune
                 {
                     case "compoundname":
                         name = node.InnerText.ToString();
-
-                        //if (name.Contains("Dune::GridDefaultImplementation"))
-                        //{
-                        //    Console.Write("");
-                        //}
-                        //if (name.Contains("Dune::AlbertaGridLeafIntersection"))
-                        //{
-                        //    Console.Write("");
-                        //}
-   
-
                         templateInName = extractTemplateInName(name);
                         name = convertName(name);
-                        break;
-                    case "basecompoundref":
-                        String refNew = null;
-                        String nameNew = node.InnerText.ToString().Replace(" ", "");
-
-                        if (node.Attributes["refid"] == null)
-                        {
-                            if (nameNew.Contains("std") && !Program.INCLUDE_CLASSES_FROM_STD)
-                            {
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            refNew = node.Attributes["refid"].Value.ToString();
-                        }
-
-                        DuneFeature newDF = new DuneFeature(refNew, nameNew);
-
-                        inherits.Add(newDF);
                         break;
                     case "sectiondef":
                         if (node.Attributes.GetNamedItem("kind") != null)
@@ -202,7 +166,7 @@ namespace Dune
                                     break;
                                 // Only the public functions are crucial for saving methods
                                 case "public-func":
-                                    methods = saveMethods(node, name);
+                                    saveTemplateMapping(node);
                                     break;
                             }
                         }
@@ -226,6 +190,80 @@ namespace Dune
                 df.setEnum(enums);
             }
 
+
+            return;
+        }
+
+        /// <summary>
+        /// Builds the relations to the other classes.
+        /// </summary>
+        /// <param name="child">the node containing the class whose relations should be added</param>
+        private static void buildRelations(XmlNode child) {
+            // Ignore private classes
+            String prot = child.Attributes.GetNamedItem("prot") == null ? null : child.Attributes.GetNamedItem("prot").Value;
+            String kind = child.Attributes.GetNamedItem("kind") == null ? null : child.Attributes.GetNamedItem("kind").Value;
+            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("group") || kind.Equals("namespace") || kind.Equals("page")))
+            {
+                return;
+            }
+
+
+            String template = "";
+            String refId = child.Attributes["id"].Value.ToString();
+            String name = "";
+            String templateInName = "";
+            List<DuneFeature> inherits = new List<DuneFeature>();
+            Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool> methods = null;
+
+            foreach (XmlNode node in child.ChildNodes)
+            {
+                switch (node.Name)
+                {
+                    case "compoundname":
+                        name = node.InnerText.ToString();
+                        templateInName = extractTemplateInName(name);
+                        name = convertName(name);
+                        break;
+                    case "basecompoundref":
+                        String refNew = null;
+                        String nameNew = node.InnerText.ToString().Replace(" ", "");
+
+                        if (node.Attributes["refid"] == null)
+                        {
+                            if (nameNew.Contains("std") && !Program.INCLUDE_CLASSES_FROM_STD)
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            refNew = node.Attributes["refid"].Value.ToString();
+                        }
+
+                        DuneFeature newDF = new DuneFeature(refNew, nameNew);
+
+                        inherits.Add(newDF);
+                        break;
+                    case "templateparamlist":
+                        template = extractTemplate(node);
+                        break;
+                    case "sectiondef":
+                        if (node.Attributes.GetNamedItem("kind") != null)
+                        {
+                            switch (node.Attributes.GetNamedItem("kind").Value)
+                            {
+                                // Only the public functions are crucial for saving methods
+                                case "public-func":
+                                    methods = saveMethods(node, name);
+                                    break;
+                            }
+                        }
+                        break;
+                }
+            }
+
+            DuneFeature df = getFeature(new DuneFeature(refId, name, template, templateInName));
+
             if (methods != null)
             {
                 df.setMethods(methods.Item1);
@@ -243,7 +281,7 @@ namespace Dune
             {
                 classesWithNoNormalMethods.Add(df);
             }
-
+            
             // Now add all relations
             foreach (DuneFeature inherit in inherits)
             {
@@ -256,11 +294,29 @@ namespace Dune
                 }
                 else
                 {
-                    relations.Add(new Tuple<DuneFeature, DuneFeature>(inherit, df));
+                    // If the class is still not found, it will be matched by name.
+                    if (newDF == null)
+                    {
+                        newDF = getFeatureByName(inherit);
+                    }
+
+                    if (newDF != null)
+                    {
+                        newDF.addChildren(df);
+                        df.addParent(newDF);
+                    }
+                    else
+                    {
+                        if (!featuresNotFound.Contains(inherit))
+                        {
+                            featuresNotFound.Add(inherit);
+                            notFound++;
+                            output.WriteLine(inherit);
+                        }
+                    }
                 }
             }
-
-            return df;
+            output.Flush();
         }
 
         /// <summary>
@@ -617,7 +673,7 @@ namespace Dune
                         }
                     }
 
-                    String methodArgs = convertMethodArgs(args.InnerText, true);
+                    String methodArgs = convertMethodArgs(args.InnerText, true).Trim();
 
                     // In case that the method is a constructor...
                    if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
@@ -638,7 +694,7 @@ namespace Dune
                       hasNormalMethods = true;
                       methodNameHashes.Add(methodName.GetHashCode());
                       //methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
-                      string typename = retrieveType(type, template);
+                      string typename = retrieveType(type);
                       methodHashes.Add((typename + " " + name.InnerText + methodArgs).GetHashCode());
                       methodArguments.Add(convertMethodArgs(args.InnerText, false));
                       // Retrieve the number of arguments and the name of the method 
@@ -653,31 +709,64 @@ namespace Dune
         }
 
         /// <summary>
+        /// Saves the mapping given in the template
+        /// </summary>
+        /// <param name="node">the node including the template</param>
+        private static void saveTemplateMapping(XmlNode node)
+        {
+            // Access memberdefs and search for the value of the definition tag
+            foreach (XmlNode c in node.ChildNodes)
+            {
+                if (c.Name.Equals("memberdef"))
+                {
+                    XmlNode template = getChild("templateparamlist", c.ChildNodes);
+
+                    if (template == null)
+                    {
+                        continue;
+                    }
+
+                    // Retrieve the mapping from the template parameter
+                    foreach (XmlNode templateParam in template.ChildNodes)
+                    {
+                        XmlNode declname = getChild("declname", templateParam.ChildNodes);
+                        XmlNode typeNode = getChild("type", templateParam.ChildNodes);
+
+                        if (declname != null && typeNode != null)
+                        {
+                            string key = declname.InnerText;
+                            string val = typeNode.InnerText;
+                            if (!typeMapping.ContainsKey(key))
+                            {
+                                typeMapping.Add(key, val);
+                            }
+                            //else
+                            //{
+                            //    string currentValue ="";
+                            //    typeMapping.TryGetValue(key, out currentValue);
+                            //    if (!currentValue.Equals(val))
+                            //    {
+                            //        System.Console.WriteLine("Key: " + key + "; Current value: " + currentValue + "; Other value: " + val);
+                            //    }
+                            //}
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Returns the text in between the type-tag. In this method, the template parameter are replaced by their types for better results in duck typing.
         /// </summary>
         /// <param name="type">the node with the type tag of the xml file</param>
         /// <param name="template">the node with the templateparamlist</param>
         /// <returns>the string in between the type tag where the name of the template parameter are replaced by their types</returns>
-        private static string retrieveType(XmlNode type, XmlNode template)
+        private static string retrieveType(XmlNode type)
         {
             // If no template is present then nothing has to be done
             string text = type.InnerText;
-            if (template == null)
-            {
-                return text;
-            }
 
-            // Firstly, retrieve the mapping from the template parameter
-            foreach (XmlNode templateParam in template.ChildNodes) {
-                XmlNode declname = getChild("declname", templateParam.ChildNodes);
-                XmlNode typeNode = getChild("type", templateParam.ChildNodes);
-
-                if (declname != null && typeNode != null && !typeMapping.ContainsKey(declname.InnerText)) {
-                    typeMapping.Add(declname.InnerText, typeNode.InnerText);
-                }
-            }
-
-            // Afterwards, apply the mapping on the inner text of the type node
+            // Apply the mapping on the inner text of the type node
             foreach (string key in typeMapping.Keys)
             {
                 string val;
