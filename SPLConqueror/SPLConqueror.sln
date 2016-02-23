@@ -1,6 +1,7 @@
-﻿Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 10
-VisualStudioVersion = 14.0.23107.0
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPLConqueror_Core", "SPLConqueror\SPLConqueror_Core.csproj", "{1F035958-15B1-450A-BFC5-BEBD95376C40}"
 EndProject
@@ -20,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptGenerator", "ScriptGe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dune", "Dune\Dune.csproj", "{197EF14B-BE63-474B-B105-BC2786F7A058}"
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VariabilitModel_GUI", "VariabilitModel_GUI\VariabilitModel_GUI.csproj", "{3C922751-4E88-47F8-89D7-1D3D4BC4E533}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPLConqueror_GUI", "SPLConqueror_GUI\SPLConqueror_GUI.csproj", "{A81DC854-379B-4EF7-8FB3-0FD857B1B960}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPLConqueror_GUI", "SPLConqueror_GUI\SPLConqueror_GUI.csproj", "{A81DC854-379B-4EF7-8FB3-0FD857B1B960}"
 EndProject
