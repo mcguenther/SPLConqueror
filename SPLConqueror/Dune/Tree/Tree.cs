@@ -18,7 +18,7 @@ namespace Dune
 
         private List<String> range = new List<String>();
 
-        private DuneFeature feature = null;
+        private DuneClass feature = null;
 
         private String name = null;
 
@@ -26,7 +26,7 @@ namespace Dune
         /// The constructor of the <code>Tree</code>-element creates a new tree object.
         /// </summary>
         /// <param name="df">the feature the node is related to</param>
-        public Tree(DuneFeature df)
+        public Tree(DuneClass df)
         {
             this.feature = df;
         }

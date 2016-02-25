@@ -40,9 +40,9 @@ namespace Dune
                 {
                     case "getClassesWithName":
                     case "g":
-                        foreach (DuneFeature f in XMLParser.getClassesWithName(arguments))
+                        foreach (DuneClass f in XMLParser.getClassesWithName(arguments))
                         {
-                            System.Console.WriteLine(f.getClassName());
+                            System.Console.WriteLine(f.getFeatureName());
                         }
                         break;
                     case "analyze":
@@ -50,7 +50,7 @@ namespace Dune
                         Boolean isEnum = arguments.LastIndexOf(':') > 0 && arguments.LastIndexOf('>') < arguments.LastIndexOf(':') && char.IsLower(arguments[arguments.LastIndexOf(':') + 1]);
                         String enumString = isEnum ? arguments.Substring(arguments.LastIndexOf(":") + 1) : "";
 
-                        DuneFeature df = findFeature(arguments);
+                        DuneClass df = findFeature(arguments);
                         List<string> result = XMLParser.getVariability(df, enumString);
 
                         if (result != null)
@@ -158,10 +158,10 @@ namespace Dune
         /// This method tries to find the right class. If multiple classes are found, the user has to select one. This method returns <code>null</code> if no class has been found or the input is invalid.
         /// </summary>
         /// <param name="feature">the class to search for</param>
-        /// <returns>the selected <code>DuneFeature</code>. <code>null</code> is returned if no class has been found or the input is invalid</returns>
-        private static DuneFeature findFeature(string feature)
+        /// <returns>the selected <code>DuneClass</code>. <code>null</code> is returned if no class has been found or the input is invalid</returns>
+        private static DuneClass findFeature(string feature)
         {
-            List<DuneFeature> dfs = XMLParser.getAllFeaturesByName(feature);
+            List<DuneClass> dfs = XMLParser.getAllFeaturesByName(feature);
 
             if (dfs.Count == 0)
             {
@@ -178,8 +178,8 @@ namespace Dune
 
             int count = 0;
             // In this case multiple classes were found
-            foreach (DuneFeature df in dfs) {
-                System.Console.WriteLine(count + ": " + df.getClassName());
+            foreach (DuneClass df in dfs) {
+                System.Console.WriteLine(count + ": " + df.getFeatureName());
                 count++;
             }
 

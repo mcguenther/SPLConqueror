@@ -18,16 +18,16 @@ namespace Dune
         static String[] blacklisted = { };//"Dune::YaspGrid::YGridLevel" };
 
         // The root of the whole feature-tree.
-        static DuneFeature root = new DuneFeature("", "root");
+        static DuneClass root = new DuneClass("", "root");
 
-        static List<DuneFeature> features = new List<DuneFeature>();
-        static Dictionary<DuneFeature, String> templatesToAnalyze = new Dictionary<DuneFeature, string>();
+        static List<DuneClass> features = new List<DuneClass>();
+        static Dictionary<DuneClass, String> templatesToAnalyze = new Dictionary<DuneClass, string>();
 
-        static Dictionary<DuneFeature, String> classesToAnalyze = new Dictionary<DuneFeature, string>();
+        static Dictionary<DuneClass, String> classesToAnalyze = new Dictionary<DuneClass, string>();
 
-        static List<Tuple<DuneFeature, DuneFeature>> relations = new List<Tuple<DuneFeature, DuneFeature>>();
+        static List<Tuple<DuneClass, DuneClass>> relations = new List<Tuple<DuneClass, DuneClass>>();
 
-        static List<DuneFeature> classesWithNoNormalMethods = new List<DuneFeature>();
+        static List<DuneClass> classesWithNoNormalMethods = new List<DuneClass>();
 
         static Dictionary<string, string> typeMapping = new Dictionary<string, string>();
 
@@ -35,7 +35,7 @@ namespace Dune
         static System.IO.StreamWriter file;
         static List<String> classNames = new List<String>();
 
-        static List<DuneFeature> featuresNotFound = new List<DuneFeature>();
+        static List<DuneClass> featuresNotFound = new List<DuneClass>();
 
         static StreamWriter output;
         static int notFound = 0;
@@ -66,7 +66,7 @@ namespace Dune
             closeFoundOutput();
 
             // Every class with no parent gets a connection to the root-node
-            foreach (DuneFeature df in features)
+            foreach (DuneClass df in features)
             {
                 if (!df.hasParents(root))
                 {
@@ -114,7 +114,7 @@ namespace Dune
         private static void printClassesWithNoNormalMethods()
         {
             StreamWriter output = new System.IO.StreamWriter(Program.DEBUG_PATH + "classesWithNoNormalMethods.txt");
-            foreach (DuneFeature df in classesWithNoNormalMethods)
+            foreach (DuneClass df in classesWithNoNormalMethods)
             {
                 output.WriteLine(df);
             }
@@ -123,12 +123,12 @@ namespace Dune
         }
 
         /// <summary>
-        /// Extracts the information needed for a <code>DuneFeature</code> and also constructs one.
+        /// Extracts the information needed for a <code>DuneClass</code> and also constructs one.
         /// </summary>
         /// <param name="child">the node in the xml-file pointing on the <code>compounddef</code> tag</param>
         private static void extractFeatures(XmlNode child)
         {
-            DuneFeature df = null;
+            DuneClass df = null;
 
             // Ignore private classes
             String prot = child.Attributes.GetNamedItem("prot") == null ? null : child.Attributes.GetNamedItem("prot").Value;
@@ -177,7 +177,7 @@ namespace Dune
                 }
             }
 
-            df = new DuneFeature(refId, name, template, templateInName);
+            df = new DuneClass(refId, name, template, templateInName);
             features.Add(df);
 
             // This boolean indicates if the current child is an interface, an abstract class or a normal class.
@@ -212,7 +212,7 @@ namespace Dune
             String refId = child.Attributes["id"].Value.ToString();
             String name = "";
             String templateInName = "";
-            List<DuneFeature> inherits = new List<DuneFeature>();
+            List<DuneClass> inherits = new List<DuneClass>();
             Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool> methods = null;
 
             foreach (XmlNode node in child.ChildNodes)
@@ -240,7 +240,7 @@ namespace Dune
                             refNew = node.Attributes["refid"].Value.ToString();
                         }
 
-                        DuneFeature newDF = new DuneFeature(refNew, nameNew);
+                        DuneClass newDF = new DuneClass(refNew, nameNew);
 
                         inherits.Add(newDF);
                         break;
@@ -262,7 +262,7 @@ namespace Dune
                 }
             }
 
-            DuneFeature df = getFeature(new DuneFeature(refId, name, template, templateInName));
+            DuneClass df = getFeature(new DuneClass(refId, name, template, templateInName));
 
             if (methods != null)
             {
@@ -283,9 +283,9 @@ namespace Dune
             }
             
             // Now add all relations
-            foreach (DuneFeature inherit in inherits)
+            foreach (DuneClass inherit in inherits)
             {
-                DuneFeature newDF = getFeature(inherit);
+                DuneClass newDF = getFeature(inherit);
                 if (newDF != null)
                 {
 
@@ -320,12 +320,12 @@ namespace Dune
         }
 
         /// <summary>
-        /// Returns the variability of the given <code>DuneFeature</code>.
+        /// Returns the variability of the given <code>DuneClass</code>.
         /// </summary>
         /// <param name="df">the class to return the variability</param>
         /// <param name="enumString">the string of the enum if there is one. If there is no enum, this variable is empty string</param>
         /// <returns>the variability of the class or enum</returns>
-        public static List<String> getVariability(DuneFeature df, String enumString)
+        public static List<String> getVariability(DuneClass df, String enumString)
         {
             if (enumString.Equals(""))
             {
@@ -362,27 +362,27 @@ namespace Dune
             // If the last name begins with a lower character then it is part of an enum
             Boolean isEnum = name.LastIndexOf(':') > 0 && name.LastIndexOf('>') < name.LastIndexOf(':') && char.IsLower(name[name.LastIndexOf(':') + 1]);
 
-            DuneFeature df;
+            DuneClass df;
 
             if (isEnum)
             {
                 string featureName = feature.Substring(0, feature.LastIndexOf(':') - 1);
 
-                df = searchForFeature(new DuneFeature("", featureName));
+                df = searchForFeature(new DuneClass("", featureName));
 
                 // If not found search only for the name
                 if (df == null)
                 {
-                    df = searchForFeatureName(new DuneFeature("", featureName));
+                    df = searchForFeatureName(new DuneClass("", featureName));
                 }
             }
             else
             {
-                df = searchForFeature(new DuneFeature("", feature));
+                df = searchForFeature(new DuneClass("", feature));
 
                 if (df == null || template.Equals(""))
                 {
-                    df = searchForFeature(new DuneFeature("", feature + "<>"));
+                    df = searchForFeature(new DuneClass("", feature + "<>"));
                 }
             }
 
@@ -425,10 +425,10 @@ namespace Dune
         {
             file = new System.IO.StreamWriter(Program.DEBUG_PATH + "inherits.txt");
 
-            List<DuneFeature> featuresToCompare = new List<DuneFeature>();
+            List<DuneClass> featuresToCompare = new List<DuneClass>();
 
             // Compare only classes with at least one public method
-            foreach (DuneFeature df in features)
+            foreach (DuneClass df in features)
             {
                 if (df.getNumberOfMethodHashes() > 0)
                 {
@@ -436,12 +436,12 @@ namespace Dune
                 }
             }
 
-            List<Tuple<DuneFeature, DuneFeature>> toInsert = new List<Tuple<DuneFeature, DuneFeature>>();
+            List<Tuple<DuneClass, DuneClass>> toInsert = new List<Tuple<DuneClass, DuneClass>>();
 
             int total = featuresToCompare.Count;
             int finished = 0;
             // The newer version with optimizations
-            foreach (DuneFeature df in featuresToCompare)
+            foreach (DuneClass df in featuresToCompare)
             {
                 finished++;
                 if (df.isIgnored())
@@ -453,7 +453,7 @@ namespace Dune
                 // Show the progress bar:
                 Console.Write("\r{0}%   ", finished * 100 / total);
 
-                foreach (DuneFeature comp in featuresToCompare)
+                foreach (DuneClass comp in featuresToCompare)
                 {
                     if (df.isIgnored())
                     {
@@ -476,7 +476,7 @@ namespace Dune
 
                         if (isSubclassOf)
                         {
-                            toInsert.Add(new Tuple<DuneFeature, DuneFeature>(comp, df));
+                            toInsert.Add(new Tuple<DuneClass, DuneClass>(comp, df));
                             file.WriteLine(df.ToString() + " -> " + comp.ToString());
                         }
                     }
@@ -485,7 +485,7 @@ namespace Dune
             }
 
             // Only now the relations are added.
-            foreach (Tuple<DuneFeature, DuneFeature> t in toInsert)
+            foreach (Tuple<DuneClass, DuneClass> t in toInsert)
             {
                 t.Item1.addParent(t.Item2);
                 t.Item2.addChildren(t.Item1);
@@ -501,7 +501,7 @@ namespace Dune
         /// <param name="comp"></param>
         /// <param name="index"></param>
         /// <returns><code>true</code> iff one or more of the method's arguments differ only in the concrete classes; <code>false</code> otherwise</returns>
-        private static bool variableSubmethod(DuneFeature df, DuneFeature comp, int index)
+        private static bool variableSubmethod(DuneClass df, DuneClass comp, int index)
         {
             List<Tuple<string, List<int>>> potentialMethods = df.getMethodArgumentsWithNameAndCount(comp.getMethodNameHash(index), comp.getMethodArgumentCount(index));
             foreach (Tuple<string, List<int>> t in potentialMethods)
@@ -582,7 +582,7 @@ namespace Dune
         }
 
         /// <summary>
-        /// This method saves the enums of the respective class in the corresponding Dictionary-element from the DuneFeature-class.
+        /// This method saves the enums of the respective class in the corresponding Dictionary-element from the DuneClass-class.
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
         /// <returns>a <code>Dictionary</code> which contains the enums and its elements</returns>
@@ -939,11 +939,11 @@ namespace Dune
         /// </summary>
         /// <param name="df">the feature to search for</param>
         /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
-        private static DuneFeature searchForFeature(DuneFeature df)
+        private static DuneClass searchForFeature(DuneClass df)
         {
-            foreach (DuneFeature d in features)
+            foreach (DuneClass d in features)
             {
-                if (d.getClassName().Equals(df.getClassName()))
+                if (d.getFeatureName().Equals(df.getFeatureName()))
                 {
                     return d;
                 }
@@ -956,11 +956,11 @@ namespace Dune
         /// </summary>
         /// <param name="df">the feature to search for</param>
         /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
-        private static DuneFeature searchForFeatureName(DuneFeature df)
+        private static DuneClass searchForFeatureName(DuneClass df)
         {
-            foreach (DuneFeature d in features)
+            foreach (DuneClass d in features)
             {
-                if (d.getClassNameWithoutTemplate().Equals(df.getClassNameWithoutTemplate()))
+                if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()))
                 {
                     return d;
                 }
@@ -973,12 +973,12 @@ namespace Dune
         /// </summary>
         /// <param name="df">the feature to search for</param>
         /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
-        private static List<DuneFeature> searchForAllFeatureNames(DuneFeature df)
+        private static List<DuneClass> searchForAllFeatureNames(DuneClass df)
         {
-            List<DuneFeature> dfs = new List<DuneFeature>();
-            foreach (DuneFeature d in features)
+            List<DuneClass> dfs = new List<DuneClass>();
+            foreach (DuneClass d in features)
             {
-                if (d.getClassNameWithoutTemplate().Equals(df.getClassNameWithoutTemplate()))
+                if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()))
                 {
                     dfs.Add(d);
                 }
@@ -987,11 +987,11 @@ namespace Dune
         }
 
         /// <summary>
-        /// Returns the given DuneFeature if the feature is not already in the features-list; the feature in the features-list is returned otherwise.
+        /// Returns the given DuneClass if the feature is not already in the features-list; the feature in the features-list is returned otherwise.
         /// </summary>
         /// <param name="df">the feature to search for</param>
-        /// <returns>the given DuneFeature if the feature is not already in the features-list; the feature in the features-list is returned otherwise</returns>
-        private static DuneFeature getFeature(DuneFeature df)
+        /// <returns>the given DuneClass if the feature is not already in the features-list; the feature in the features-list is returned otherwise</returns>
+        private static DuneClass getFeature(DuneClass df)
         {
             int indx = XMLParser.features.IndexOf(df);
             if (indx >= 0)
@@ -1010,13 +1010,13 @@ namespace Dune
         /// </summary>
         /// <param name="df">the feature containing the name to search for</param>
         /// <returns>the feature with the given name; <code>null</code> if no feature is found</returns>
-        private static DuneFeature getFeatureByName(DuneFeature df)
+        private static DuneClass getFeatureByName(DuneClass df)
         {
-            String name = df.getClassName();
+            String name = df.getFeatureName();
             
-            foreach (DuneFeature d in features)
+            foreach (DuneClass d in features)
             {
-                if (d.getClassNameWithoutTemplate().Equals(df.getClassNameWithoutTemplate()) && d.getTemplateArgumentCount() == df.getTemplateArgumentCount())
+                if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()) && d.getTemplateArgumentCount() == df.getTemplateArgumentCount())
                 {
                     return d;
                 }
@@ -1029,7 +1029,7 @@ namespace Dune
         /// </summary>
         /// <param name="feature">the feature to search for</param>
         /// <returns>a list containing all features that match by the given name</returns>
-        public static List<DuneFeature> getAllFeaturesByName(String feature)
+        public static List<DuneClass> getAllFeaturesByName(String feature)
         {
             // Extract the name and the template
             string name;
@@ -1047,37 +1047,37 @@ namespace Dune
             // If the last name begins with a lower character then it is part of an enum
             Boolean isEnum = char.IsLower(name[name.LastIndexOf(':') + 1]);
 
-            DuneFeature df;
+            DuneClass df;
 
             if (isEnum)
             {
                 string featureName = feature.Substring(0, feature.LastIndexOf(':') - 1);
 
-                df = searchForFeature(new DuneFeature("", featureName));
+                df = searchForFeature(new DuneClass("", featureName));
 
                 // If not found search only for the name
                 if (df == null)
                 {
-                    return searchForAllFeatureNames(new DuneFeature("", featureName));
+                    return searchForAllFeatureNames(new DuneClass("", featureName));
                 }
                 else
                 {
-                    List<DuneFeature> dfs = new List<DuneFeature>();
+                    List<DuneClass> dfs = new List<DuneClass>();
                     dfs.Add(df);
                     return dfs;
                 }
             }
             else
             {
-                df = searchForFeature(new DuneFeature("", feature));
+                df = searchForFeature(new DuneClass("", feature));
 
                 if (df == null || template.Equals(""))
                 {
-                    return searchForAllFeatureNames(new DuneFeature("", feature + "<>"));
+                    return searchForAllFeatureNames(new DuneClass("", feature + "<>"));
                 }
                 else
                 {
-                    List<DuneFeature> dfs = new List<DuneFeature>();
+                    List<DuneClass> dfs = new List<DuneClass>();
                     dfs.Add(df);
                     return dfs;
                 }
@@ -1089,13 +1089,13 @@ namespace Dune
         /// </summary>
         /// <param name="f">the feature the template belongs to</param>
         /// <param name="template">the template to be analyzed</param>
-        private static void analyzeTemplate(DuneFeature f, String template, Tree root, ref Dictionary<String, Tree> nonIdentifiedNodes, ref List<Tuple<Tree, String>> todo)
+        private static void analyzeTemplate(DuneClass f, String template, Tree root, ref Dictionary<String, Tree> nonIdentifiedNodes, ref List<Tuple<Tree, String>> todo)
         {
             template = template.Trim();
             int level = 0;
             int i = 0;
             int from = 0;
-            DuneFeature n = null;
+            DuneClass n = null;
             int currentBeginning = 0;
             while (i < template.Length)
             {
@@ -1140,7 +1140,7 @@ namespace Dune
 
                         if (from <= currentBeginning)
                         {
-                            DuneFeature df = getFeature(template.Substring(currentBeginning, i - currentBeginning).Trim());
+                            DuneClass df = getFeature(template.Substring(currentBeginning, i - currentBeginning).Trim());
 
                             // TODO Debug
                             if (df == null)
@@ -1150,7 +1150,7 @@ namespace Dune
                                 // Debug
                                 //if (template.Substring(currentBeginning, i - currentBeginning).Trim().Equals("1"))
                                 //{
-                                //    System.Console.WriteLine("1: " + f.getClassName());
+                                //    System.Console.WriteLine("1: " + f.getFeatureName());
                                 //}
                             }
 
@@ -1201,11 +1201,11 @@ namespace Dune
         /// </summary>
         /// <param name="className">the name of the feature to be searched for</param>
         /// <returns>the feature with the given name</returns>
-        private static DuneFeature getFeature(String className)
+        private static DuneClass getFeature(String className)
         {
-            foreach (DuneFeature f in features)
+            foreach (DuneClass f in features)
             {
-                if (f.getClassName().Equals(className))
+                if (f.getFeatureName().Equals(className))
                 {
                     return f;
                 }
@@ -1218,12 +1218,12 @@ namespace Dune
         /// </summary>
         /// <param name="name">the name of the class to search for</param>
         /// <returns>a list containing all classes which are known with the given name</returns>
-        public static List<DuneFeature> getClassesWithName(String name)
+        public static List<DuneClass> getClassesWithName(String name)
         {
-            List<DuneFeature> result = new List<DuneFeature>();
-            foreach (DuneFeature f in features)
+            List<DuneClass> result = new List<DuneClass>();
+            foreach (DuneClass f in features)
             {
-                if (f.getClassNameWithoutTemplate().Equals(name))
+                if (f.getFeatureNameWithoutTemplate().Equals(name))
                 {
                     result.Add(f);
                 }
