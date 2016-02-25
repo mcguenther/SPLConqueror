@@ -9,6 +9,7 @@ namespace Dune
     class DuneFeature
     {
         private String reference;
+        private String featureNamespace;
         private String fullClassName;
         private String className;
         private int templateArgumentCount;
@@ -60,6 +61,18 @@ namespace Dune
                 this.fullClassName = this.className;
             }
 
+            // Post-processing the name of the class
+            if (this.className.Contains("::"))
+            {
+                int lastColons = this.className.LastIndexOf("::");
+                // Retrieve the namespace
+                this.featureNamespace = this.className.Substring(0, lastColons);
+                this.className = this.className.Substring(lastColons + 2, this.className.Length - lastColons - 2);
+            } else
+            {
+                this.featureNamespace = "";
+            }
+
             
             this.reference = reference;
             this.parents = new List<DuneFeature>();
@@ -101,6 +114,19 @@ namespace Dune
                 this.className = className;
                 this.templateArgumentCount = 0;
                 this.fullClassName = this.className;
+            }
+
+            // Post-processing the name of the class
+            if (this.className.Contains("::"))
+            {
+                int lastColons = this.className.LastIndexOf("::");
+                // Retrieve the namespace
+                this.featureNamespace = this.className.Substring(0, lastColons);
+                this.className = this.className.Substring(lastColons + 2, this.className.Length - lastColons - 2);
+            }
+            else
+            {
+                this.featureNamespace = "";
             }
 
 
