@@ -694,7 +694,7 @@ namespace Dune
                       hasNormalMethods = true;
                       methodNameHashes.Add(methodName.GetHashCode());
                       //methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
-                      string typename = retrieveType(type);
+                      string typename = retrieveType(type, template);
                       methodHashes.Add((typename + " " + name.InnerText + methodArgs).GetHashCode());
                       methodArguments.Add(convertMethodArgs(args.InnerText, false));
                       // Retrieve the number of arguments and the name of the method 
@@ -761,12 +761,37 @@ namespace Dune
         /// <param name="type">the node with the type tag of the xml file</param>
         /// <param name="template">the node with the templateparamlist</param>
         /// <returns>the string in between the type tag where the name of the template parameter are replaced by their types</returns>
-        private static string retrieveType(XmlNode type)
+        private static string retrieveType(XmlNode type, XmlNode template)
         {
-            // If no template is present then nothing has to be done
             string text = type.InnerText;
 
-            // Apply the mapping on the inner text of the type node
+            
+
+            if (template != null)
+            {
+
+                // Firstly, apply the mapping from the template parameter
+                foreach (XmlNode templateParam in template.ChildNodes)
+                {
+                    XmlNode declname = getChild("declname", templateParam.ChildNodes);
+                    XmlNode typeNode = getChild("type", templateParam.ChildNodes);
+
+                    if (declname != null && typeNode != null && !typeMapping.ContainsKey(declname.InnerText))
+                    {
+                        string key = declname.InnerText;
+                        string val = typeNode.InnerText;
+                        text = text.Replace(" " + key + " ", " " + val + " ");
+                        text = text.Replace(" " + key + ",", " " + val + ",");
+                    }
+                }
+            }
+
+            if (text.Contains(" k ") || text.Contains(" k,") || text.Contains(" dorder ") || text.Contains(" dorder,") || text.Contains(" size ") || text.Contains(" size,"))
+            {
+                System.Console.WriteLine("Found a class that uses k, dorder or size from the global dictionary...");
+            }
+
+            // Apply the mapping on the inner text of the type node using the global mapping
             foreach (string key in typeMapping.Keys)
             {
                 string val;
