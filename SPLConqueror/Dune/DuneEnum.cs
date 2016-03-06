@@ -17,6 +17,12 @@ namespace Dune
 
         private List<string> values;
 
+        /// <summary>
+        /// The constructor of the class <code>DuneEnum</code>.
+        /// </summary>
+        /// <param name="reference">the reference of the enum</param>
+        /// <param name="featureNamespace">the namespace of the enum</param>
+        /// <param name="enumName">the name of the enum</param>
         public DuneEnum(string reference, string featureNamespace, string enumName) {
             this.enumNamespace = featureNamespace;
             this.reference = reference;
@@ -77,17 +83,17 @@ namespace Dune
                 return false;
             }
 
-            // If parameter cannot be cast to DuneClass return false.
-            DuneEnum p = obj as DuneEnum;
+            // If parameter cannot be cast to DuneFeature return false.
+            DuneFeature p = obj as DuneFeature;
             if ((System.Object)p == null)
             {
                 return false;
             }
 
             // If both objects have references then match them by reference
-            if (this.reference != null && !this.reference.Equals("") && p.reference != null && !p.reference.Equals(""))
+            if (this.reference != null && !this.reference.Equals("") && p.getReference() != null && !p.getReference().Equals(""))
             {
-                return this.reference.Equals(p.reference);
+                return this.reference.Equals(p.getReference());
             }
 
             // Return true if the fields match:

@@ -585,7 +585,7 @@ namespace Dune
         /// This method saves the enums of the respective class in the corresponding Dictionary-element from the DuneClass-class.
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
-        /// <returns>a <code>Dictionary</code> which contains the enums and its elements</returns>
+        /// <returns>a <code>Dictionary</code> which contains the name of the enums and its elements</returns>
         private static Dictionary<String, List<String>> saveEnums(XmlNode node)
         {
             Dictionary<String, List<String>> result = new Dictionary<String, List<String>>();
