@@ -78,12 +78,19 @@ namespace Dune
 
             System.Console.WriteLine("Done!");
 
-            System.Console.WriteLine("Now finding potential parents(duck-typing)");
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            if(Program.USE_DUCK_TYPING)
+
+            if (Program.USE_DUCK_TYPING)
+            {
+                System.Console.WriteLine("Now finding potential parents(duck-typing)");
+                Stopwatch stopwatch = Stopwatch.StartNew();
                 findPotentialParents();
-            stopwatch.Stop();
-            System.Console.WriteLine("\rFinished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
+                stopwatch.Stop();
+                System.Console.WriteLine("\rFinished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
+            }
+            else
+            {
+                System.Console.WriteLine("Duck-typing is disabled.");
+            }
 
             System.Console.Write("Writing the classes with no normal methods in a file...");
             printClassesWithNoNormalMethods();
@@ -172,7 +179,7 @@ namespace Dune
                         }
                         break;
                     case "templateparamlist":
-                        template = extractTemplate(node);
+                        template = extractOnlyTemplate(node);
                         break;
                 }
             }
@@ -198,7 +205,8 @@ namespace Dune
         /// Builds the relations to the other classes.
         /// </summary>
         /// <param name="child">the node containing the class whose relations should be added</param>
-        private static void buildRelations(XmlNode child) {
+        private static void buildRelations(XmlNode child)
+        {
             // Ignore private classes
             String prot = child.Attributes.GetNamedItem("prot") == null ? null : child.Attributes.GetNamedItem("prot").Value;
             String kind = child.Attributes.GetNamedItem("kind") == null ? null : child.Attributes.GetNamedItem("kind").Value;
@@ -207,7 +215,7 @@ namespace Dune
                 return;
             }
 
-
+            Dictionary<String, String> templateTypeMapping = null;
             String template = "";
             String refId = child.Attributes["id"].Value.ToString();
             String name = "";
@@ -245,7 +253,9 @@ namespace Dune
                         inherits.Add(newDF);
                         break;
                     case "templateparamlist":
-                        template = extractTemplate(node);
+                        Tuple<String, Dictionary<String, String>> templateParams = extractTemplate(node);
+                        template = templateParams.Item1;
+                        templateTypeMapping = templateParams.Item2;
                         break;
                     case "sectiondef":
                         if (node.Attributes.GetNamedItem("kind") != null)
@@ -254,7 +264,7 @@ namespace Dune
                             {
                                 // Only the public functions are crucial for saving methods
                                 case "public-func":
-                                    methods = saveMethods(node, name);
+                                    methods = saveMethods(node, name, templateTypeMapping);
                                     break;
                             }
                         }
@@ -281,7 +291,7 @@ namespace Dune
             {
                 classesWithNoNormalMethods.Add(df);
             }
-            
+
             // Now add all relations
             foreach (DuneClass inherit in inherits)
             {
@@ -331,7 +341,7 @@ namespace Dune
             {
                 return df.getVariability(root);
             }
-            else 
+            else
             {
                 return df.getAlternativeEnums(enumString);
             }
@@ -506,7 +516,7 @@ namespace Dune
             List<Tuple<string, List<int>>> potentialMethods = df.getMethodArgumentsWithNameAndCount(comp.getMethodNameHash(index), comp.getMethodArgumentCount(index));
             foreach (Tuple<string, List<int>> t in potentialMethods)
             {
-                if (isSubmethod(t, comp.getMethodArguments(index)) )
+                if (isSubmethod(t, comp.getMethodArguments(index)))
                 {
                     return true;
                 }
@@ -619,13 +629,16 @@ namespace Dune
         /// Saves the methods of the class/interface
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
+        /// <param name="classname">The name of the class</param>
+        /// <param name="templateTypeMapping">the mapping from the template name of the type to its type</param>
         /// <returns>a tuple with a list containing the method hashes, a list containing the hash of the method names and a list containing the count of the arguments (in this order)</returns>
-        private static MethodList saveMethods(XmlNode node, String classname)
+        private static MethodList saveMethods(XmlNode node, String classname, Dictionary<String, String> templateTypeMapping)
         {
             // The pure class name (e.g. 'x' in 'Dune::y::x') is needed in order to identify the constructor
             int indx = classname.LastIndexOf(':');
             String pureClassName = null;
-            if (indx >= 0) {
+            if (indx >= 0)
+            {
                 pureClassName = classname.Substring(indx + 1, classname.Length - indx - 1);
             }
 
@@ -676,31 +689,32 @@ namespace Dune
                     String methodArgs = convertMethodArgs(args.InnerText, true).Trim();
 
                     // In case that the method is a constructor...
-                   if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
-                   {   
-                     // add only the constructor WITH arguments. 
-                     if (!methodArgs.Equals("()")) {
-                        // In case of a constructor, the name remains empty
-                        methodNameHashes.Add("".GetHashCode());
-                        methodHashes.Add(methodArgs.GetHashCode());
+                    if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
+                    {
+                        // add only the constructor WITH arguments. 
+                        if (!methodArgs.Equals("()"))
+                        {
+                            // In case of a constructor, the name remains empty
+                            methodNameHashes.Add("".GetHashCode());
+                            methodHashes.Add(methodArgs.GetHashCode());
+                            methodArguments.Add(convertMethodArgs(args.InnerText, false));
+                            // Retrieve the number of arguments and the name of the method 
+                            argumentCount.Add(getCountOfArgs(args.InnerText));
+                            replaceableArgs.Add(replaceableArguments);
+                        }
+                    }
+                    else
+                    {
+                        hasNormalMethods = true;
+                        methodNameHashes.Add(methodName.GetHashCode());
+                        //methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
+                        string typename = retrieveType(type, template, templateTypeMapping);
+                        methodHashes.Add((typename + " " + name.InnerText + methodArgs).GetHashCode());
                         methodArguments.Add(convertMethodArgs(args.InnerText, false));
                         // Retrieve the number of arguments and the name of the method 
                         argumentCount.Add(getCountOfArgs(args.InnerText));
                         replaceableArgs.Add(replaceableArguments);
-                     }
-                  }
-                  else
-                  {
-                      hasNormalMethods = true;
-                      methodNameHashes.Add(methodName.GetHashCode());
-                      //methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
-                      string typename = retrieveType(type, template);
-                      methodHashes.Add((typename + " " + name.InnerText + methodArgs).GetHashCode());
-                      methodArguments.Add(convertMethodArgs(args.InnerText, false));
-                      // Retrieve the number of arguments and the name of the method 
-                      argumentCount.Add(getCountOfArgs(args.InnerText));
-                      replaceableArgs.Add(replaceableArguments);
-                  }
+                    }
                 }
             }
 
@@ -761,11 +775,11 @@ namespace Dune
         /// <param name="type">the node with the type tag of the xml file</param>
         /// <param name="template">the node with the templateparamlist</param>
         /// <returns>the string in between the type tag where the name of the template parameter are replaced by their types</returns>
-        private static string retrieveType(XmlNode type, XmlNode template)
+        private static string retrieveType(XmlNode type, XmlNode template, Dictionary<String, String> templateTypeMapping)
         {
             string text = type.InnerText;
 
-            
+
 
             if (template != null)
             {
@@ -786,6 +800,21 @@ namespace Dune
                 }
             }
 
+            if (templateTypeMapping != null)
+            {
+                // Apply the mapping from the template parameter list of the class itself
+                foreach (String templateTypeName in templateTypeMapping.Keys)
+                {
+                    String templateType;
+                    templateTypeMapping.TryGetValue(templateTypeName, out templateType);
+
+                    text = text.Replace(" " + templateTypeName + " ", " " + templateType + " ");
+                    text = text.Replace(" " + templateTypeName + ",", " " + templateType + ",");
+
+                }
+            }
+
+            // DEBUG
             if (text.Contains(" k ") || text.Contains(" k,") || text.Contains(" dorder ") || text.Contains(" dorder,") || text.Contains(" size ") || text.Contains(" size,"))
             {
                 System.Console.WriteLine("Found a class that uses k, dorder or size from the global dictionary...");
@@ -796,7 +825,7 @@ namespace Dune
             {
                 string val;
                 typeMapping.TryGetValue(key, out val);
-                text = text.Replace(" " + key + " ", " " + val  + " ");
+                text = text.Replace(" " + key + " ", " " + val + " ");
                 text = text.Replace(" " + key + ",", " " + val + ",");
             }
             return text;
@@ -877,7 +906,8 @@ namespace Dune
                     {
                         result += trimmed.Substring(0, j + 1);
                         break;
-                    } else if (c.Equals(' '))
+                    }
+                    else if (c.Equals(' '))
                     {
                         name = false;
                     }
@@ -1013,7 +1043,7 @@ namespace Dune
         private static DuneClass getFeatureByName(DuneClass df)
         {
             String name = df.getFeatureName();
-            
+
             foreach (DuneClass d in features)
             {
                 if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()) && d.getTemplateArgumentCount() == df.getTemplateArgumentCount())
@@ -1236,7 +1266,32 @@ namespace Dune
         /// </summary>
         /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
         /// <returns>the string containing the template</returns>
-        private static String extractTemplate(XmlNode child)
+        private static String extractOnlyTemplate(XmlNode child)
+        {
+            string template = "";
+
+            for (int j = 0; j < child.ChildNodes.Count; j++)
+            {
+                // XmlNode c = cur.ChildNodes.Item(j);
+                XmlNode c = child.ChildNodes.Item(j);
+
+                if (j > 0)
+                {
+                    template += ",";
+                }
+
+                template += c.FirstChild.InnerText;
+            }
+
+            return template;
+        }
+
+        /// <summary>
+        /// This method extracts the information of the template.
+        /// </summary>
+        /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
+        /// <returns>a tuple which consists of a string containing the template and a mapping from the name of the template parameter(as far as it has one) to its type</returns>
+        private static Tuple<String, Dictionary<String, String>> extractTemplate(XmlNode child)
         {
 
             //bool found = false;
@@ -1261,7 +1316,8 @@ namespace Dune
             //         i++;
             //     }
             //}
-            string result = "";
+            Dictionary<String, String> templateTypeMapping = new Dictionary<string, string>();
+            string template = "";
 
             //if (found)
             //{
@@ -1274,14 +1330,29 @@ namespace Dune
 
                 if (j > 0)
                 {
-                    result += ",";
+                    template += ",";
                 }
 
-                result += c.FirstChild.InnerText;
+                template += c.FirstChild.InnerText;
+
+                // Now save the mapping from the name of the parameter to its type (this is needed for resolving these names in some methods).
+                XmlNode declname = getChild("declname", c.ChildNodes);
+                XmlNode defname = getChild("declname", c.ChildNodes);
+
+                if (declname != null)
+                {
+                    templateTypeMapping.Add(declname.InnerText, c.FirstChild.InnerText);
+                }
+                else if (defname != null)
+                {
+                    templateTypeMapping.Add(defname.InnerText, c.FirstChild.InnerText);
+                }
+
+                // TODO: Add support for default values (defvals)
             }
             //}
 
-            return result;
+            return new Tuple<string, Dictionary<string, string>>(template, templateTypeMapping);
         }
 
         /// <summary>
