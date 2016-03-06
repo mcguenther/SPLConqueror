@@ -213,7 +213,7 @@ namespace Dune
             String name = "";
             String templateInName = "";
             List<DuneClass> inherits = new List<DuneClass>();
-            Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool> methods = null;
+            MethodList methods = null;
 
             foreach (XmlNode node in child.ChildNodes)
             {
@@ -266,13 +266,13 @@ namespace Dune
 
             if (methods != null)
             {
-                df.setMethods(methods.Item1);
-                df.setMethodNameHashes(methods.Item2);
-                df.setMethodArgumentCount(methods.Item3);
-                df.setMethodArguments(methods.Item4);
-                df.setReplaceableMethodArguments(methods.Item5);
-                df.ignoreAtDuckTyping(methods.Item6);
-                if (methods.Item6)
+                df.setMethods(methods.getMethodHashes());
+                df.setMethodNameHashes(methods.getMethodNameHashes());
+                df.setMethodArgumentCount(methods.getArgumentCount());
+                df.setMethodArguments(methods.getMethodArguments());
+                df.setReplaceableMethodArguments(methods.getReplaceableArguments());
+                df.ignoreAtDuckTyping(methods.classHasNormalMethods());
+                if (!methods.classHasNormalMethods())
                 {
                     classesWithNoNormalMethods.Add(df);
                 }
@@ -620,7 +620,7 @@ namespace Dune
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
         /// <returns>a tuple with a list containing the method hashes, a list containing the hash of the method names and a list containing the count of the arguments (in this order)</returns>
-        private static Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool> saveMethods(XmlNode node, String classname)
+        private static MethodList saveMethods(XmlNode node, String classname)
         {
             // The pure class name (e.g. 'x' in 'Dune::y::x') is needed in order to identify the constructor
             int indx = classname.LastIndexOf(':');
@@ -704,7 +704,7 @@ namespace Dune
                 }
             }
 
-            return new Tuple<List<int>,List<int>,List<int>, List<string>, List<List<int>>, bool>(methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs, !hasNormalMethods);
+            return new MethodList(methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs, !hasNormalMethods);
 
         }
 
