@@ -105,12 +105,21 @@ namespace Dune
 
             System.Console.WriteLine("Done!");
 
-            System.Console.WriteLine("Now finding potential parents(duck-typing)");
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            if (Program.USE_DUCK_TYPING)
+            
+            if(Program.USE_DUCK_TYPING)
+
+
+            {
+                System.Console.WriteLine("Now finding potential parents(duck-typing)");
+                Stopwatch stopwatch = Stopwatch.StartNew();
                 findPotentialParents();
-            stopwatch.Stop();
-            System.Console.WriteLine("\rFinished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
+                stopwatch.Stop();
+                System.Console.WriteLine("\rFinished duck-typing. Time needed for duck-typing: " + stopwatch.Elapsed);
+            }
+            else
+            {
+                System.Console.WriteLine("Duck-typing is disabled.");
+            }
 
             System.Console.Write("Writing the classes with no normal methods in a file...");
             printClassesWithNoNormalMethods();
@@ -224,9 +233,9 @@ namespace Dune
                             }
                         }
                         break;
-                    //case "templateparamlist":
-                    //    template = extractTemplate(node);
-                    //    break;
+                    case "templateparamlist":
+                        template = extractOnlyTemplate(node);
+                        break;
                 }
             }
 
@@ -271,13 +280,13 @@ namespace Dune
                 return;
             }
 
-
+            Dictionary<String, String> templateTypeMapping = null;
             String template = "";
             String refId = child.Attributes["id"].Value.ToString();
             String name = "";
             String templateInName = "";
             List<DuneClass> inherits = new List<DuneClass>();
-            Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool> methods = null;
+            MethodList methods = null;
 
             foreach (XmlNode node in child.ChildNodes)
             {
@@ -308,9 +317,12 @@ namespace Dune
 
                         inherits.Add(newDF);
                         break;
-                    //case "templateparamlist":
-                    //    template = extractTemplate(node);
-                    //    break;
+                    case "templateparamlist":
+                        //Tuple<String, Dictionary<String, String>> templateParams = 
+                        //extractTemplate(node);
+                        //template = templateParams.Item1;
+                        //templateTypeMapping = templateParams.Item2;
+                        break;
                     case "sectiondef":
                         if (node.Attributes.GetNamedItem("kind") != null)
                         {
@@ -318,7 +330,7 @@ namespace Dune
                             {
                                 // Only the public functions are crucial for saving methods
                                 case "public-func":
-                                    methods = saveMethods(node, name);
+                                    methods = saveMethods(node, name, templateTypeMapping);
                                     break;
                             }
                         }
@@ -330,13 +342,13 @@ namespace Dune
 
             if (methods != null)
             {
-                df.setMethods(methods.Item1);
-                df.setMethodNameHashes(methods.Item2);
-                df.setMethodArgumentCount(methods.Item3);
-                df.setMethodArguments(methods.Item4);
-                df.setReplaceableMethodArguments(methods.Item5);
-                df.ignoreAtDuckTyping(methods.Item6);
-                if (methods.Item6)
+                df.setMethods(methods.getMethodHashes());
+                df.setMethodNameHashes(methods.getMethodNameHashes());
+                df.setMethodArgumentCount(methods.getArgumentCount());
+                df.setMethodArguments(methods.getMethodArguments());
+                df.setReplaceableMethodArguments(methods.getReplaceableArguments());
+                df.ignoreAtDuckTyping(methods.classHasNormalMethods());
+                if (!methods.classHasNormalMethods())
                 {
                     classesWithNoNormalMethods.Add(df);
                 }
@@ -649,7 +661,7 @@ namespace Dune
         /// This method saves the enums of the respective class in the corresponding Dictionary-element from the DuneClass-class.
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
-        /// <returns>a <code>Dictionary</code> which contains the enums and its elements</returns>
+        /// <returns>a <code>Dictionary</code> which contains the name of the enums and its elements</returns>
         private static Dictionary<String, List<String>> saveEnums(XmlNode node)
         {
             Dictionary<String, List<String>> result = new Dictionary<String, List<String>>();
@@ -683,8 +695,10 @@ namespace Dune
         /// Saves the methods of the class/interface
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
+        /// <param name="classname">The name of the class</param>
+        /// <param name="templateTypeMapping">the mapping from the template name of the type to its type</param>
         /// <returns>a tuple with a list containing the method hashes, a list containing the hash of the method names and a list containing the count of the arguments (in this order)</returns>
-        private static Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool> saveMethods(XmlNode node, String classname)
+        private static MethodList saveMethods(XmlNode node, String classname, Dictionary<String, String> templateTypeMapping)
         {
             // The pure class name (e.g. 'x' in 'Dune::y::x') is needed in order to identify the constructor
             int indx = classname.LastIndexOf(':');
@@ -760,7 +774,7 @@ namespace Dune
                         hasNormalMethods = true;
                         methodNameHashes.Add(methodName.GetHashCode());
                         //methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
-                        string typename = retrieveType(type, template);
+                        string typename = retrieveType(type, template, templateTypeMapping);
                         methodHashes.Add((typename + " " + name.InnerText + methodArgs).GetHashCode());
                         methodArguments.Add(convertMethodArgs(args.InnerText, false));
                         // Retrieve the number of arguments and the name of the method 
@@ -770,7 +784,7 @@ namespace Dune
                 }
             }
 
-            return new Tuple<List<int>, List<int>, List<int>, List<string>, List<List<int>>, bool>(methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs, !hasNormalMethods);
+            return new MethodList(methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs, !hasNormalMethods);
 
         }
 
@@ -827,7 +841,7 @@ namespace Dune
         /// <param name="type">the node with the type tag of the xml file</param>
         /// <param name="template">the node with the templateparamlist</param>
         /// <returns>the string in between the type tag where the name of the template parameter are replaced by their types</returns>
-        private static string retrieveType(XmlNode type, XmlNode template)
+        private static string retrieveType(XmlNode type, XmlNode template, Dictionary<String, String> templateTypeMapping)
         {
             string text = type.InnerText;
 
@@ -852,6 +866,21 @@ namespace Dune
                 }
             }
 
+            if (templateTypeMapping != null)
+            {
+                // Apply the mapping from the template parameter list of the class itself
+                foreach (String templateTypeName in templateTypeMapping.Keys)
+                {
+                    String templateType;
+                    templateTypeMapping.TryGetValue(templateTypeName, out templateType);
+
+                    text = text.Replace(" " + templateTypeName + " ", " " + templateType + " ");
+                    text = text.Replace(" " + templateTypeName + ",", " " + templateType + ",");
+
+                }
+            }
+
+            // DEBUG
             if (text.Contains(" k ") || text.Contains(" k,") || text.Contains(" dorder ") || text.Contains(" dorder,") || text.Contains(" size ") || text.Contains(" size,"))
             {
                 System.Console.WriteLine("Found a class that uses k, dorder or size from the global dictionary...");
@@ -1308,6 +1337,34 @@ namespace Dune
                 }
             }
             return result;
+        }
+
+/// <summary>
+        /// This method extracts the information of the template.
+        /// </summary>
+        /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
+        /// <returns>the string containing the template</returns>
+        private static String extractOnlyTemplate(XmlNode child)
+        {
+
+            string template = "";
+
+            //bool found = false;
+            //bool tooFar = false;
+            for (int j = 0; j < child.ChildNodes.Count; j++)
+            {
+                // XmlNode c = cur.ChildNodes.Item(j);
+                XmlNode c = child.ChildNodes.Item(j);
+
+                if (j > 0)
+                {
+                    template += ",";
+                }
+
+                template += c.FirstChild.InnerText;
+            }
+
+            return template;
         }
 
         public static int ifConds = 0;
