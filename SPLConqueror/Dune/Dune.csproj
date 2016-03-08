@@ -77,8 +77,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Shell.cs" />
+    <Compile Include="TemplateObject.cs" />
+    <Compile Include="TemplateTree.cs" />
     <Compile Include="Tree\Tree.cs" />
     <Compile Include="DuneFeature.cs" />
+    <Compile Include="DuneEnum.cs" />
+    <Compile Include="DuneClass.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XMLParser.cs" />
