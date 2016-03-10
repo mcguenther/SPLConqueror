@@ -23,6 +23,8 @@ namespace Dune
         static DuneClass root = new DuneClass("", "root");
 
         static List<DuneClass> features = new List<DuneClass>();
+        static List<DuneEnum> enums = new List<DuneEnum>();
+
         static Dictionary<DuneClass, String> templatesToAnalyze = new Dictionary<DuneClass, string>();
 
         static Dictionary<DuneClass, String> classesToAnalyze = new Dictionary<DuneClass, string>();
@@ -93,8 +95,16 @@ namespace Dune
 
 
             // Every class with no parent gets a connection to the root-node
-            foreach (DuneClass df in features)
+            foreach (DuneFeature dfeature in features)
             {
+
+                if (dfeature.GetType() != typeof(DuneClass))
+                {
+                    continue;
+                }
+
+                DuneClass df = (DuneClass)dfeature;
+
                 if (!df.hasParents(root))
                 {
                     // Add the root as a parent, so every node has a common node as parent in the transitive closure
@@ -205,7 +215,7 @@ namespace Dune
             String refId = child.Attributes["id"].Value.ToString();
             String name = "";
             String templateInName = "";
-            Dictionary<String, List<String>> enums = null;
+            List<Enum> enumerations = null;
 
             foreach (XmlNode node in child.ChildNodes)
             {
@@ -224,7 +234,7 @@ namespace Dune
                                 // Only the public types are crucial for saving enums
                                 case "public-type":
                                     // Save the enums in the feature
-                                    enums = saveEnums(node);
+                                    enumerations = saveEnums(node);
                                     break;
                                 // Only the public functions are crucial for saving methods
                                 case "public-func":
@@ -257,9 +267,14 @@ namespace Dune
 
             df.setType(structClass, child.Attributes.GetNamedItem("abstract") != null);
 
-            if (enums != null)
+            if (enumerations != null)
             {
-                df.setEnum(enums);
+                foreach (Enum enumObject in enumerations)
+                {
+                    enums.Add(new DuneEnum(name, enumObject));
+                    //features.Add(new DuneEnum(enums));
+                    //df.setEnum(enums);
+                }
             }
 
 
@@ -338,7 +353,7 @@ namespace Dune
                 }
             }
 
-            DuneClass df = getFeature(new DuneClass(refId, name, template, templateInName));
+            DuneClass df = getClass(new DuneClass(refId, name, template, templateInName));
 
             if (methods != null)
             {
@@ -361,7 +376,7 @@ namespace Dune
             // Now add all relations
             foreach (DuneClass inherit in inherits)
             {
-                DuneClass newDF = getFeature(inherit);
+                DuneClass newDF = getClass(inherit);
                 if (newDF != null)
                 {
 
@@ -398,19 +413,16 @@ namespace Dune
         /// <summary>
         /// Returns the variability of the given <code>DuneClass</code>.
         /// </summary>
-        /// <param name="df">the class to return the variability</param>
-        /// <param name="enumString">the string of the enum if there is one. If there is no enum, this variable is empty string</param>
+        /// <param name="df">the class to return the variability for</param>
         /// <returns>the variability of the class or enum</returns>
-        public static List<String> getVariability(DuneClass df, String enumString)
-        {
-            if (enumString.Equals(""))
+        public static List<String> getVariability(DuneFeature df)
+        { 
+            if (df == null)
             {
-                return df.getVariability(root);
+                return null;
             }
-            else
-            {
-                return df.getAlternativeEnums(enumString);
-            }
+
+            return df.getVariability(root);
         }
 
 
@@ -435,45 +447,50 @@ namespace Dune
             {
                 name = feature;
             }
-            // If the last name begins with a lower character then it is part of an enum
-            Boolean isEnum = name.LastIndexOf(':') > 0 && name.LastIndexOf('>') < name.LastIndexOf(':') && char.IsLower(name[name.LastIndexOf(':') + 1]);
 
-            DuneClass df;
+            DuneFeature df;
 
-            if (isEnum)
+            df = searchForFeature(new DuneClass("", feature));
+
+            if (df == null || template.Equals(""))
             {
-                string featureName = feature.Substring(0, feature.LastIndexOf(':') - 1);
-
-                df = searchForFeature(new DuneClass("", featureName));
-
-                // If not found search only for the name
-                if (df == null)
-                {
-                    df = searchForFeatureName(new DuneClass("", featureName));
-                }
-            }
-            else
-            {
-                df = searchForFeature(new DuneClass("", feature));
-
-                if (df == null || template.Equals(""))
-                {
-                    df = searchForFeature(new DuneClass("", feature + "<>"));
-                }
+                df = searchForFeature(new DuneClass("", feature + "<>"));
             }
 
-            if (df != null && !isEnum)
+            if (df == null)
+            {
+                int colonIndex = feature.LastIndexOf(':');
+                String enumNamespace = feature.Substring(0, colonIndex - 1);
+                String enumValue = feature.Substring(colonIndex + 1, feature.Length - colonIndex - 1);
+                df = searchForEnum(enumNamespace, enumValue);
+            }
+
+            if (df != null)
             {
                 return df.getVariability(root);
-            }
-            else if (df != null)
-            {
-                return df.getAlternativeEnums(feature.Substring(feature.LastIndexOf(':') + 1));
             }
             else
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Searches for the enum containing the given value.
+        /// </summary>
+        /// <param name="enumNamespace">the namespace of the enum, typically the surrounding class</param>
+        /// <param name="value">the value of the enum to search for</param>
+        /// <returns>the <code>enum</code> if a enum is found containing the given value; <code>null</code> otherwise</returns>
+        private static DuneEnum searchForEnum(String enumNamespace, String value)
+        {
+            foreach (DuneEnum de in enums)
+            {
+                if (de.getNamespace().Equals(enumNamespace) && de.getValues().Contains(value))
+                {
+                    return de;
+                }
+            }
+            return null;
         }
 
 
@@ -662,16 +679,26 @@ namespace Dune
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
         /// <returns>a <code>Dictionary</code> which contains the name of the enums and its elements</returns>
-        private static Dictionary<String, List<String>> saveEnums(XmlNode node)
+        private static List<Enum> saveEnums(XmlNode node)
         {
-            Dictionary<String, List<String>> result = new Dictionary<String, List<String>>();
+            List<Enum> result = new List<Enum>();
             // Access memberdefs and search for the value of the definition tag
             foreach (XmlNode c in node.ChildNodes)
             {
                 if (c.Name.Equals("memberdef") && c.Attributes.GetNamedItem("kind") != null && c.Attributes.GetNamedItem("kind").Value.Equals("enum"))
                 {
-                    XmlNode name = getChild("name", c.ChildNodes);
+                    String reference = "";
+                    XmlNode enumName = getChild("name", c.ChildNodes);
                     List<String> enumNames = new List<String>();
+
+                    foreach (XmlAttribute attribute in c.Attributes)
+                    {
+                        if (attribute.Name.Equals("id"))
+                        {
+                            reference = attribute.Value;
+                            break;
+                        }
+                    }
 
                     // Extract the enum-options
                     foreach (XmlNode enumvalue in c.ChildNodes)
@@ -683,7 +710,7 @@ namespace Dune
                         }
                     }
 
-                    result.Add(name.InnerText, enumNames);
+                    result.Add(new Enum(reference, enumName.InnerText, enumNames));
                 }
             }
 
@@ -1081,9 +1108,9 @@ namespace Dune
         /// </summary>
         /// <param name="df">the feature to search for</param>
         /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
-        private static List<DuneClass> searchForAllFeatureNames(DuneClass df)
+        private static List<DuneFeature> searchForAllClassNames(DuneClass df)
         {
-            List<DuneClass> dfs = new List<DuneClass>();
+            List<DuneFeature> dfs = new List<DuneFeature>();
             foreach (DuneClass d in features)
             {
                 if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()))
@@ -1099,12 +1126,12 @@ namespace Dune
         /// </summary>
         /// <param name="df">the feature to search for</param>
         /// <returns>the given DuneClass if the feature is not already in the features-list; the feature in the features-list is returned otherwise</returns>
-        private static DuneClass getFeature(DuneClass df)
+        private static DuneClass getClass(DuneClass df)
         {
             int indx = XMLParser.features.IndexOf(df);
-            if (indx >= 0)
+            if (indx >= 0 && XMLParser.features[indx].GetType() == typeof(DuneClass))
             {
-                return df = XMLParser.features[indx];
+                return df =(DuneClass) XMLParser.features[indx];
             }
             //else
             //{
@@ -1122,8 +1149,15 @@ namespace Dune
         {
             String name = df.getFeatureName();
 
-            foreach (DuneClass d in features)
+            foreach (DuneFeature dfeature in features)
             {
+                if (dfeature.GetType() != typeof(DuneClass))
+                {
+                    continue;
+                }
+
+                DuneClass d = (DuneClass)dfeature;
+
                 if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()) && d.getTemplateArgumentCount() == df.getTemplateArgumentCount())
                 {
                     return d;
@@ -1137,7 +1171,7 @@ namespace Dune
         /// </summary>
         /// <param name="feature">the feature to search for</param>
         /// <returns>a list containing all features that match by the given name</returns>
-        public static List<DuneClass> getAllFeaturesByName(String feature)
+        public static List<DuneFeature> getAllFeaturesByName(String feature)
         {
             // Extract the name and the template
             string name;
@@ -1152,43 +1186,33 @@ namespace Dune
             {
                 name = feature;
             }
-            // If the last name begins with a lower character then it is part of an enum
-            Boolean isEnum = char.IsLower(name[name.LastIndexOf(':') + 1]);
 
-            DuneClass df;
+            List<DuneFeature> alternatives = new List<DuneFeature>();
 
-            if (isEnum)
+            DuneFeature df;
+
+            df = searchForFeature(new DuneClass("", feature));
+
+            int colonIndex = feature.LastIndexOf(':');
+            String enumNamespace = feature.Substring(0, colonIndex - 1);
+
+            // If not found search for the enum
+            if (df == null)
             {
-                string featureName = feature.Substring(0, feature.LastIndexOf(':') - 1);
+                String enumValue = feature.Substring(colonIndex + 1, feature.Length - colonIndex - 1);
 
-                df = searchForFeature(new DuneClass("", featureName));
-
-                // If not found search only for the name
-                if (df == null)
-                {
-                    return searchForAllFeatureNames(new DuneClass("", featureName));
-                }
-                else
-                {
-                    List<DuneClass> dfs = new List<DuneClass>();
-                    dfs.Add(df);
-                    return dfs;
-                }
+                df = searchForEnum(enumNamespace, enumValue);
             }
-            else
-            {
-                df = searchForFeature(new DuneClass("", feature));
 
-                if (df == null || template.Equals(""))
-                {
-                    return searchForAllFeatureNames(new DuneClass("", feature + "<>"));
-                }
-                else
-                {
-                    List<DuneClass> dfs = new List<DuneClass>();
-                    dfs.Add(df);
-                    return dfs;
-                }
+            // If still not found, the class with the given prefix is searched
+            if (df == null)
+            {
+                return searchForAllClassNames(new DuneClass("", enumNamespace));
+            } else
+            {
+                List<DuneFeature> dfs = new List<DuneFeature>();
+                dfs.Add(df);
+                return dfs;
             }
         }
 

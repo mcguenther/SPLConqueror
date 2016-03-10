@@ -17,6 +17,13 @@ namespace Dune
         String getFeatureName();
 
         /// <summary>
+        /// Returns the variability of the enum/class.
+        /// </summary>
+        /// <param name="root">the root feature. This is needed in case of trees</param>
+        /// <returns>the whole list of variability that was found by the program</returns>
+        List<String> getVariability(DuneFeature root);
+
+        /// <summary>
         /// Returns the namespace of the feature.
         /// </summary>
         /// <returns>the namespace of the feature</returns>

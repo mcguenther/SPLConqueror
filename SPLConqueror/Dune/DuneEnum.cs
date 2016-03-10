@@ -10,24 +10,20 @@ namespace Dune
     /// </summary>
     class DuneEnum : DuneFeature
     {
-        private String reference;
         private String enumNamespace;
         private String fullEnumName;
-        private String enumName;
-
-        private List<string> values;
+        private Enum enumObject;
+        
 
         /// <summary>
         /// The constructor of the class <code>DuneEnum</code>.
         /// </summary>
-        /// <param name="reference">the reference of the enum</param>
+        /// <param name="enumObject">the enum containing its name, values as well as its reference in the Doxygen xml-file.</param>
         /// <param name="featureNamespace">the namespace of the enum</param>
-        /// <param name="enumName">the name of the enum</param>
-        public DuneEnum(string reference, string featureNamespace, string enumName) {
+        public DuneEnum(string featureNamespace, Enum enumObject) {
             this.enumNamespace = featureNamespace;
-            this.reference = reference;
-            this.enumName = enumName;
-            this.fullEnumName = featureNamespace + "::" + enumName;
+            this.fullEnumName = featureNamespace + "::" + enumObject.getName();
+            this.enumObject = enumObject;
         }
 
         /// <summary>
@@ -54,7 +50,7 @@ namespace Dune
         /// <returns>the reference of the enum</returns>
         public string getReference()
         {
-            return this.reference;
+            return this.enumObject.getReference();
         }
 
         /// <summary>
@@ -72,7 +68,16 @@ namespace Dune
         /// <returns>the name of the enum</returns>
         public string getFeatureNameWithoutTemplateAndNamespace()
         {
-            return this.enumName;
+            return this.enumObject.getName();
+        }
+
+        /// <summary>
+        /// Returns the values of the enum.
+        /// </summary>
+        /// <returns>the values of the enum as a list</returns>
+        public List<string> getValues()
+        {
+            return this.enumObject.getValues();
         }
 
         public override bool Equals(System.Object obj)
@@ -90,10 +95,13 @@ namespace Dune
                 return false;
             }
 
+            String ownRef = this.enumObject.getReference();
+            String objRef = p.getReference();
+
             // If both objects have references then match them by reference
-            if (this.reference != null && !this.reference.Equals("") && p.getReference() != null && !p.getReference().Equals(""))
+            if (ownRef != null && !ownRef.Equals("") && objRef != null && !objRef.Equals(""))
             {
-                return this.reference.Equals(p.getReference());
+                return ownRef.Equals(objRef);
             }
 
             // Return true if the fields match:
@@ -103,6 +111,12 @@ namespace Dune
         public override int GetHashCode()
         {
             return base.GetHashCode();
+        }
+
+        public List<string> getVariability(DuneFeature root)
+        {
+            // The root feature is not needed until now (but DuneClass needs it because of the tree-like structure)
+            return this.enumObject.getValues().Select(x => enumNamespace + "::" + x).ToList();
         }
     }
 }
