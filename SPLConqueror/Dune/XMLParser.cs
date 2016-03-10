@@ -272,8 +272,19 @@ namespace Dune
                 foreach (Enum enumObject in enumerations)
                 {
                     DuneEnum de = new DuneEnum(name, enumObject);
-                    refIdToFeature.Add(de.getReference(), de);
-                    enums.Add(de);
+                    if (refIdToFeature.ContainsKey(de.getReference()))
+                    {
+                        DuneFeature d = null;
+                        refIdToFeature.TryGetValue(de.getReference(), out d);
+                        if (!de.Equals(d))
+                        {
+                            Console.WriteLine("The reference " + de.getReference() + " occurs multiple times for different enums!");
+                        }
+                    }
+                    else {
+                        refIdToFeature.Add(de.getReference(), de);
+                        enums.Add(de);
+                    }
                 }
             }
 
