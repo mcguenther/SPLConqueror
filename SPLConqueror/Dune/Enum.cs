@@ -12,7 +12,8 @@ namespace Dune
     {
         private String name;
         private String reference;
-        private List<String> values;
+        private List<DuneEnumValue> values;
+        private List<string> stringValues = null;
 
         /// <summary>
         /// The constructor of the <code>Enum</code>-class. It creates an enum by its name, its reference-ID as well as its possible values.
@@ -20,7 +21,7 @@ namespace Dune
         /// <param name="name">the name of the <code>enum</code></param>
         /// <param name="reference">the reference to this enum according to the xml-file created by <code>Doxygen</code></param>
         /// <param name="values">the values of the <code>enum</code></param>
-        public Enum(String reference, String name, List<String> values)
+        public Enum(String reference, String name, List<DuneEnumValue> values)
         {
             this.name = name;
             this.reference = reference;
@@ -46,12 +47,28 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns the list containing all <code>DuneEnumValues</code>.
+        /// </summary>
+        /// <returns>the <code>DuneEnumValues</code></returns>
+        public List<DuneEnumValue> getValueObjects()
+        {
+            return this.values;
+        }
+
+        /// <summary>
         /// Returns the values of the enum.
         /// </summary>
         /// <returns>the values of the enum</returns>
-        public List<String> getValues()
+        public List<string> getValues()
         {
-            return this.values;
+            if (stringValues == null) { 
+                stringValues = new List<string>();
+                foreach(DuneEnumValue dev in this.values)
+                {
+                    stringValues.Add(dev.getFeatureName());
+                }
+            }
+            return this.stringValues;
         }
     }
 }

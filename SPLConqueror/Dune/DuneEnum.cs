@@ -116,7 +116,7 @@ namespace Dune
         public List<string> getVariability(DuneFeature root)
         {
             // The root feature is not needed until now (but DuneClass needs it because of the tree-like structure)
-            return this.enumObject.getValues().Select(x => enumNamespace + "::" + x).ToList();
+            return this.enumObject.getValues();
         }
     }
 }

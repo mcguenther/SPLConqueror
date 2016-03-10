@@ -234,7 +234,7 @@ namespace Dune
                                 // Only the public types are crucial for saving enums
                                 case "public-type":
                                     // Save the enums in the feature
-                                    enumerations = saveEnums(node);
+                                    enumerations = saveEnums(node, name);
                                     break;
                                 // Only the public functions are crucial for saving methods
                                 case "public-func":
@@ -269,9 +269,12 @@ namespace Dune
 
             if (enumerations != null)
             {
+                // Add the enums to the refIDToFeature-mapping
                 foreach (Enum enumObject in enumerations)
                 {
                     DuneEnum de = new DuneEnum(name, enumObject);
+
+                    // It may happen that an enum appears multiple times
                     if (refIdToFeature.ContainsKey(de.getReference()))
                     {
                         DuneFeature d = null;
@@ -283,6 +286,24 @@ namespace Dune
                     }
                     else {
                         refIdToFeature.Add(de.getReference(), de);
+
+                        // Add also the values of the enums because they have also a reference ID
+                        foreach (DuneEnumValue dev in enumObject.getValueObjects())
+                        {
+                            if (refIdToFeature.ContainsKey(dev.getReference()))
+                            {
+                                DuneFeature comp;
+                                refIdToFeature.TryGetValue(dev.getReference(), out comp);
+                                if (!comp.getFeatureName().Equals(dev.getFeatureName()))
+                                {
+                                    Console.WriteLine("The reference " + de.getReference() + " occurs multiple times for different enum values!");
+                                }
+                            }
+                            else {
+                                refIdToFeature.Add(dev.getReference(), dev);
+                            }
+                        }
+
                         enums.Add(de);
                     }
                 }
@@ -689,8 +710,9 @@ namespace Dune
         /// This method saves the enums of the respective class in the corresponding Dictionary-element from the DuneClass-class.
         /// </summary>
         /// <param name="node">the object containing all information about the class/interface</param>
+        /// <param name="currentNamespace">the namespace we are currently in</param>
         /// <returns>a <code>Dictionary</code> which contains the name of the enums and its elements</returns>
-        private static List<Enum> saveEnums(XmlNode node)
+        private static List<Enum> saveEnums(XmlNode node, string currentNamespace)
         {
             List<Enum> result = new List<Enum>();
             // Access memberdefs and search for the value of the definition tag
@@ -700,7 +722,7 @@ namespace Dune
                 {
                     String reference = "";
                     XmlNode enumName = getChild("name", c.ChildNodes);
-                    List<String> enumNames = new List<String>();
+                    List<DuneEnumValue> enumNames = new List<DuneEnumValue>();
 
                     foreach (XmlAttribute attribute in c.Attributes)
                     {
@@ -716,7 +738,17 @@ namespace Dune
                     {
                         if (enumvalue.Name.Equals("enumvalue"))
                         {
-                            enumNames.Add(getChild("name", enumvalue.ChildNodes).InnerText);
+                            String valueReference = "";
+                            foreach (XmlAttribute attribute in enumvalue.Attributes)
+                            {
+                                if (attribute.Name.Equals("id"))
+                                {
+                                    valueReference = attribute.Value;
+                                    break;
+                                }
+                            }
+
+                            enumNames.Add(new DuneEnumValue(valueReference, currentNamespace, getChild("name", enumvalue.ChildNodes).InnerText));
 
                         }
                     }

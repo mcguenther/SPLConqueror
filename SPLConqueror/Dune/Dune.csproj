@@ -77,6 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Enum.cs" />
+    <Compile Include="DuneEnumValue.cs" />
     <Compile Include="Shell.cs" />
     <Compile Include="TemplateObject.cs" />
     <Compile Include="TemplateTree.cs" />
