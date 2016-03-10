@@ -89,7 +89,9 @@ namespace Dune
             Console.WriteLine("not easy to find : " + notEasy);
             Console.WriteLine("mehrdeutigkeiten : " + mehrdeutigkeit);
             Console.WriteLine("further informaion : " + furtherInformation);
-
+            Console.WriteLine("further informaion for template elements : " + tempElementsWithFurtherInformation);
+            Console.WriteLine("only info in paramlist " + onlyInParamList);
+           
             closeFoundOutput();
 
 
@@ -1406,7 +1408,10 @@ namespace Dune
         public static int easyToFind = 0;
         public static int notEasy = 0;
         public static int mehrdeutigkeit = 0;
-        public static int furtherInformation = 0; 
+        public static int furtherInformation = 0;
+        public static int tempElementsWithFurtherInformation = 0;
+        public static int onlyInParamList = 0;
+
         /// <summary>
         /// This method extracts the information of the template.
         /// </summary>
@@ -1423,6 +1428,8 @@ namespace Dune
                 name = name.Substring(0, name.IndexOf(TemplateStart));
                 hasTemplate = true;
             }
+
+            Dictionary<String, TemplateElement> teList = new Dictionary<String, TemplateElement>();
 
             // analyse the templateparamlist-elements.
             // I assume, here we have one element for each placeholder in the template
@@ -1441,6 +1448,7 @@ namespace Dune
                             String defVal_cont_ref_id = "";
                             String defname_cont = "";
                             String deftype_cont = "";
+                            DuneFeature o = null;
 
                             foreach (XmlNode innerNode in node.ChildNodes)
                             {
@@ -1458,14 +1466,16 @@ namespace Dune
                                             if (att != null)
                                             {
                                                 defVal_cont_ref_id = att.InnerText;
-                                                if (!refIdToFeature.ContainsKey(defVal_cont_ref_id))
+                                                if (refIdToFeature.ContainsKey(defVal_cont_ref_id))
+                                                {
+                                                    o = refIdToFeature[defVal_cont_ref_id];
+                                                }
+                                                else
                                                 {
                                                     Console.WriteLine("foo bar shit ");
                                                 }
 
-                                                DuneFeature o = refIdToFeature[defVal_cont_ref_id];
-                                                if (o == null)
-                                                    Console.WriteLine("foo bar shit ");
+
                                             }
                                             string defValueTemplate = innerNode.InnerText;
                                             if(defValueTemplate.Length >0){
@@ -1485,33 +1495,50 @@ namespace Dune
                                 }
                             }
 
-                            if (getChild("declname", node.ChildNodes) != null)
-                            {
+                            // Create a object for the template element defined in the param tag
 
-                                string placeHolderName = getChild("declname", node.ChildNodes).InnerText;
-                                XmlNode defval = getChild("defval", node.ChildNodes);
-                                //String typ = getChild("defval", node.ChildNodes).InnerText;
-                                if (defval != null)
-                                {
-                                    if (getChild("ref", defval.ChildNodes) != null)
-                                    {
-                                        String defValue = getChild("ref", defval.ChildNodes).InnerText;
-                                        XmlAttribute att = getAttribute("refid", getChild("ref", defval.ChildNodes));
-                                        if (att != null)
-                                        {
-                                            String refId = att.InnerText;
-                                        }
-                                    }
-                                    string defValueTemplate = defval.InnerText;
-                                    //Console.WriteLine(defValueTemplate);
-                                }
+                            if (declmame_cont != "")
+                            {
+                                TemplateElement te = new TemplateElement();
+                                te.declmame_cont = declmame_cont;
+                                te.defval_cont = defval_cont;
+                                te.defVal_cont_ref = defVal_cont_ref;
+                                te.defVal_cont_ref_id = defVal_cont_ref_id;
+                                te.defname_cont = defname_cont;
+                                te.deftype_cont = deftype_cont;
+                                te.o = o;
+
+                                teList.Add(declmame_cont, te);
+
                             }
+
+                            //if (getChild("declname", node.ChildNodes) != null)
+                            //{
+
+                            //    string placeHolderName = getChild("declname", node.ChildNodes).InnerText;
+                            //    XmlNode defval = getChild("defval", node.ChildNodes);
+                            //    //String typ = getChild("defval", node.ChildNodes).InnerText;
+                            //    if (defval != null)
+                            //    {
+                            //        if (getChild("ref", defval.ChildNodes) != null)
+                            //        {
+                            //            String defValue = getChild("ref", defval.ChildNodes).InnerText;
+                            //            XmlAttribute att = getAttribute("refid", getChild("ref", defval.ChildNodes));
+                            //            if (att != null)
+                            //            {
+                            //                String refId = att.InnerText;
+                            //            }
+                            //        }
+                            //        string defValueTemplate = defval.InnerText;
+                            //        //Console.WriteLine(defValueTemplate);
+                            //    }
+                            //}
                             break;
                     }
                 }
             }
 
-
+            
 
             if (hasTemplate)
             {
@@ -1530,6 +1557,7 @@ namespace Dune
                 templateString = templateString.Substring(1, templateString.Count() - 2);
                 templateString = templateString.Trim();
 
+                int elementsWithFurterInformation = teList.Count();
 
                 if (templateString.Contains("enable_if"))
                 {
@@ -1540,12 +1568,29 @@ namespace Dune
                 // template splitting
                 // in einem template sind entweder terminale Elemente oder Klassen, die selbst wieder Elemente besitzen. 
 
+                
+
                 templateTree = new TemplateTree();
                 String[] templateParts = templateString.Split(' ');
                 for (int i = 0; i < templateParts.Count(); i++)
                 {
                     string token = templateParts[i];
                     double val = 0;
+
+
+                    if (token.EndsWith("..."))
+                    {
+                        templateTree.parentHasUnlimitedNumberOfParameters();
+                        token = token.Replace("...", "");
+                    }
+
+
+                    if (teList.ContainsKey(token))
+                    {
+                        tempElementsWithFurtherInformation += 1;
+                        teList.Remove(token);
+                    }
+
                     if(Double.TryParse(token,out val))
                     {
                         easyToFind += 1;
@@ -1578,6 +1623,11 @@ namespace Dune
                 }
                 Console.WriteLine("OrgString " + className);
             }
+
+
+
+            onlyInParamList += teList.Count();            
+
             if(templateTree != null)
                 Console.WriteLine("parsed:: " + templateTree.toString());
             //Console.WriteLine("");

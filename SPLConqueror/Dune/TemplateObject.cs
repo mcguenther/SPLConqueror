@@ -23,7 +23,7 @@ namespace Dune
 
         private DuneClass defaultValue = null;
 
-
+        public bool hasUnlimitedNumberOfParameters = false;
 
     }
 }
