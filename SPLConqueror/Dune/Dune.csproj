@@ -76,10 +76,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DuneEnum.cs" />
-    <Compile Include="DuneFeature.cs" />
     <Compile Include="Enum.cs" />
-    <Compile Include="MethodList.cs" />
     <Compile Include="Shell.cs" />
     <Compile Include="TemplateObject.cs" />
     <Compile Include="TemplateTree.cs" />
