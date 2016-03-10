@@ -271,9 +271,9 @@ namespace Dune
             {
                 foreach (Enum enumObject in enumerations)
                 {
-                    enums.Add(new DuneEnum(name, enumObject));
-                    //features.Add(new DuneEnum(enums));
-                    //df.setEnum(enums);
+                    DuneEnum de = new DuneEnum(name, enumObject);
+                    refIdToFeature.Add(de.getReference(), de);
+                    enums.Add(de);
                 }
             }
 
