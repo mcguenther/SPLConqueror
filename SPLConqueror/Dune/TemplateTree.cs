@@ -46,6 +46,20 @@ namespace Dune
             this.furtherInformation = token;
         }
 
+
+        internal void addNumericValue(string token)
+        {
+            TemplateTree newPart = new TemplateTree();
+            newPart.artificalString = token;
+            newPart.type = Kind.value;
+            newPart.isTerminal = true;
+
+            newPart.parent = currElement;
+            currElement.children.Add(newPart);
+            lastElement = newPart;
+        }
+
+
         internal void addInformation(string token)
         {
             TemplateTree newPart = new TemplateTree();

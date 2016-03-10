@@ -1594,6 +1594,7 @@ namespace Dune
                     if(Double.TryParse(token,out val))
                     {
                         easyToFind += 1;
+                        templateTree.addNumericValue(token);
                     }
 
                     if(token.Equals("<"))
@@ -1631,8 +1632,6 @@ namespace Dune
             if(templateTree != null)
                 Console.WriteLine("parsed:: " + templateTree.toString());
             //Console.WriteLine("");
-
-            //refIdToFeature[refIdToFeature]
 
             return templateTree;
 
