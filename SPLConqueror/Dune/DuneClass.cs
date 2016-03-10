@@ -30,6 +30,10 @@ namespace Dune
 
         private bool ignoreDuckTyping = false;
 
+
+        public LinkedList<TemplateTree> templat = new LinkedList<TemplateTree>();
+
+
         /// <summary>
         /// Constructs a new DuneClass with the given reference and the given className
         /// </summary>

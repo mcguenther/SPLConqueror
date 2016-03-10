@@ -17,6 +17,8 @@ namespace Dune
 
         static String[] blacklisted = { };//"Dune::YaspGrid::YGridLevel" };
 
+        static char TemplateStart = '<';
+
         // The root of the whole feature-tree.
         static DuneClass root = new DuneClass("", "root");
 
@@ -32,6 +34,12 @@ namespace Dune
         static List<DuneClass> classesWithNoNormalMethods = new List<DuneClass>();
 
         static Dictionary<string, string> typeMapping = new Dictionary<string, string>();
+
+
+        static Dictionary<String, DuneFeature> refIdToFeature = new Dictionary<string, DuneFeature>();
+        public static Dictionary<String, List<DuneFeature>> nameWithoutPackageToDuneFeatures = new Dictionary<string, List<DuneFeature>>(); 
+
+        
 
         // Is only here for debugging
         static System.IO.StreamWriter file;
@@ -65,7 +73,26 @@ namespace Dune
             {
                 buildRelations(child);
             }
+
+            foreach (XmlNode child in childList)
+            {
+                extractTemplate(child);
+            }
+            foreach (DuneFeature feature in XMLParser.features)
+            {
+                templatePreProcessing_aliasReplacement(feature);
+            }
+
+
+            Console.WriteLine("number of if conditions in tremplates: " + ifConds);
+            Console.WriteLine("easy to find : " + easyToFind);
+            Console.WriteLine("not easy to find : " + notEasy);
+            Console.WriteLine("mehrdeutigkeiten : " + mehrdeutigkeit);
+            Console.WriteLine("further informaion : " + furtherInformation);
+
             closeFoundOutput();
+
+
 
             // Every class with no parent gets a connection to the root-node
             foreach (DuneFeature dfeature in features)
@@ -88,8 +115,10 @@ namespace Dune
 
             System.Console.WriteLine("Done!");
 
+            
+            if(Program.USE_DUCK_TYPING)
 
-            if (Program.USE_DUCK_TYPING)
+
             {
                 System.Console.WriteLine("Now finding potential parents(duck-typing)");
                 Stopwatch stopwatch = Stopwatch.StartNew();
@@ -106,6 +135,32 @@ namespace Dune
             printClassesWithNoNormalMethods();
             System.Console.WriteLine("Finished!");
 
+        }
+
+        /// <summary>
+        /// In a template of a class, another class might be references (not only with a placeholder, here we have a real reference to another class). 
+        /// Here, it might happen, that the referenced class also have template parameters. 
+        /// Exampel:::
+        /// Dune::Zero &lt;MultiIndex&lt;F,dim&gt;&gt;
+        /// Dune::MultiIndex&lt;Field,dim&gt;
+        /// 
+        /// In this method, we ceatre an alias map for the template parameters of the inner class.
+        /// 
+        /// TODO: Find a better example. (One, where the F is also used in the outer class). 
+        /// 
+        /// The basic idea behin this is that the parameters of the outer most template are specified by the user, while the inner template-parameters might not be specified because we found the inner class in the alternative checking. 
+        /// 
+        /// 
+        /// </summary>
+        /// <param name="feature">the current feature</param>
+        private static void templatePreProcessing_aliasReplacement(DuneFeature feature)
+        {
+            if (feature.GetType().Equals(typeof(DuneClass)))
+            {
+                LinkedList<TemplateTree> elements = ((DuneClass)feature).templat;
+                
+
+            }
         }
 
         /// <summary>
@@ -197,6 +252,16 @@ namespace Dune
             df = new DuneClass(refId, name, template, templateInName);
             features.Add(df);
 
+            string nameWithoutPackage = name.Substring(name.LastIndexOf(':')+1);
+
+            if(!refIdToFeature.ContainsKey(refId))
+                refIdToFeature.Add(refId, df);
+
+            if(!nameWithoutPackageToDuneFeatures.ContainsKey(nameWithoutPackage))
+                nameWithoutPackageToDuneFeatures.Add(nameWithoutPackage,new List<DuneFeature>());
+            nameWithoutPackageToDuneFeatures[nameWithoutPackage].Add(df);
+            
+
             // This boolean indicates if the current child is an interface, an abstract class or a normal class.
             Boolean structClass = child.Attributes.GetNamedItem("kind").Value.Equals("struct");
 
@@ -268,9 +333,10 @@ namespace Dune
                         inherits.Add(newDF);
                         break;
                     case "templateparamlist":
-                        Tuple<String, Dictionary<String, String>> templateParams = extractTemplate(node);
-                        template = templateParams.Item1;
-                        templateTypeMapping = templateParams.Item2;
+                        //Tuple<String, Dictionary<String, String>> templateParams = 
+                        //extractTemplate(node);
+                        //template = templateParams.Item1;
+                        //templateTypeMapping = templateParams.Item2;
                         break;
                     case "sectiondef":
                         if (node.Attributes.GetNamedItem("kind") != null)
@@ -953,6 +1019,18 @@ namespace Dune
 
         }
 
+        private static XmlAttribute getAttribute(String name, XmlNode parent)
+        {
+            foreach (XmlAttribute attribute in parent.Attributes)
+            {
+                if (attribute.Name.Equals(name))
+                {
+                    return attribute;
+                }
+            }
+            return null;
+        }
+
         /// <summary>
         /// Returns the node of the nodelist with the given name.
         /// </summary>
@@ -1285,15 +1363,18 @@ namespace Dune
             return result;
         }
 
-        /// <summary>
+/// <summary>
         /// This method extracts the information of the template.
         /// </summary>
         /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
         /// <returns>the string containing the template</returns>
         private static String extractOnlyTemplate(XmlNode child)
         {
+
             string template = "";
 
+            //bool found = false;
+            //bool tooFar = false;
             for (int j = 0; j < child.ChildNodes.Count; j++)
             {
                 // XmlNode c = cur.ChildNodes.Item(j);
@@ -1310,73 +1391,183 @@ namespace Dune
             return template;
         }
 
+        public static int ifConds = 0;
+        public static int easyToFind = 0;
+        public static int notEasy = 0;
+        public static int mehrdeutigkeit = 0;
+        public static int furtherInformation = 0; 
         /// <summary>
         /// This method extracts the information of the template.
         /// </summary>
         /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
-        /// <returns>a tuple which consists of a string containing the template and a mapping from the name of the template parameter(as far as it has one) to its type</returns>
-        private static Tuple<String, Dictionary<String, String>> extractTemplate(XmlNode child)
+        private static TemplateTree extractTemplate(XmlNode world)
         {
+            TemplateTree templateTree = null;
 
-            //bool found = false;
-            //bool tooFar = false;
-
-            //// The searched tag cannot be at index 0.
-            //int i = 1;
-
-            //while (!found && !tooFar)
-            //{
-            //     XmlNode c = child.ChildNodes.Item(i);
-            //     if (c.Name.Equals("templateparamlist"))
-            //     {
-            //         found = true;
-            //     }
-            //     else if (!c.Name.Equals("includes") && !c.Name.Equals("derivedcompoundref") && !c.Name.Equals("basecompoundref") && !c.Name.Equals("innerclass"))
-            //     {
-            //         tooFar = true;
-            //     }
-            //     else
-            //     {
-            //         i++;
-            //     }
-            //}
-            Dictionary<String, String> templateTypeMapping = new Dictionary<string, string>();
-            string template = "";
-
-            //if (found)
-            //{
-            //XmlNode cur = child.ChildNodes.Item(i);
-            //for (int j = 0; j < cur.ChildNodes.Count; j++ )
-            for (int j = 0; j < child.ChildNodes.Count; j++)
+            bool hasTemplate = false;
+            string className = world.FirstChild.InnerText;
+            string name = className;
+            if (name.Contains(TemplateStart))
             {
-                // XmlNode c = cur.ChildNodes.Item(j);
-                XmlNode c = child.ChildNodes.Item(j);
-
-                if (j > 0)
-                {
-                    template += ",";
-                }
-
-                template += c.FirstChild.InnerText;
-
-                // Now save the mapping from the name of the parameter to its type (this is needed for resolving these names in some methods).
-                XmlNode declname = getChild("declname", c.ChildNodes);
-                XmlNode defname = getChild("declname", c.ChildNodes);
-
-                if (declname != null)
-                {
-                    templateTypeMapping.Add(declname.InnerText, c.FirstChild.InnerText);
-                }
-                else if (defname != null)
-                {
-                    templateTypeMapping.Add(defname.InnerText, c.FirstChild.InnerText);
-                }
-
-                // TODO: Add support for default values (defvals)
+                name = name.Substring(0, name.IndexOf(TemplateStart));
+                hasTemplate = true;
             }
-            //}
 
-            return new Tuple<string, Dictionary<string, string>>(template, templateTypeMapping);
+            // analyse the templateparamlist-elements.
+            // I assume, here we have one element for each placeholder in the template
+            XmlNode type = getChild("templateparamlist", world.ChildNodes);
+            if (type != null)
+            {
+                foreach (XmlNode node in type.ChildNodes)
+                {
+                    switch (node.Name)
+                    {
+                        case "param":
+
+                            String declmame_cont = "";
+                            String defval_cont = "";
+                            String defVal_cont_ref = "";
+                            String defVal_cont_ref_id = "";
+                            String defname_cont = "";
+                            String deftype_cont = "";
+
+                            foreach (XmlNode innerNode in node.ChildNodes)
+                            {
+                                switch (innerNode.Name)
+                                {
+                                    case "declname":
+                                        declmame_cont = innerNode.InnerText;
+                                        break;
+                                    case "defval":
+                                        defval_cont = innerNode.InnerText;
+                                        if (getChild("ref", innerNode.ChildNodes) != null)
+                                        {
+                                            defVal_cont_ref = getChild("ref", innerNode.ChildNodes).InnerText;
+                                            XmlAttribute att = getAttribute("refid", getChild("ref", innerNode.ChildNodes));
+                                            if (att != null)
+                                            {
+                                                defVal_cont_ref_id = att.InnerText;
+                                            }
+                                            string defValueTemplate = innerNode.InnerText;
+                                            if(defValueTemplate.Length >0){
+                                                Console.WriteLine("asd");
+                                            }
+                                        }
+                                        break;
+                                    case "defname":
+                                        defname_cont = innerNode.InnerText;
+                                        break;
+                                    case "type":
+                                        deftype_cont = innerNode.InnerText;
+                                        break;
+                                    default:
+                                        Console.WriteLine(innerNode.Name+" is not considered in the template extraction");
+                                        break;
+                                }
+                            }
+
+                            if (getChild("declname", node.ChildNodes) != null)
+                            {
+
+                                string placeHolderName = getChild("declname", node.ChildNodes).InnerText;
+                                XmlNode defval = getChild("defval", node.ChildNodes);
+                                //String typ = getChild("defval", node.ChildNodes).InnerText;
+                                if (defval != null)
+                                {
+                                    if (getChild("ref", defval.ChildNodes) != null)
+                                    {
+                                        String defValue = getChild("ref", defval.ChildNodes).InnerText;
+                                        XmlAttribute att = getAttribute("refid", getChild("ref", defval.ChildNodes));
+                                        if (att != null)
+                                        {
+                                            String refId = att.InnerText;
+                                        }
+                                    }
+                                    string defValueTemplate = defval.InnerText;
+                                    //Console.WriteLine(defValueTemplate);
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+
+
+
+            if (hasTemplate)
+            {
+                string templateString = className.Substring(name.Count());
+                templateString = templateString.Replace("&", "");
+                templateString = templateString.Replace("*", "");
+                templateString = templateString.Replace(",", "");
+                templateString = templateString.Replace(">", " > ");
+                templateString = templateString.Replace("<", " < ");
+
+                while (templateString.Contains("  "))
+                    templateString = templateString.Replace("  ", " ");
+                templateString = templateString.Trim();
+
+                // remove first < and last > because we know implicitly that they are there 
+                templateString = templateString.Substring(1, templateString.Count() - 2);
+                templateString = templateString.Trim();
+
+
+                if (templateString.Contains("enable_if"))
+                {
+                    ifConds += 1;
+                    Console.WriteLine("");
+                    return null; 
+                }
+                // template splitting
+                // in einem template sind entweder terminale Elemente oder Klassen, die selbst wieder Elemente besitzen. 
+
+                templateTree = new TemplateTree();
+                String[] templateParts = templateString.Split(' ');
+                for (int i = 0; i < templateParts.Count(); i++)
+                {
+                    string token = templateParts[i];
+                    double val = 0;
+                    if(Double.TryParse(token,out val))
+                    {
+                        easyToFind += 1;
+                    }
+
+                    if(token.Equals("<"))
+                    {
+                        // increase hierarchy
+                        templateTree.incHierarchy();
+                    }else if (token.Equals(">"))
+                    {
+                        // decrease hierarchy
+                        templateTree.decHierarchy();
+                    }
+                    else if (token.StartsWith("::"))
+                    {
+                        // here, futher information for the last terminal elemenent on the same level can be derived
+                        furtherInformation += 1;
+                        templateTree.addFurtherInformation(token);
+                    }
+                    else
+                    {
+                        templateTree.addInformation(token);
+                    }
+                    if (!token.Equals("<") && !token.Equals(">"))
+                    {
+                        notEasy += 1;
+                    }
+
+                }
+                Console.WriteLine("OrgString " + className);
+            }
+            if(templateTree != null)
+                Console.WriteLine("parsed:: " + templateTree.toString());
+            //Console.WriteLine("");
+
+            //refIdToFeature[refIdToFeature]
+
+            return templateTree;
+
+  
         }
 
         /// <summary>
