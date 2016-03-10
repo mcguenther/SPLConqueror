@@ -27,7 +27,6 @@ namespace Dune
         private List<int> methodHashes;
         private List<int> methodNameHashes;
         private List<int> methodArgumentCount;
-        private Dictionary<String, List<String>> enums;
 
         private bool ignoreDuckTyping = false;
 
@@ -78,7 +77,6 @@ namespace Dune
             this.parents = new List<DuneClass>();
             this.children = new List<DuneClass>();
             this.methodHashes = new List<int>();
-            this.enums = null;
         }
 
         /// <summary>
@@ -134,7 +132,6 @@ namespace Dune
             this.parents = new List<DuneClass>();
             this.children = new List<DuneClass>();
             this.methodHashes = new List<int>();
-            this.enums = null;
         }
 
         /// <summary>
@@ -207,20 +204,6 @@ namespace Dune
         }
 
         /// <summary>
-        /// Adds an enum to the dictionary of enums of the class.
-        /// </summary>
-        /// <param name="key">the name of the enum</param>
-        /// <param name="enums">a list containing all enum-options</param>
-        public void addEnum(String key, List<String> enums)
-        {
-            //if (this.enums.ContainsKey(key))
-            //{
-            //    return;
-            //}
-            this.enums.Add(key, enums);
-        }
-
-        /// <summary>
         /// Sets the boolean variable <code>ignoreDuckTyping</code> to the given value.
         /// </summary>
         /// <param name="ignore">the boolean value the variable <code>ignoreDuckTyping</code> should be set to</param>
@@ -236,20 +219,6 @@ namespace Dune
         public bool isIgnored()
         {
             return ignoreDuckTyping;
-        }
-
-        /// <summary>
-        /// Sets the enums of the <code>DuneClass</code> to the given argument.
-        /// </summary>
-        /// <param name="enums">the <code>Dictionary</code> containing the enums of the class</param>
-        public void setEnum(Dictionary<String, List<String>> enums)
-        {
-            // Should never be the case...
-            if (this.enums != null)
-            {
-                System.Console.Write("");
-            }
-            this.enums = enums;
         }
 
         /// <summary>
@@ -430,35 +399,11 @@ namespace Dune
         }
 
         /// <summary>
-        /// Returns a list of strings containing the alternatives to the given enum.
-        /// </summary>
-        /// <param name="enumName">The name of the enum to search for</param>
-        /// <returns>a list of strings containing the alternatives to the given enum; if no alternatives then this list is empty</returns>
-        public List<string> getAlternativeEnums(string enumName) {
-            List<string> result = new List<string>();
-
-            foreach (KeyValuePair<string, List<string>> k in enums)
-            {
-                if (k.Value.Contains(enumName))
-                {
-                    foreach (string listEntry in k.Value)
-                    {
-                        result.Add(this.getFeatureName() + "::" + listEntry);
-                    }
-
-                    return result;
-                }
-            }
-
-            return result;
-        }
-
-        /// <summary>
         /// Returns the classes with which the current class may be replaced with.
         /// </summary>
         /// <param name="root">the root node which is excluded</param>
         /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
-        public List<string> getVariability(DuneClass root)
+        public List<string> getVariability(DuneFeature root)
         {
             return getVariability(root, new List<DuneClass>(), this);
         }
@@ -470,7 +415,7 @@ namespace Dune
         /// <param name="analyzed">the list which contains the features that were analyzed already</param>
         /// <param name="baseClass">the class the variability is searched for</param>
         /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
-        private List<string> getVariability(DuneClass root, List<DuneClass> analyzed, DuneClass baseClass)
+        private List<string> getVariability(DuneFeature root, List<DuneClass> analyzed, DuneClass baseClass)
         {
             List<string> result = new List<string>();
 

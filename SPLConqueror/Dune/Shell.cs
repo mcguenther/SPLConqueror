@@ -47,11 +47,8 @@ namespace Dune
                         break;
                     case "analyze":
                     case "a":
-                        Boolean isEnum = arguments.LastIndexOf(':') > 0 && arguments.LastIndexOf('>') < arguments.LastIndexOf(':') && char.IsLower(arguments[arguments.LastIndexOf(':') + 1]);
-                        String enumString = isEnum ? arguments.Substring(arguments.LastIndexOf(":") + 1) : "";
-
-                        DuneClass df = findFeature(arguments);
-                        List<string> result = XMLParser.getVariability(df, enumString);
+                        DuneFeature df = findFeature(arguments);
+                        List<string> result = XMLParser.getVariability(df);
 
                         if (result != null)
                         {
@@ -159,9 +156,9 @@ namespace Dune
         /// </summary>
         /// <param name="feature">the class to search for</param>
         /// <returns>the selected <code>DuneClass</code>. <code>null</code> is returned if no class has been found or the input is invalid</returns>
-        private static DuneClass findFeature(string feature)
+        private static DuneFeature findFeature(string feature)
         {
-            List<DuneClass> dfs = XMLParser.getAllFeaturesByName(feature);
+            List<DuneFeature> dfs = XMLParser.getAllFeaturesByName(feature);
 
             if (dfs.Count == 0)
             {
