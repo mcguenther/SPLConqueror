@@ -1447,6 +1447,14 @@ namespace Dune
                                             if (att != null)
                                             {
                                                 defVal_cont_ref_id = att.InnerText;
+                                                if (!refIdToFeature.ContainsKey(defVal_cont_ref_id))
+                                                {
+                                                    Console.WriteLine("foo bar shit ");
+                                                }
+
+                                                DuneFeature o = refIdToFeature[defVal_cont_ref_id];
+                                                if (o == null)
+                                                    Console.WriteLine("foo bar shit ");
                                             }
                                             string defValueTemplate = innerNode.InnerText;
                                             if(defValueTemplate.Length >0){
