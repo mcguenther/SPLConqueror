@@ -12,6 +12,8 @@ namespace Dune
         TemplateTree currElement;
         TemplateTree parent;
 
+        TemplateTree lastElement;
+
         String furtherInformation = "";
 
         public TemplateTree()
@@ -36,12 +38,27 @@ namespace Dune
         internal void decHierarchy()
         {
             currElement = currElement.parent;
+            lastElement = lastElement.parent;
         }
 
         internal void addFurtherInformation(string token)
         {
             this.furtherInformation = token;
         }
+
+
+        internal void addNumericValue(string token)
+        {
+            TemplateTree newPart = new TemplateTree();
+            newPart.artificalString = token;
+            newPart.type = Kind.value;
+            newPart.isTerminal = true;
+
+            newPart.parent = currElement;
+            currElement.children.Add(newPart);
+            lastElement = newPart;
+        }
+
 
         internal void addInformation(string token)
         {
@@ -71,6 +88,8 @@ namespace Dune
 
             newPart.parent = currElement;
             currElement.children.Add(newPart);
+
+            lastElement = newPart;
         }
 
         public String toString()
@@ -115,5 +134,10 @@ namespace Dune
             return elements;
         }
 
+
+        internal void parentHasUnlimitedNumberOfParameters()
+        {
+            lastElement.parent.hasUnlimitedNumberOfParameters = true;
+        }
     }
 }

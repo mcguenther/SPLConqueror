@@ -8,7 +8,7 @@ namespace Dune
     class TemplateObject
     {
 
-        public enum Kind {concrete, placeholder};
+        public enum Kind {concrete, placeholder, value};
 
         public Kind type;
         public Boolean isTerminal = true;
@@ -23,7 +23,7 @@ namespace Dune
 
         private DuneClass defaultValue = null;
 
-
+        public bool hasUnlimitedNumberOfParameters = false;
 
     }
 }
