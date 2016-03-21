@@ -256,6 +256,7 @@ namespace Dune
                 return;
             }
 
+
             df = new DuneClass(refId, name, template, templateInName);
             features.Add(df);
 
@@ -394,23 +395,30 @@ namespace Dune
 
             DuneClass df = getClass(new DuneClass(refId, name, template, templateInName));
 
-            if (methods != null)
+
+
+            if (df != null)
             {
-                df.setMethods(methods.getMethodHashes());
-                df.setMethodNameHashes(methods.getMethodNameHashes());
-                df.setMethodArgumentCount(methods.getArgumentCount());
-                df.setMethodArguments(methods.getMethodArguments());
-                df.setReplaceableMethodArguments(methods.getReplaceableArguments());
-                df.ignoreAtDuckTyping(methods.classHasNormalMethods());
-                if (!methods.classHasNormalMethods())
+
+                if (methods != null)
+                {
+                    df.setMethods(methods.getMethodHashes());
+                    df.setMethodNameHashes(methods.getMethodNameHashes());
+                    df.setMethodArgumentCount(methods.getArgumentCount());
+                    df.setMethodArguments(methods.getMethodArguments());
+                    df.setReplaceableMethodArguments(methods.getReplaceableArguments());
+                    df.ignoreAtDuckTyping(methods.classHasNormalMethods());
+                    if (!methods.classHasNormalMethods())
+                    {
+                        classesWithNoNormalMethods.Add(df);
+                    }
+                }
+                else
                 {
                     classesWithNoNormalMethods.Add(df);
                 }
-            }
-            else
-            {
-                classesWithNoNormalMethods.Add(df);
-            }
+
+            
 
             // Now add all relations
             foreach (DuneClass inherit in inherits)
@@ -445,6 +453,8 @@ namespace Dune
                         }
                     }
                 }
+            }
+
             }
             output.Flush();
         }
@@ -1460,13 +1470,14 @@ namespace Dune
             bool hasTemplate = false;
             string className = world.FirstChild.InnerText;
             string name = className;
+
             if (name.Contains(TemplateStart))
             {
                 name = name.Substring(0, name.IndexOf(TemplateStart));
                 hasTemplate = true;
             }
 
-            Dictionary<String, TemplateElement> teList = new Dictionary<String, TemplateElement>();
+            Dictionary<String, TemplateElement> templateParamList = new Dictionary<String, TemplateElement>();
 
             // analyse the templateparamlist-elements.
             // I assume, here we have one element for each placeholder in the template
@@ -1495,6 +1506,8 @@ namespace Dune
                                         declmame_cont = innerNode.InnerText;
                                         break;
                                     case "defval":
+
+                                        // TODO: laut DTD: <!ELEMENT defval ( #PCDATA | ref )* >
                                         defval_cont = innerNode.InnerText;
                                         if (getChild("ref", innerNode.ChildNodes) != null)
                                         {
@@ -1524,6 +1537,7 @@ namespace Dune
                                         defname_cont = innerNode.InnerText;
                                         break;
                                     case "type":
+                                        // TODO: laut DTD: <!ELEMENT type ( #PCDATA | ref )* >
                                         deftype_cont = innerNode.InnerText;
                                         break;
                                     default:
@@ -1534,7 +1548,7 @@ namespace Dune
 
                             // Create a object for the template element defined in the param tag
 
-                            if (declmame_cont != "")
+                            if (declmame_cont != "" || deftype_cont != "")
                             {
                                 TemplateElement te = new TemplateElement();
                                 te.declmame_cont = declmame_cont;
@@ -1545,7 +1559,16 @@ namespace Dune
                                 te.deftype_cont = deftype_cont;
                                 te.o = o;
 
-                                teList.Add(declmame_cont, te);
+                                String identifier = "";
+                                if (declmame_cont != "")
+                                    identifier = declmame_cont;
+                                else
+                                {
+                                    identifier = deftype_cont.Replace("class", "").Trim();
+                                }
+
+                                if(!identifier.Equals("typename"))
+                                    templateParamList.Add(declmame_cont, te);
 
                             }
 
@@ -1594,7 +1617,7 @@ namespace Dune
                 templateString = templateString.Substring(1, templateString.Count() - 2);
                 templateString = templateString.Trim();
 
-                int elementsWithFurterInformation = teList.Count();
+                int elementsWithFurterInformation = templateParamList.Count();
 
                 if (templateString.Contains("enable_if"))
                 {
@@ -1622,10 +1645,12 @@ namespace Dune
                     }
 
 
-                    if (teList.ContainsKey(token))
+                    if (templateParamList.ContainsKey(token))
                     {
                         tempElementsWithFurtherInformation += 1;
-                        teList.Remove(token);
+                        templateTree.addInformation(token, templateParamList[token]);
+                        templateParamList.Remove(token);
+
                     }
 
                     if(Double.TryParse(token,out val))
@@ -1664,7 +1689,7 @@ namespace Dune
 
 
 
-            onlyInParamList += teList.Count();            
+            onlyInParamList += templateParamList.Count();            
 
             if(templateTree != null)
                 Console.WriteLine("parsed:: " + templateTree.toString());

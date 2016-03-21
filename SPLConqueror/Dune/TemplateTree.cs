@@ -19,7 +19,7 @@ namespace Dune
         public TemplateTree()
         {
             currElement = this;
-            
+
         }
 
 
@@ -73,7 +73,7 @@ namespace Dune
                     XMLParser.mehrdeutigkeit += 1;
                     Console.WriteLine("TODO:: addInformation with mehrdeutigkeit");
                 }
-                
+
                 newPart.referseTo = XMLParser.nameWithoutPackageToDuneFeatures[token].First();
                 newPart.artificalString = token;
                 newPart.type = Kind.concrete;
@@ -92,6 +92,25 @@ namespace Dune
             lastElement = newPart;
         }
 
+        internal void addInformation(string token, TemplateElement furtherInformation)
+        {
+            TemplateTree newPart = new TemplateTree();
+
+            newPart.artificalString = token;
+            newPart.type = Kind.concrete;
+
+            newPart.informationFromTemplateParamlist = furtherInformation;
+
+            // TODO 
+            newPart.isTerminal = true;
+
+
+            newPart.parent = currElement;
+            currElement.children.Add(newPart);
+            lastElement = newPart;
+        }
+
+
         public String toString()
         {
             StringBuilder sb = new StringBuilder();
@@ -101,12 +120,12 @@ namespace Dune
             else
                 sb.Append(artificalString);
 
-            if(this.children.Count > 0)
+            if (this.children.Count > 0)
                 sb.Append(" ( ");
 
             for (int i = 0; i < this.children.Count; i++)
             {
-                sb.Append(this.children[i].toString()+ " ");
+                sb.Append(this.children[i].toString() + " ");
             }
 
             if (this.children.Count > 0)
