@@ -251,6 +251,11 @@ namespace Dune
                 }
             }
 
+            if (name.Contains("helper") || name.Contains("Helper"))
+            {
+                return;
+            }
+
             df = new DuneClass(refId, name, template, templateInName);
             features.Add(df);
 
