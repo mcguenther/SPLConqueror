@@ -31,7 +31,7 @@ namespace Dune
         /// Returns the name of the <code>DuneEnumValue</code>, namely the value with the preceeding namespace.
         /// </summary>
         /// <returns>the value including its namespace as a prefix</returns>
-        public string getFeatureName()
+        public override string getFeatureName()
         {
             return this.enumNamespace + "::" + this.value;
         }
@@ -40,7 +40,7 @@ namespace Dune
         /// Returns the name of the <code>DuneEnumValue</code>, namely the value with the preceeding namespace.
         /// </summary>
         /// <returns>the value including its namespace as a prefix</returns>
-        public string getFeatureNameWithoutTemplate()
+        public override string getFeatureNameWithoutTemplate()
         {
             return this.enumNamespace + "::" +  this.value;
         }
@@ -49,7 +49,7 @@ namespace Dune
         /// Returns the value of the enum without the namespace.
         /// </summary>
         /// <returns>the value of the enum</returns>
-        public string getFeatureNameWithoutTemplateAndNamespace()
+        public override string getFeatureNameWithoutTemplateAndNamespace()
         {
             return this.value;
         }
@@ -58,7 +58,7 @@ namespace Dune
         /// Returns the namespace of the enum.
         /// </summary>
         /// <returns>the namespace of the enum</returns>
-        public string getNamespace()
+        public override string getNamespace()
         {
             return this.enumNamespace;
         }
@@ -67,7 +67,7 @@ namespace Dune
         /// Returns the reference ID (refID) of the enum value.
         /// </summary>
         /// <returns>the reference ID of the enum value</returns>
-        public string getReference()
+        public override string getReference()
         {
             return this.reference;
         }
@@ -77,7 +77,7 @@ namespace Dune
         /// </summary>
         /// <param name="root">the root-feature. Not needed here</param>
         /// <returns>a list containing the value</returns>
-        public List<string> getVariability(DuneFeature root)
+        public override List<string> getVariability(DuneFeature root)
         {
             List<string> result = new List<string>();
             result.Add(this.enumNamespace + "::" + this.value);

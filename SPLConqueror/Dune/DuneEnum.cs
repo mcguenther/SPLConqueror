@@ -30,7 +30,7 @@ namespace Dune
         /// Returns the name of the enum with its template.
         /// </summary>
         /// <returns>the name of the enum</returns>
-        public string getFeatureName()
+        public override string getFeatureName()
         {
             return fullEnumName;
         }
@@ -39,7 +39,7 @@ namespace Dune
         /// Returns the namespace of the enum.
         /// </summary>
         /// <returns>the namespace of the enum</returns>
-        public string getNamespace()
+        public override string getNamespace()
         {
             return this.enumNamespace;
         }
@@ -48,7 +48,7 @@ namespace Dune
         /// Returns the reference of the enum.
         /// </summary>
         /// <returns>the reference of the enum</returns>
-        public string getReference()
+        public override string getReference()
         {
             return this.enumObject.getReference();
         }
@@ -57,7 +57,7 @@ namespace Dune
         /// Returns the name of the enum(the same as getFeatureName()).
         /// </summary>
         /// <returns>the name of the enum</returns>
-        public string getFeatureNameWithoutTemplate()
+        public override string getFeatureNameWithoutTemplate()
         {
             return fullEnumName;
         }
@@ -66,7 +66,7 @@ namespace Dune
         /// Returns the name of the enum without its template and its namespace.
         /// </summary>
         /// <returns>the name of the enum</returns>
-        public string getFeatureNameWithoutTemplateAndNamespace()
+        public override string getFeatureNameWithoutTemplateAndNamespace()
         {
             return this.enumObject.getName();
         }
@@ -113,7 +113,7 @@ namespace Dune
             return base.GetHashCode();
         }
 
-        public List<string> getVariability(DuneFeature root)
+        public override List<string> getVariability(DuneFeature root)
         {
             // The root feature is not needed until now (but DuneClass needs it because of the tree-like structure)
             return this.enumObject.getValues();

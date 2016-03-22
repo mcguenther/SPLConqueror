@@ -407,7 +407,7 @@ namespace Dune
         /// </summary>
         /// <param name="root">the root node which is excluded</param>
         /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
-        public List<string> getVariability(DuneFeature root)
+        public override List<string> getVariability(DuneFeature root)
         {
             return getVariability(root, new List<DuneClass>(), this);
         }
@@ -507,7 +507,7 @@ namespace Dune
         /// Returns the reference.
         /// </summary>
         /// <returns>the reference of the feature/class</returns>
-        public String getReference()
+        public override String getReference()
         {
             return this.reference;
         }
@@ -525,7 +525,7 @@ namespace Dune
         /// Returns the namespace of the class.
         /// </summary>
         /// <returns>the namespace of the class</returns>
-        public string getNamespace()
+        public override string getNamespace()
         {
             return this.featureNamespace;
         }
@@ -534,7 +534,7 @@ namespace Dune
         /// Returns the name of the class with its template.
         /// </summary>
         /// <returns>the name of the feature/class</returns>
-        public String getFeatureName()
+        public override String getFeatureName()
         {
             return this.fullClassName;
             //return this.className + this.rawTemplate;
@@ -545,7 +545,7 @@ namespace Dune
         /// Returns the name of the class without its template.
         /// </summary>
         /// <returns>the name of the feature/class</returns>
-        public String getFeatureNameWithoutTemplate()
+        public override String getFeatureNameWithoutTemplate()
         {
             return this.featureNamespace + "::" + this.className;
         }
@@ -554,7 +554,7 @@ namespace Dune
         /// Returns the name of the class without its template and its namespace.
         /// </summary>
         /// <returns>the name of the feature/class</returns>
-        public String getFeatureNameWithoutTemplateAndNamespace()
+        public override String getFeatureNameWithoutTemplateAndNamespace()
         {
             return this.className;
         }

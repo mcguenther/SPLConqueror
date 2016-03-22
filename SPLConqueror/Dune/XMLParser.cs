@@ -119,8 +119,6 @@ namespace Dune
 
             
             if(Program.USE_DUCK_TYPING)
-
-
             {
                 System.Console.WriteLine("Now finding potential parents(duck-typing)");
                 Stopwatch stopwatch = Stopwatch.StartNew();
@@ -1477,6 +1475,16 @@ namespace Dune
                 hasTemplate = true;
             }
 
+            if (name.Contains("helper") || name.Contains("Helper"))
+            {
+                return null;
+            }
+
+            String refId = world.Attributes["id"].Value.ToString();
+
+            DuneFeature currFeature = refIdToFeature[refId];
+
+
             Dictionary<String, TemplateElement> templateParamList = new Dictionary<String, TemplateElement>();
 
             // analyse the templateparamlist-elements.
@@ -1567,8 +1575,8 @@ namespace Dune
                                     identifier = deftype_cont.Replace("class", "").Trim();
                                 }
 
-                                if(!identifier.Equals("typename"))
-                                    templateParamList.Add(declmame_cont, te);
+                                //if(!identifier.Equals("typename"))
+                                //    templateParamList.Add(declmame_cont, te);
 
                             }
 
@@ -1694,6 +1702,8 @@ namespace Dune
             if(templateTree != null)
                 Console.WriteLine("parsed:: " + templateTree.toString());
             //Console.WriteLine("");
+
+            currFeature.tempTree = templateTree;
 
             return templateTree;
 
