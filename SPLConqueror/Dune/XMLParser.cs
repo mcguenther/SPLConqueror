@@ -225,6 +225,10 @@ namespace Dune
                         name = node.InnerText.ToString();
                         templateInName = extractTemplateInName(name);
                         name = convertName(name);
+                        if (name.Contains("helper") || name.Contains("Helper"))
+                        {
+                            return;
+                        }
                         break;
                     case "sectiondef":
                         if (node.Attributes.GetNamedItem("kind") != null)
@@ -248,12 +252,6 @@ namespace Dune
                         break;
                 }
             }
-
-            if (name.Contains("helper") || name.Contains("Helper"))
-            {
-                return;
-            }
-
 
             df = new DuneClass(refId, name, template, templateInName);
             features.Add(df);
@@ -349,6 +347,10 @@ namespace Dune
                         name = node.InnerText.ToString();
                         templateInName = extractTemplateInName(name);
                         name = convertName(name);
+                        if (name.Contains("helper") || name.Contains("Helper"))
+                        {
+                            return;
+                        }
                         break;
                     case "basecompoundref":
                         String refNew = null;
@@ -392,11 +394,6 @@ namespace Dune
             }
 
             DuneClass df = getClass(new DuneClass(refId, name, template, templateInName));
-
-
-
-            if (df != null)
-            {
 
                 if (methods != null)
                 {
@@ -453,7 +450,7 @@ namespace Dune
                 }
             }
 
-            }
+            
             output.Flush();
         }
 
