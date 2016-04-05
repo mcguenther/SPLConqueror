@@ -1472,7 +1472,10 @@ namespace Dune
                 hasTemplate = true;
             }
 
-            if (name.Contains("helper") || name.Contains("Helper"))
+            // Ignore helper, private classes and so on.
+            String prot = world.Attributes.GetNamedItem("prot") == null ? null : world.Attributes.GetNamedItem("prot").Value;
+            String kind = world.Attributes.GetNamedItem("kind") == null ? null : world.Attributes.GetNamedItem("kind").Value;
+            if (name.Contains("helper") || name.Contains("Helper") ||  (prot != null && prot.Equals("private")) || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("group") || kind.Equals("namespace") || kind.Equals("page")))
             {
                 return null;
             }
