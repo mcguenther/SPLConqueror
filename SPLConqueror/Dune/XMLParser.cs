@@ -338,6 +338,8 @@ namespace Dune
             String templateInName = "";
             List<DuneClass> inherits = new List<DuneClass>();
             MethodList methods = null;
+            int max = -1;
+            int min = -1;
 
             foreach (XmlNode node in child.ChildNodes)
             {
@@ -373,10 +375,17 @@ namespace Dune
                         inherits.Add(newDF);
                         break;
                     case "templateparamlist":
-                        //Tuple<String, Dictionary<String, String>> templateParams = 
-                        //extractTemplate(node);
-                        //template = templateParams.Item1;
-                        //templateTypeMapping = templateParams.Item2;
+                        // Set the range of the template
+                        max = node.ChildNodes.Count;
+                        min = max;
+                        foreach (XmlNode param in node.ChildNodes)
+                        {
+                            if (getChild("defval", param.ChildNodes) != null)
+                            {
+                                min--;
+                            }
+
+                        }
                         break;
                     case "sectiondef":
                         if (node.Attributes.GetNamedItem("kind") != null)
@@ -413,7 +422,11 @@ namespace Dune
                     classesWithNoNormalMethods.Add(df);
                 }
 
-            
+            // Set the range; Note that this can be variable because of the default values.
+            if (min > -1 && max > -1)
+            {
+                df.setRange(min, max);
+            }
 
             // Now add all relations
             foreach (DuneClass inherit in inherits)
@@ -1573,6 +1586,11 @@ namespace Dune
                                 else
                                 {
                                     identifier = deftype_cont.Replace("class", "").Trim();
+                                }
+
+                                if (currFeature.GetType() == typeof(DuneClass))
+                                {
+                                    ((DuneClass)currFeature).addTemplateElement(te);
                                 }
 
                                 //if(!identifier.Equals("typename"))

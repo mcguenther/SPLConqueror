@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Collections;
+using Dune.util;
 
 namespace Dune
 {
@@ -12,7 +13,8 @@ namespace Dune
         private String featureNamespace;
         private String fullClassName;
         private String className;
-        private int templateArgumentCount;
+        private Range templateArgumentCount;
+        private List<TemplateElement> templateElements;
         private String templateForCode;
         private String implementingTemplate;
         private Boolean isStruct = false;
@@ -45,14 +47,16 @@ namespace Dune
             int index = className.IndexOf('<');
             this.templateForCode = "";
             this.implementingTemplate = "";
+            this.templateElements = new List<TemplateElement>();
             if (index > 0)
             {
                 this.className = className.Substring(0, index);
                 this.templateForCode = className.Substring(index + 1, className.Length - index - 2);
                 this.implementingTemplate = this.templateForCode;
-                this.templateArgumentCount = XMLParser.getCountOfArgs(this.templateForCode);
+                int minmax = XMLParser.getCountOfArgs(this.templateForCode);
+                this.templateArgumentCount = new Range(minmax, minmax);
                 this.fullClassName = this.className;
-                if (this.templateArgumentCount > 0)
+                if (minmax > 0)
                 {
                     this.fullClassName += "<" + this.templateForCode + ">";
                 }
@@ -60,7 +64,7 @@ namespace Dune
             else
             {
                 this.className = className;
-                this.templateArgumentCount = 0;
+                this.templateArgumentCount = new Range(0,0);
                 this.fullClassName = this.className;
             }
 
@@ -94,12 +98,14 @@ namespace Dune
         {
             this.templateForCode = "";
             this.implementingTemplate = "";
+            this.templateElements = new List<TemplateElement>();
 
             if (template != null && !template.Equals(""))
             {
                 this.className = className;
                 this.implementingTemplate = template;
-                this.templateArgumentCount = XMLParser.getCountOfArgs(this.implementingTemplate);
+                int minmax = XMLParser.getCountOfArgs(this.implementingTemplate);
+                this.templateArgumentCount = new Range(minmax, minmax);
                 if (templateInName == null)
                 {
                     this.fullClassName = this.className + "<" + template + ">";
@@ -114,7 +120,7 @@ namespace Dune
             else
             {
                 this.className = className;
-                this.templateArgumentCount = 0;
+                this.templateArgumentCount = new Range(0,0);
                 this.fullClassName = this.className;
             }
 
@@ -223,6 +229,15 @@ namespace Dune
         public bool isIgnored()
         {
             return ignoreDuckTyping;
+        }
+
+        /// <summary>
+        /// Adds a template element to the list of template elements.
+        /// </summary>
+        /// <param name="te">the template element to add</param>
+        public void addTemplateElement(TemplateElement te)
+        {
+            this.templateElements.Add(te);
         }
 
         /// <summary>
@@ -513,10 +528,20 @@ namespace Dune
         }
 
         /// <summary>
+        /// Sets the range of the argument template.
+        /// </summary>
+        /// <param name="min">the lower bound</param>
+        /// <param name="max">the uppder bound</param>
+        public void setRange(int min, int max)
+        {
+            this.templateArgumentCount = new Range(min, max);
+        }
+
+        /// <summary>
         /// Returns the number of template arguments.
         /// </summary>
         /// <returns>the number of template arguments</returns>
-        public int getTemplateArgumentCount()
+        public Range getTemplateArgumentCount()
         {
             return this.templateArgumentCount;
         }
