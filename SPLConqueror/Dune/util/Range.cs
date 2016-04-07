@@ -37,5 +37,33 @@ namespace Dune.util
         {
             return number >= this.lowerBound && number <= this.upperBound;
         }
+
+        /// <summary>
+        /// Returns <code>true</code> iff the specified number corresponds to the upper bound.
+        /// </summary>
+        /// <param name="number">the number to check</param>
+        /// <returns><code>true</code> iff the specified number corresponds to the upper bound</returns>
+        public bool isUpperBound(int number)
+        {
+            return number == this.upperBound;
+        }
+
+        /// <summary>
+        /// Returns the upper bound of the range.
+        /// </summary>
+        /// <returns>the upper bound</returns>
+        public int getUpperBound()
+        {
+            return this.upperBound;
+        }
+
+        /// <summary>
+        /// Returns the lower bound of the range.
+        /// </summary>
+        /// <returns>the lower bound</returns>
+        public int getLowerBound()
+        {
+            return this.lowerBound;
+        }
     }
 }

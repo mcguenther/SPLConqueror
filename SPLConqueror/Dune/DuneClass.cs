@@ -163,6 +163,33 @@ namespace Dune
             return result;
         }
 
+
+        /// <summary>
+        /// Fills the given template with the default values.
+        /// </summary>
+        /// <param name="templateToFill">the template to fill with default values</param>
+        /// <returns>the filled template</returns>
+        public string fillTemplate(string templateToFill)
+        {
+            int argumentCount = XMLParser.getCountOfArgs(templateToFill) ;
+            if (!templateArgumentCount.isUpperBound(argumentCount) && templateArgumentCount.isIn(argumentCount))
+            {
+                int index = templateToFill.LastIndexOf('>');
+                string prefix = templateToFill.Substring(0, index);
+                string sufix = templateToFill.Substring(index, templateToFill.Length - index);
+                string extension = "";
+                for (int i = argumentCount; i <= templateArgumentCount.getUpperBound(); i++)
+                {
+                    extension += ", " + templateElements.ElementAt(i - templateArgumentCount.getLowerBound());
+                }
+
+                return prefix + extension + sufix;
+            } else
+            {
+                return templateToFill;
+            }
+        }
+
         /// <summary>
         /// Returns the hashed name of the method.
         /// </summary>

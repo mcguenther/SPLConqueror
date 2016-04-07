@@ -507,11 +507,11 @@ namespace Dune
 
             DuneFeature df;
 
-            df = searchForFeature(new DuneClass("", feature));
+            df = searchForClass(new DuneClass("", feature));
 
             if (df == null || template.Equals(""))
             {
-                df = searchForFeature(new DuneClass("", feature + "<>"));
+                df = searchForClass(new DuneClass("", feature + "<>"));
             }
 
             if (df == null)
@@ -1142,11 +1142,13 @@ namespace Dune
         /// </summary>
         /// <param name="df">the feature to search for</param>
         /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
-        private static DuneClass searchForFeature(DuneClass df)
+        private static DuneClass searchForClass(DuneClass df)
         {
             foreach (DuneClass d in features)
             {
-                if (d.getFeatureName().Equals(df.getFeatureName()))
+
+                // Not only the name of the classes has to correspond... also the template argument count has to fit.
+                if (d.getFeatureName().Equals(df.getFeatureName()) && df.getTemplateArgumentCount().isIn(d.getTemplateArgumentCount().getLowerBound()) && df.getTemplateArgumentCount().isIn(d.getTemplateArgumentCount().getUpperBound()))
                 {
                     return d;
                 }
@@ -1159,7 +1161,7 @@ namespace Dune
         /// </summary>
         /// <param name="df">the feature to search for</param>
         /// <returns>the feature if it was found; <code>null</code> otherwise</returns>
-        private static DuneClass searchForFeatureName(DuneClass df)
+        private static DuneClass searchForClassName(DuneClass df)
         {
             foreach (DuneClass d in features)
             {
@@ -1259,7 +1261,7 @@ namespace Dune
 
             DuneFeature df;
 
-            df = searchForFeature(new DuneClass("", feature));
+            df = searchForClass(new DuneClass("", feature));
 
             int colonIndex = feature.LastIndexOf(':');
             String enumNamespace = feature.Substring(0, colonIndex - 1);
