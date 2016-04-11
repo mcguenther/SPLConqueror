@@ -14,12 +14,23 @@ namespace Dune
 
         TemplateTree lastElement;
 
+        DuneFeature refersTo;
+
         String furtherInformation = "";
 
         public TemplateTree()
         {
             currElement = this;
 
+        }
+
+        /// <summary>
+        /// Add the refering dune feature.
+        /// </summary>
+        /// <param name="df">the dune feature the current element refers to</param>
+        public void addInformation(DuneFeature df)
+        {
+            this.referseTo = df;
         }
 
 

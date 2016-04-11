@@ -80,6 +80,15 @@ namespace Dune
             return this.enumObject.getValues();
         }
 
+        /// <summary>
+        /// Returns the values of the enum as a list of <code>DuneEnumValue</code>.
+        /// </summary>
+        /// <returns>the values of the enum as a list of <code>DuneEnumValue</code></returns>
+        public List<DuneEnumValue> getValueObjects()
+        {
+            return this.enumObject.getValueObjects();
+        }
+
         public override bool Equals(System.Object obj)
         {
             // If parameter is null return false.

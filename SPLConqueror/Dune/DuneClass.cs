@@ -211,6 +211,60 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns the template argument on the specified position.
+        /// </summary>
+        /// <param name="index">the number of the template argument to return. Note that this begins with 0</param>
+        /// <returns>the template argument on the specified position</returns>
+        public string getTemplateArgument(int index)
+        {
+            if (index > 0 && index <= this.templateArgumentCount.getUpperBound())
+            {
+                int level = 0;
+                string result = "";
+                int count = 0;
+                for (int i = 1; i < this.implementingTemplate.Length; i++)
+                {
+                    switch (this.implementingTemplate[i]) {
+                        case '<':
+                            if (level == 0 && count == index)
+                            {
+                                result += this.implementingTemplate[i];
+                            }
+                            level++;
+                            break;
+                        case '>':
+                            level--;
+                            if (level == 0 && count == index)
+                            {
+                                result += this.implementingTemplate[i];
+                            }
+                            break;
+                        case ',':
+                            if (level == 0 && count == index)
+                            {
+                                return result;
+                            } else
+                            {
+                                count++;
+                            }
+                            break;
+                        default:
+                            if (level == 0 && count == index)
+                            {
+                                result += this.implementingTemplate[i];
+                            }
+                            break;
+                    }
+                }
+                return result=="" ? null : result;
+            } else if (index > this.templateArgumentCount.getUpperBound() && this.tempTree.hasUnlimitedNumberOfParameters)
+            {
+                return getTemplateArgument(this.templateArgumentCount.getUpperBound());
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Returns the argument count of the method on the given index.
         /// </summary>
         /// <param name="index">the index in the local list</param>
@@ -229,15 +283,6 @@ namespace Dune
         {
             this.isStruct = isStruct;
             this.isAbstract = isAbstract;
-        }
-
-        /// <summary>
-        /// For debugging purpose. This method should be deleted
-        /// </summary>
-        /// <returns>a list containing the parent-nodes.</returns>
-        public List<DuneClass> getParents()
-        {
-            return parents;
         }
 
         /// <summary>

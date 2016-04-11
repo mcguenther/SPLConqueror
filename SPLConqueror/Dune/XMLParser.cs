@@ -22,8 +22,8 @@ namespace Dune
         // The root of the whole feature-tree.
         static DuneClass root = new DuneClass("", "root");
 
-        static List<DuneClass> features = new List<DuneClass>();
-        static List<DuneEnum> enums = new List<DuneEnum>();
+        public static List<DuneClass> features = new List<DuneClass>();
+        public static List<DuneEnum> enums = new List<DuneEnum>();
 
         static Dictionary<DuneClass, String> templatesToAnalyze = new Dictionary<DuneClass, string>();
 
@@ -1403,7 +1403,7 @@ namespace Dune
         /// </summary>
         /// <param name="className">the name of the feature to be searched for</param>
         /// <returns>the feature with the given name</returns>
-        private static DuneClass getFeature(String className)
+        internal static DuneClass getFeature(String className)
         {
             foreach (DuneClass f in features)
             {
@@ -1728,6 +1728,12 @@ namespace Dune
             return templateTree;
 
   
+        }
+
+        private static string analyzeTemplate(string template)
+        {
+            // First step: Split the whole template
+            throw new NotImplementedException();
         }
 
         /// <summary>

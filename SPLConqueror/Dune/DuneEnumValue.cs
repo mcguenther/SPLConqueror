@@ -17,9 +17,9 @@ namespace Dune
         /// <summary>
         /// Constructs a <code>DuneEnumValue</code> by the reference, the namespace and its value.
         /// </summary>
-        /// <param name="reference"></param>
+        /// <param name="reference">the refid</param>
         /// <param name="enumNamespace">the namespace of the enum value</param>
-        /// <param name="value"></param>
+        /// <param name="value">the value</param>
         public DuneEnumValue(string reference, string enumNamespace, string value)
         {
             this.reference = reference;
