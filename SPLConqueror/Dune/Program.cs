@@ -19,7 +19,7 @@ namespace Dune
         public const bool INCLUDE_CLASSES_FROM_STD = false;
 
 
-        public static bool USE_DUCK_TYPING = true;
+        public static bool USE_DUCK_TYPING = false;
 
 
         /// <summary>

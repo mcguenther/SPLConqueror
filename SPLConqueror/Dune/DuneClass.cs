@@ -217,12 +217,12 @@ namespace Dune
         /// <returns>the template argument on the specified position</returns>
         public string getTemplateArgument(int index)
         {
-            if (index > 0 && index <= this.templateArgumentCount.getUpperBound())
+            if (index >= 0 && index < this.templateArgumentCount.getUpperBound())
             {
                 int level = 0;
                 string result = "";
                 int count = 0;
-                for (int i = 1; i < this.implementingTemplate.Length; i++)
+                for (int i = 0; i < this.implementingTemplate.Length; i++)
                 {
                     switch (this.implementingTemplate[i]) {
                         case '<':

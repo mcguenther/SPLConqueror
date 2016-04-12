@@ -14,9 +14,8 @@ namespace Dune
 
         TemplateTree lastElement;
 
-        DuneFeature refersTo;
-
         String furtherInformation = "";
+        String methodInvocation = "";
 
         public TemplateTree()
         {
@@ -119,6 +118,11 @@ namespace Dune
             newPart.parent = currElement;
             currElement.children.Add(newPart);
             lastElement = newPart;
+        }
+
+        internal void addMethodInvocation(string method)
+        {
+            this.methodInvocation = method;
         }
 
 
