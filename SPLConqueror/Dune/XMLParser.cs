@@ -38,9 +38,9 @@ namespace Dune
 
 
         static Dictionary<String, DuneFeature> refIdToFeature = new Dictionary<string, DuneFeature>();
-        public static Dictionary<String, List<DuneFeature>> nameWithoutPackageToDuneFeatures = new Dictionary<string, List<DuneFeature>>(); 
+        public static Dictionary<String, List<DuneFeature>> nameWithoutPackageToDuneFeatures = new Dictionary<string, List<DuneFeature>>();
 
-        
+
 
         // Is only here for debugging
         static System.IO.StreamWriter file;
@@ -92,7 +92,7 @@ namespace Dune
             Console.WriteLine("further informaion : " + furtherInformation);
             Console.WriteLine("further informaion for template elements : " + tempElementsWithFurtherInformation);
             Console.WriteLine("only info in paramlist " + onlyInParamList);
-           
+
             closeFoundOutput();
 
 
@@ -118,8 +118,8 @@ namespace Dune
 
             System.Console.WriteLine("Done!");
 
-            
-            if(Program.USE_DUCK_TYPING)
+
+            if (Program.USE_DUCK_TYPING)
             {
                 System.Console.WriteLine("Now finding potential parents(duck-typing)");
                 Stopwatch stopwatch = Stopwatch.StartNew();
@@ -159,7 +159,7 @@ namespace Dune
             if (feature.GetType().Equals(typeof(DuneClass)))
             {
                 LinkedList<TemplateTree> elements = ((DuneClass)feature).templat;
-                
+
 
             }
         }
@@ -257,15 +257,15 @@ namespace Dune
             df = new DuneClass(refId, name, template, templateInName);
             features.Add(df);
 
-            string nameWithoutPackage = name.Substring(name.LastIndexOf(':')+1);
+            string nameWithoutPackage = name.Substring(name.LastIndexOf(':') + 1);
 
-            if(!refIdToFeature.ContainsKey(refId))
+            if (!refIdToFeature.ContainsKey(refId))
                 refIdToFeature.Add(refId, df);
 
-            if(!nameWithoutPackageToDuneFeatures.ContainsKey(nameWithoutPackage))
-                nameWithoutPackageToDuneFeatures.Add(nameWithoutPackage,new List<DuneFeature>());
+            if (!nameWithoutPackageToDuneFeatures.ContainsKey(nameWithoutPackage))
+                nameWithoutPackageToDuneFeatures.Add(nameWithoutPackage, new List<DuneFeature>());
             nameWithoutPackageToDuneFeatures[nameWithoutPackage].Add(df);
-            
+
 
             // This boolean indicates if the current child is an interface, an abstract class or a normal class.
             Boolean structClass = child.Attributes.GetNamedItem("kind").Value.Equals("struct");
@@ -405,23 +405,23 @@ namespace Dune
 
             DuneClass df = getClass(new DuneClass(refId, name, template, templateInName));
 
-                if (methods != null)
-                {
-                    df.setMethods(methods.getMethodHashes());
-                    df.setMethodNameHashes(methods.getMethodNameHashes());
-                    df.setMethodArgumentCount(methods.getArgumentCount());
-                    df.setMethodArguments(methods.getMethodArguments());
-                    df.setReplaceableMethodArguments(methods.getReplaceableArguments());
-                    df.ignoreAtDuckTyping(methods.classHasNormalMethods());
-                    if (!methods.classHasNormalMethods())
-                    {
-                        classesWithNoNormalMethods.Add(df);
-                    }
-                }
-                else
+            if (methods != null)
+            {
+                df.setMethods(methods.getMethodHashes());
+                df.setMethodNameHashes(methods.getMethodNameHashes());
+                df.setMethodArgumentCount(methods.getArgumentCount());
+                df.setMethodArguments(methods.getMethodArguments());
+                df.setReplaceableMethodArguments(methods.getReplaceableArguments());
+                df.ignoreAtDuckTyping(methods.classHasNormalMethods());
+                if (!methods.classHasNormalMethods())
                 {
                     classesWithNoNormalMethods.Add(df);
                 }
+            }
+            else
+            {
+                classesWithNoNormalMethods.Add(df);
+            }
 
             // Set the range; Note that this can be variable because of the default values.
             if (min > -1 && max > -1)
@@ -464,7 +464,7 @@ namespace Dune
                 }
             }
 
-            
+
             output.Flush();
         }
 
@@ -474,7 +474,7 @@ namespace Dune
         /// <param name="df">the class to return the variability for</param>
         /// <returns>the variability of the class or enum</returns>
         public static List<String> getVariability(DuneFeature df)
-        { 
+        {
             if (df == null)
             {
                 return null;
@@ -527,7 +527,7 @@ namespace Dune
             {
                 if (df.GetType() == typeof(DuneClass) && !template.Equals(String.Empty))
                 {
-                    analyzeTemplate(template, refersTo, (DuneClass) df);
+                    analyzeTemplate(template, (DuneClass)df);
                 }
                 return df.getVariability(root);
             }
@@ -541,13 +541,12 @@ namespace Dune
         /// This method analyzes the given template by calling another helper-method.
         /// </summary>
         /// <param name="template">the template to be analyzed</param>
-        /// <param name="refersto">the global <code>RefersToAliasing</code></param>
         /// <param name="d">the <code>DuneClass</code> the template is related to</param>
         /// <returns>the <code>TemplateTree</code> including the whole information about the template</returns>
-        private static TemplateTree analyzeTemplate(string template, RefersToAliasing refersto, DuneClass d)
+        private static TemplateTree analyzeTemplate(string template, DuneClass d)
         {
             TemplateTree tt = new TemplateTree();
-            analyzeTemplate(template, refersto, d, tt);
+            analyzeTemplate(template, d, tt);
 
             return tt;
         }
@@ -556,11 +555,10 @@ namespace Dune
         /// This method analyzes the given template and adds the information to the given <code>TemplateTree</code>.
         /// </summary>
         /// <param name="template">the template to be analyzed</param>
-        /// <param name="refersto">the global <code>RefersToAliasing</code></param>
         /// <param name="d">the <code>DuneClass</code> the template is related to</param>
         /// <param name="tt">the template tree in which the information will be saved</param>
         /// <returns>the <code>TemplateTree</code> including the whole information about the template</returns>
-        private static TemplateTree analyzeTemplate(string template, RefersToAliasing refersto, DuneClass d, TemplateTree tt)
+        private static TemplateTree analyzeTemplate(string template, DuneClass d, TemplateTree tt)
         {
             string[] args = splitTemplate(template);
             for (int i = 0; i < args.Length; i++)
@@ -580,7 +578,8 @@ namespace Dune
                 bool classOrEnum = false;
                 string method = arg.Contains("(") ? arg.Substring(arg.LastIndexOf("::"), arg.LastIndexOf(")") + 1 - arg.LastIndexOf("::")) : "";
 
-                if (arg.Contains("(")) {
+                if (arg.Contains("("))
+                {
                     tt.addInformation(arg.Substring(arg.LastIndexOf("::"), arg.LastIndexOf(")") + 1 - arg.LastIndexOf("::")));
                 }
 
@@ -614,18 +613,21 @@ namespace Dune
                 string className = arg;
                 if (className.Contains("::"))
                 {
-                    className = className.Substring(className.LastIndexOf("::") + 2, className.Length - className.LastIndexOf("::") - 3);
+                    className = className.Substring(className.LastIndexOf("::") + 2, className.Length - className.LastIndexOf("::") - 2);
                 }
 
                 if (className.Contains("<"))
                 {
                     int index = className.IndexOf('<');
-                    string temp = className.Substring(index, className.LastIndexOf('>') - index);
+                    string temp = className.Substring(index, className.LastIndexOf('>') - index + 1);
                     className = className.Substring(0, index);
                     DuneClass classObject = XMLParser.getFeature(className);
+                    
                     if (classObject != null)
                     {
-                        analyzeTemplate(temp, refersto, classObject, tt);
+                        tt.addInformation(classObject);
+                        tt.incHierarchy();
+                        analyzeTemplate(temp, classObject, tt);
                     }
                     else
                     {
@@ -635,15 +637,12 @@ namespace Dune
 
                 if (className.Contains(" "))
                 {
-                    // TODO: Be aware of "typename <varname> (it seems that only typenames are appearing)"
-                    if (!className.Contains("typename"))
-                        Console.WriteLine("Non-obvious case");
+                    Console.WriteLine("Non-obvious case");
                 }
 
                 if (XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(className))
                 {
                     classOrEnum = true;
-                    tt.addInformation(className);
                 }
 
 
@@ -655,7 +654,10 @@ namespace Dune
                 // If no other case matches then it has to be an alias; A method should also be an alias (TODO: Also analyze the class and template in which the method appears in)
                 string templateArgument = d.getTemplateArgument(i);
                 if (templateArgument != null)
-                    refersto.add(templateArgument, arg);
+                {
+                    tt.addAlias(templateArgument, arg);
+                    tt.addInformation(arg);
+                }
                 else
                     Console.WriteLine("Non-obvious case");
 
@@ -682,7 +684,8 @@ namespace Dune
                     case ',':
                         if (level == 0)
                         {
-                            args.AddLast(arg);
+                            args.AddLast(arg.Trim());
+                            arg = "";
                         }
                         else
                         {
@@ -703,6 +706,9 @@ namespace Dune
                         break;
                 }
             }
+            // Also add the last element
+            if (!arg.Equals(""))
+                args.AddLast(arg.Trim());
 
             return args.ToArray();
         }
@@ -1321,9 +1327,8 @@ namespace Dune
         {
             foreach (DuneClass d in features)
             {
-
                 // Not only the name of the classes has to correspond... also the template argument count has to fit.
-                if (d.getFeatureName().Equals(df.getFeatureName()) && df.getTemplateArgumentCount().isIn(d.getTemplateArgumentCount().getLowerBound()) && df.getTemplateArgumentCount().isIn(d.getTemplateArgumentCount().getUpperBound()))
+                if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()) && d.getTemplateArgumentCount().isIn(df.getTemplateArgumentCount().getLowerBound()) && d.getTemplateArgumentCount().isIn(df.getTemplateArgumentCount().getUpperBound()))
                 {
                     return d;
                 }
@@ -1376,7 +1381,7 @@ namespace Dune
             int indx = XMLParser.features.IndexOf(df);
             if (indx >= 0 && XMLParser.features[indx].GetType() == typeof(DuneClass))
             {
-                return df =(DuneClass) XMLParser.features[indx];
+                return df = (DuneClass)XMLParser.features[indx];
             }
             //else
             //{
@@ -1453,7 +1458,8 @@ namespace Dune
             if (df == null)
             {
                 return searchForAllClassNames(new DuneClass("", enumNamespace));
-            } else
+            }
+            else
             {
                 List<DuneFeature> dfs = new List<DuneFeature>();
                 dfs.Add(df);
@@ -1582,7 +1588,7 @@ namespace Dune
         {
             foreach (DuneClass f in features)
             {
-                if (f.getFeatureName().Equals(className))
+                if (f.getFeatureNameWithoutTemplateAndNamespace().Equals(className))
                 {
                     return f;
                 }
@@ -1608,7 +1614,7 @@ namespace Dune
             return result;
         }
 
-/// <summary>
+        /// <summary>
         /// This method extracts the information of the template.
         /// </summary>
         /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
@@ -1665,7 +1671,7 @@ namespace Dune
             // Ignore helper, private classes and so on.
             String prot = world.Attributes.GetNamedItem("prot") == null ? null : world.Attributes.GetNamedItem("prot").Value;
             String kind = world.Attributes.GetNamedItem("kind") == null ? null : world.Attributes.GetNamedItem("kind").Value;
-            if (name.Contains("helper") || name.Contains("Helper") ||  (prot != null && prot.Equals("private")) || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("group") || kind.Equals("namespace") || kind.Equals("page")))
+            if (name.Contains("helper") || name.Contains("Helper") || (prot != null && prot.Equals("private")) || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("group") || kind.Equals("namespace") || kind.Equals("page")))
             {
                 return null;
             }
@@ -1726,7 +1732,8 @@ namespace Dune
 
                                             }
                                             string defValueTemplate = innerNode.InnerText;
-                                            if(defValueTemplate.Length >0){
+                                            if (defValueTemplate.Length > 0)
+                                            {
                                                 Console.WriteLine("asd");
                                             }
                                         }
@@ -1739,7 +1746,7 @@ namespace Dune
                                         deftype_cont = innerNode.InnerText;
                                         break;
                                     default:
-                                        Console.WriteLine(innerNode.Name+" is not considered in the template extraction");
+                                        Console.WriteLine(innerNode.Name + " is not considered in the template extraction");
                                         break;
                                 }
                             }
@@ -1801,7 +1808,7 @@ namespace Dune
                 }
             }
 
-            
+
 
             if (hasTemplate)
             {
@@ -1826,12 +1833,12 @@ namespace Dune
                 {
                     ifConds += 1;
                     Console.WriteLine("");
-                    return null; 
+                    return null;
                 }
                 // template splitting
                 // in einem template sind entweder terminale Elemente oder Klassen, die selbst wieder Elemente besitzen. 
 
-                
+
 
                 templateTree = new TemplateTree();
                 String[] templateParts = templateString.Split(' ');
@@ -1856,17 +1863,18 @@ namespace Dune
 
                     }
 
-                    if(Double.TryParse(token,out val))
+                    if (Double.TryParse(token, out val))
                     {
                         easyToFind += 1;
                         templateTree.addNumericValue(token);
                     }
 
-                    if(token.Equals("<"))
+                    if (token.Equals("<"))
                     {
                         // increase hierarchy
                         templateTree.incHierarchy();
-                    }else if (token.Equals(">"))
+                    }
+                    else if (token.Equals(">"))
                     {
                         // decrease hierarchy
                         templateTree.decHierarchy();
@@ -1892,9 +1900,9 @@ namespace Dune
 
 
 
-            onlyInParamList += templateParamList.Count();            
+            onlyInParamList += templateParamList.Count();
 
-            if(templateTree != null)
+            if (templateTree != null)
                 Console.WriteLine("parsed:: " + templateTree.toString());
             //Console.WriteLine("");
 
@@ -1902,7 +1910,7 @@ namespace Dune
 
             return templateTree;
 
-  
+
         }
 
         private static string analyzeTemplate(string template)

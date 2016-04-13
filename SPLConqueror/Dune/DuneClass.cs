@@ -219,44 +219,11 @@ namespace Dune
         {
             if (index >= 0 && index < this.templateArgumentCount.getUpperBound())
             {
-                int level = 0;
-                string result = "";
-                int count = 0;
-                for (int i = 0; i < this.implementingTemplate.Length; i++)
+                if (this.templateElements[index].deftype_cont.Equals("class") || this.templateElements[index].deftype_cont.Equals("typename"))
                 {
-                    switch (this.implementingTemplate[i]) {
-                        case '<':
-                            if (level == 0 && count == index)
-                            {
-                                result += this.implementingTemplate[i];
-                            }
-                            level++;
-                            break;
-                        case '>':
-                            level--;
-                            if (level == 0 && count == index)
-                            {
-                                result += this.implementingTemplate[i];
-                            }
-                            break;
-                        case ',':
-                            if (level == 0 && count == index)
-                            {
-                                return result;
-                            } else
-                            {
-                                count++;
-                            }
-                            break;
-                        default:
-                            if (level == 0 && count == index)
-                            {
-                                result += this.implementingTemplate[i];
-                            }
-                            break;
-                    }
+                    return this.templateElements[index].defval_cont.Equals("") ? this.templateElements[index].defname_cont : this.templateElements[index].defval_cont;
                 }
-                return result=="" ? null : result;
+                return this.templateElements[index].deftype_cont;
             } else if (index > this.templateArgumentCount.getUpperBound() && this.tempTree.hasUnlimitedNumberOfParameters)
             {
                 return getTemplateArgument(this.templateArgumentCount.getUpperBound());
