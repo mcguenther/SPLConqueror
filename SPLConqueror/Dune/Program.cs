@@ -49,8 +49,20 @@ namespace Dune
                 return;
             }
 
-
             
+
+            try {
+                var writer = new StreamWriter(DEBUG_PATH+"out.txt");
+                // Redirect standard output from the console to the output file.
+                Console.SetOut(writer);
+
+                //Console.SetOut(
+
+            }catch(IOException e) {
+                TextWriter errorWriter = Console.Error;
+                errorWriter.WriteLine(e.Message);
+            }
+
             XMLParser.parse(PATH);
 
             // Needed for debugging purposes.

@@ -14,5 +14,8 @@ namespace Dune
         public String defname_cont = "";
         public String deftype_cont = "";
         public DuneFeature o = null;
+
+        public TemplateTree defVal_tree = null;
+        public TemplateTree type_tree = null;
     }
 }
