@@ -20,7 +20,13 @@ namespace Dune
         public TemplateTree()
         {
             currElement = this;
+            this.refersToAliasing = new util.RefersToAliasing();
+        }
 
+        public TemplateTree(TemplateTree tt)
+        {
+            currElement = this;
+            this.refersToAliasing = tt.refersToAliasing;
         }
 
         /// <summary>
@@ -29,7 +35,18 @@ namespace Dune
         /// <param name="df">the dune feature the current element refers to</param>
         public void addInformation(DuneFeature df)
         {
-            this.referseTo = df;
+            
+            TemplateTree newPart = new TemplateTree(this);
+
+            newPart.referseTo = df;
+            newPart.type = Kind.concrete;
+            newPart.artificalString = df.getFeatureNameWithoutTemplateAndNamespace();
+            newPart.isTerminal = true;
+
+            newPart.parent = currElement;
+            currElement.children.Add(newPart);
+
+            lastElement = newPart;
         }
 
 
@@ -56,10 +73,20 @@ namespace Dune
             this.furtherInformation = token;
         }
 
+        internal void addAlias(string templateargument, string alias)
+        {
+            string value = this.refersToAliasing.get(templateargument);
+            if (value != null && value.Equals(alias))
+            {
+                return;
+            }
+            this.refersToAliasing.add(templateargument, alias);
+        }
+
 
         internal void addNumericValue(string token)
         {
-            TemplateTree newPart = new TemplateTree();
+            TemplateTree newPart = new TemplateTree(this);
             newPart.artificalString = token;
             newPart.type = Kind.value;
             newPart.isTerminal = true;
@@ -72,7 +99,7 @@ namespace Dune
 
         internal void addInformation(string token)
         {
-            TemplateTree newPart = new TemplateTree();
+            TemplateTree newPart = new TemplateTree(this);
 
             if (XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(token))
             {
@@ -104,7 +131,7 @@ namespace Dune
 
         internal void addInformation(string token, TemplateElement furtherInformation)
         {
-            TemplateTree newPart = new TemplateTree();
+            TemplateTree newPart = new TemplateTree(this);
 
             newPart.artificalString = token;
             newPart.type = Kind.concrete;
@@ -136,7 +163,7 @@ namespace Dune
                 sb.Append(artificalString);
 
             if (this.children.Count > 0)
-                sb.Append(" ( ");
+                sb.Append(" < ");
 
             for (int i = 0; i < this.children.Count; i++)
             {
@@ -144,7 +171,7 @@ namespace Dune
             }
 
             if (this.children.Count > 0)
-                sb.Append(" ) ");
+                sb.Append(" > ");
 
             sb.Append(furtherInformation);
             return sb.ToString();

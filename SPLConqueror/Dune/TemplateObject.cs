@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Dune.util;
 
 namespace Dune
 {
@@ -17,7 +18,7 @@ namespace Dune
 
         public string artificalString = "";
 
-        public Dictionary<String, String> referseToAliasing = new Dictionary<string, string>();
+        public RefersToAliasing refersToAliasing;
 
         private List<TemplateObject> children;
 

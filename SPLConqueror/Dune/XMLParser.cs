@@ -297,10 +297,9 @@ namespace Dune
                 }
 
             }
-
-
             if (!nameWithoutPackageToDuneFeatures.ContainsKey(nameWithoutPackage))
                 nameWithoutPackageToDuneFeatures.Add(nameWithoutPackage, new List<DuneFeature>());
+            
             nameWithoutPackageToDuneFeatures[nameWithoutPackage].Add(df);
 
 
@@ -566,7 +565,7 @@ namespace Dune
             {
                 if (df.GetType() == typeof(DuneClass) && !template.Equals(String.Empty))
                 {
-                    analyzeTemplate(template, refersTo, (DuneClass)df);
+                    analyzeTemplate(template, (DuneClass)df);
                 }
                 return df.getVariability(root);
             }
@@ -580,13 +579,12 @@ namespace Dune
         /// This method analyzes the given template by calling another helper-method.
         /// </summary>
         /// <param name="template">the template to be analyzed</param>
-        /// <param name="refersto">the global <code>RefersToAliasing</code></param>
         /// <param name="d">the <code>DuneClass</code> the template is related to</param>
         /// <returns>the <code>TemplateTree</code> including the whole information about the template</returns>
-        private static TemplateTree analyzeTemplate(string template, RefersToAliasing refersto, DuneClass d)
+        private static TemplateTree analyzeTemplate(string template, DuneClass d)
         {
             TemplateTree tt = new TemplateTree();
-            analyzeTemplate(template, refersto, d, tt);
+            analyzeTemplate(template, d, tt);
 
             return tt;
         }
@@ -595,11 +593,10 @@ namespace Dune
         /// This method analyzes the given template and adds the information to the given <code>TemplateTree</code>.
         /// </summary>
         /// <param name="template">the template to be analyzed</param>
-        /// <param name="refersto">the global <code>RefersToAliasing</code></param>
         /// <param name="d">the <code>DuneClass</code> the template is related to</param>
         /// <param name="tt">the template tree in which the information will be saved</param>
         /// <returns>the <code>TemplateTree</code> including the whole information about the template</returns>
-        private static TemplateTree analyzeTemplate(string template, RefersToAliasing refersto, DuneClass d, TemplateTree tt)
+        private static TemplateTree analyzeTemplate(string template, DuneClass d, TemplateTree tt)
         {
             string[] args = splitTemplate(template);
             for (int i = 0; i < args.Length; i++)
@@ -654,18 +651,21 @@ namespace Dune
                 string className = arg;
                 if (className.Contains("::"))
                 {
-                    className = className.Substring(className.LastIndexOf("::") + 2, className.Length - className.LastIndexOf("::") - 3);
+                    className = className.Substring(className.LastIndexOf("::") + 2, className.Length - className.LastIndexOf("::") - 2);
                 }
 
                 if (className.Contains("<"))
                 {
                     int index = className.IndexOf('<');
-                    string temp = className.Substring(index, className.LastIndexOf('>') - index);
+                    string temp = className.Substring(index, className.LastIndexOf('>') - index + 1);
                     className = className.Substring(0, index);
                     DuneClass classObject = XMLParser.getFeature(className);
+                    
                     if (classObject != null)
                     {
-                        analyzeTemplate(temp, refersto, classObject, tt);
+                        tt.addInformation(classObject);
+                        tt.incHierarchy();
+                        analyzeTemplate(temp, classObject, tt);
                     }
                     else
                     {
@@ -675,15 +675,12 @@ namespace Dune
 
                 if (className.Contains(" "))
                 {
-                    // TODO: Be aware of "typename <varname> (it seems that only typenames are appearing)"
-                    if (!className.Contains("typename"))
-                        Console.WriteLine("Non-obvious case");
+                    Console.WriteLine("Non-obvious case");
                 }
 
                 if (XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(className))
                 {
                     classOrEnum = true;
-                    tt.addInformation(className);
                 }
 
 
@@ -695,7 +692,10 @@ namespace Dune
                 // If no other case matches then it has to be an alias; A method should also be an alias (TODO: Also analyze the class and template in which the method appears in)
                 string templateArgument = d.getTemplateArgument(i);
                 if (templateArgument != null)
-                    refersto.add(templateArgument, arg);
+                {
+                    tt.addAlias(templateArgument, arg);
+                    tt.addInformation(arg);
+                }
                 else
                     Console.WriteLine("Non-obvious case");
 
@@ -722,7 +722,8 @@ namespace Dune
                     case ',':
                         if (level == 0)
                         {
-                            args.AddLast(arg);
+                            args.AddLast(arg.Trim());
+                            arg = "";
                         }
                         else
                         {
@@ -743,6 +744,9 @@ namespace Dune
                         break;
                 }
             }
+            // Also add the last element
+            if (!arg.Equals(""))
+                args.AddLast(arg.Trim());
 
             return args.ToArray();
         }
@@ -1368,9 +1372,8 @@ namespace Dune
         {
             foreach (DuneClass d in features)
             {
-
                 // Not only the name of the classes has to correspond... also the template argument count has to fit.
-                if (d.getFeatureName().Equals(df.getFeatureName()) && df.getTemplateArgumentCount().isIn(d.getTemplateArgumentCount().getLowerBound()) && df.getTemplateArgumentCount().isIn(d.getTemplateArgumentCount().getUpperBound()))
+                if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()) && d.getTemplateArgumentCount().isIn(df.getTemplateArgumentCount().getLowerBound()) && d.getTemplateArgumentCount().isIn(df.getTemplateArgumentCount().getUpperBound()))
                 {
                     return d;
                 }
@@ -1543,7 +1546,7 @@ namespace Dune
         {
             foreach (DuneClass f in features)
             {
-                if (f.getFeatureName().Equals(className))
+                if (f.getFeatureNameWithoutTemplateAndNamespace().Equals(className))
                 {
                     return f;
                 }
@@ -1941,8 +1944,6 @@ namespace Dune
 
         }
 
-
-
         /// <summary>
         /// Used for debug-purposes and returns the template itself.
         /// </summary>
@@ -2019,7 +2020,7 @@ namespace Dune
             {
                 toConv = toConv.Substring(0);
             }
-
+    
             // The index-variable is now used to iterate through the name in order to obtain the class with its path(without methods and variables name etc.)
             index = toConv.Length - 1;
             // This variable indicates where the last ":" appeared.
