@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml;
 
 namespace Dune
 {
@@ -13,47 +14,85 @@ namespace Dune
         private string reference;
         private TemplateTree type;
 
-        public DuneTypeDef(string reference, string name, string type)
+        /// <summary>
+        /// Creates a new <code>DuneTypeDef</code> by the given reference, name and type.
+        /// </summary>
+        /// <param name="reference">the reference id of the typedef</param>
+        /// <param name="name">the name of the typedef</param>
+        /// <param name="type">the type(or definition) of the typedef</param>
+        public DuneTypeDef(string reference, string name, XmlNode type)
         {
             this.name = name;
             this.reference = reference;
             this.typeNamespace = "";
             this.wholeName = this.name;
             // TODO: Call the analyzeTemplate-method
+            this.type = XMLParser.getTemplateTreeOf(type);
 
         }
 
-        public DuneTypeDef(string reference, string typeNamespace, string name, string type) : this(reference, name, type)
+        /// <summary>
+        /// Creates a new <code>DuneTypeDef</code> by the given reference, namespace, name and type.
+        /// </summary>
+        /// <param name="reference">the reference id of the typedef</param>
+        /// <param name="typeNamespace">the namespace of the typedef</param>
+        /// <param name="name">the name of the typedef</param>
+        /// <param name="type">the type(or definition) of the typedef</param>
+        public DuneTypeDef(string reference, string typeNamespace, string name, XmlNode type) : this(reference, name, type)
         {
             setNamespace(typeNamespace);
         }
 
+        /// <summary>
+        /// Sets the namespace of the typedef.
+        /// </summary>
+        /// <param name="typeNamespace">the namespace of the typedef</param>
         public void setNamespace(string typeNamespace)
         {
             this.typeNamespace = typeNamespace;
             this.wholeName = this.typeNamespace + this.name;
         }
 
+        /// <summary>
+        /// Returns the name of the typedef including its namespace.
+        /// </summary>
+        /// <returns>the name of the typedef</returns>
         public override string getFeatureName()
         {
             return this.wholeName;
         }
 
+        /// <summary>
+        /// Returns the name of the typedef including its namespace.
+        /// </summary>
+        /// <returns>the name of the typedef</returns>
         public override string getFeatureNameWithoutTemplate()
         {
             return this.wholeName;
         }
 
+        /// <summary>
+        /// Returns only the name of the typedef.
+        /// </summary>
+        /// <returns>only the name of the typedef</returns>
         public override string getFeatureNameWithoutTemplateAndNamespace()
         {
             return this.name;
         }
 
+        /// <summary>
+        /// Returns the namespace of the typedef.
+        /// </summary>
+        /// <returns>the namespace of the typedef</returns>
         public override string getNamespace()
         {
             return this.typeNamespace;
         }
 
+        /// <summary>
+        /// Returns the reference id of the typedef.
+        /// </summary>
+        /// <returns>the reference id of the typedef</returns>
         public override string getReference()
         {
             return this.reference;

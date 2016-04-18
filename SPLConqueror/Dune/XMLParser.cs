@@ -267,9 +267,11 @@ namespace Dune
                                         if (c.Name.Equals("memberdef") && c.Attributes.GetNamedItem("kind") != null && c.Attributes.GetNamedItem("kind").Value.Equals("typedef"))
                                         {
                                             String id = c.Attributes["id"].InnerText;
+                                            String localName = getChild("name", c.ChildNodes).InnerText;
+                                            XmlNode type = getChild("type", c.ChildNodes);
                                             alternativeRefIds.Add(id);
                                             if (!refIdToFeature.ContainsKey(id))
-                                                refIdToFeature.Add(id, );
+                                                refIdToFeature.Add(id, new DuneTypeDef(id, localName, type));
                                             else if (!isNamespace)
                                                 Console.Write("");
                                             
@@ -926,10 +928,10 @@ namespace Dune
         }
 
         /// <summary>
-        /// 
+        /// Splits the arguments from the given template.
         /// </summary>
-        /// <param name="toSplit"></param>
-        /// <returns></returns>
+        /// <param name="toSplit">the template to split</param>
+        /// <returns>the arguments of the template in a <code>List</code></returns>
         private static List<string> splitArgs(string toSplit)
         {
             List<string> args = new List<string>();
@@ -1684,57 +1686,7 @@ namespace Dune
                                         declmame_cont = innerNode.InnerText;
                                         break;
                                     case "defval":
-                                        if (innerNode.ChildNodes.Count > 3)
-                                            Console.WriteLine("");
-                                        foreach (XmlNode defValRef in innerNode.ChildNodes)
-                                        {
-                                            switch (defValRef.Name)
-                                            {
-                                                case "ref":
-                                                    String classNameInDefValue = defValRef.InnerText;
-                                                    String defValRef_curr_id = defValRef.Attributes["refid"].InnerText;
-                                                    DuneFeature df = null;
-                                                    if (XMLParser.refIdToFeature.ContainsKey(defValRef_curr_id))
-                                                        df = XMLParser.refIdToFeature[defValRef_curr_id];
-                                                    else
-                                                    {
-                                                        if (!XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(defValRef.InnerText))
-                                                        {
-                                                            // ignore such cases:::
-                                                            Console.WriteLine("id not found " + defValRef_curr_id);
-                                                            idNotFound += 1;
-                                                            Console.WriteLine("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNEEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNN");
-                                                        }
-                                                        else
-                                                        {
-                                                            df = XMLParser.nameWithoutPackageToDuneFeatures[defValRef.InnerText].First();
-                                                        }
-                                                    }
-
-                                                    if (df != null)
-                                                        defVal_tree.addInformation(df);
-
-                                                    break;
-                                                default:
-                                                    Console.WriteLine("foo");
-                                                    if (defValRef.InnerText.Equals("&gt;"))
-                                                    {
-                                                        defVal_tree.decHierarchy();
-                                                    }
-                                                    else if (defValRef.InnerText.Equals("&lt;"))
-                                                    {
-                                                        defVal_tree.incHierarchy();
-                                                    }
-                                                    else
-                                                    {
-                                                        defVal_tree.addInformation(defValRef.InnerText);
-                                                        Console.Write(defValRef.InnerText);
-                                                        Console.Write(defValRef.InnerText);
-                                                    }
-                                                    break;
-                                            }
-                                        }
-
+                                        addTemplateTreeOf(innerNode, type_tree);
                                         break;
                                     case "defname":
                                         defname_cont = innerNode.InnerText;
@@ -1957,6 +1909,92 @@ namespace Dune
             return templateTree;
 
 
+        }
+
+        /// <summary>
+        /// Creates a new <code>TemplateTree</code> and adds the information which is included in the given node.
+        /// </summary>
+        /// <param name="node">the <code>XmlNode</code> with the needed information</param>
+        /// <returns>the <code>TemplateTree</code> created out of the information from the node</returns>
+        internal static TemplateTree getTemplateTreeOf(XmlNode node)
+        {
+            TemplateTree type_tree = new TemplateTree();
+            addTemplateTreeOf(node, type_tree);
+            return type_tree;
+        }
+
+        /// <summary>
+        /// Adds the information given in the node to the template tree.
+        /// </summary>
+        /// <param name="node">the node with the information</param>
+        /// <param name="type_tree">the <code>TemplateTree</code> which will be used to add the information from the given node</param>
+        private static void addTemplateTreeOf(XmlNode node, TemplateTree type_tree)
+        {
+            foreach (XmlNode defValRef in node.ChildNodes)
+            {
+                switch (defValRef.Name)
+                {
+                    case "ref":
+                        String classNameInDefValue = defValRef.InnerText;
+                        String defValRef_curr_id = defValRef.Attributes["refid"].InnerText;
+                        DuneFeature df = null;
+                        if (XMLParser.refIdToFeature.ContainsKey(defValRef_curr_id))
+                        {
+                            df = XMLParser.refIdToFeature[defValRef_curr_id];
+
+                        } else
+                        {
+                            if (!XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(defValRef.InnerText))
+                            {
+                                // ignore such cases:::
+                                Console.WriteLine("id not found type " + defValRef_curr_id);
+                                idNotFound += 1;
+                                Console.WriteLine("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNEEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNN");
+                            }
+                            else
+                            {
+                                df = XMLParser.nameWithoutPackageToDuneFeatures[defValRef.InnerText].First();
+                            }
+                        }
+
+                        if (df != null)
+                        {
+                            type_tree.addInformation(df);
+
+                            if (df.GetType() == typeof(DuneTypeDef))
+                            {
+                                // Add the namespace if there is one
+                                DuneTypeDef dtd = (DuneTypeDef)df;
+                                string typedefNamespace = classNameInDefValue.Contains("::") ? classNameInDefValue.Substring(0, classNameInDefValue.Length - classNameInDefValue.LastIndexOf("::") - 1) : "";
+                                if (!typedefNamespace.Equals("") && !typedefNamespace.Equals(dtd.getNamespace()))
+                                {
+                                    dtd.setNamespace(typedefNamespace);
+                                }
+                            }
+                        }
+
+                        break;
+                    default:
+                        Console.WriteLine("foo");
+                        // TODO: What about "Dune::PDELab::DOFIndex&lt; std::size_t, <ref refid="structDune_1_1TypeTree_1_1TreeInfo" kindref="compound">TypeTree::TreeInfo</ref>&lt; GFS &gt;::depth, 2 &gt;"?
+                        if (defValRef.InnerText.Equals("&gt;"))
+                        {
+                            // TODO: there are elements such as &gt; ::v . We need to split the string
+                            type_tree.decHierarchy();
+                        }
+                        else if (defValRef.InnerText.Equals("&lt;"))
+                        {
+                            type_tree.incHierarchy();
+                        }
+                        else
+                        {
+                            type_tree.addInformation(defValRef.InnerText);
+                            Console.Write(defValRef.InnerText);
+                            Console.Write(defValRef.InnerText);
+                        }
+                        break;
+                }
+            }
         }
 
         /// <summary>
