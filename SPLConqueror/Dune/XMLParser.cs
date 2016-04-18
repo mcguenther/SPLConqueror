@@ -64,6 +64,16 @@ namespace Dune
             XmlNodeList childList = current.ChildNodes;
             System.Console.WriteLine("Parsing the file...");
 
+            List<XmlNode> namespaces = new List<XmlNode>();
+
+            foreach (XmlNode child in childList)
+            {
+                if (child.Attributes.GetNamedItem("kind") != null && child.Attributes.GetNamedItem("kind").Equals("namespace"))
+                    extractFeatures(child);
+                else
+                    namespaces.Add(child);
+            }
+
             foreach (XmlNode child in childList)
             {
                 extractFeatures(child);
@@ -210,10 +220,12 @@ namespace Dune
             // Ignore private classes
             String prot = child.Attributes.GetNamedItem("prot") == null ? null : child.Attributes.GetNamedItem("prot").Value;
             String kind = child.Attributes.GetNamedItem("kind") == null ? null : child.Attributes.GetNamedItem("kind").Value;
-            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("namespace") || kind.Equals("page"))) //  || kind.Equals("group")
+            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("page"))) //  || kind.Equals("group") || kind.Equals("namespace")
             {
                 return;
             }
+
+            bool isNamespace = kind != null && kind.Equals("namespace");
 
 
             String template = "";
@@ -221,11 +233,6 @@ namespace Dune
             String name = "";
             String templateInName = "";
             List<Enum> enumerations = null;
-
-            if (refId.Equals("group__GridFunctionSpace"))
-            {
-                Console.Write("");
-            }
 
             List<String> alternativeRefIds = new List<String>();
 
@@ -261,6 +268,11 @@ namespace Dune
                                         {
                                             String id = c.Attributes["id"].InnerText;
                                             alternativeRefIds.Add(id);
+                                            if (!refIdToFeature.ContainsKey(id))
+                                                refIdToFeature.Add(id, );
+                                            else if (!isNamespace)
+                                                Console.Write("");
+                                            
                                         }
                                     }
 
@@ -365,7 +377,7 @@ namespace Dune
             // Ignore private classes
             String prot = child.Attributes.GetNamedItem("prot") == null ? null : child.Attributes.GetNamedItem("prot").Value;
             String kind = child.Attributes.GetNamedItem("kind") == null ? null : child.Attributes.GetNamedItem("kind").Value;
-            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("namespace") || kind.Equals("page"))) // || kind.Equals("group")
+            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("page"))) // || kind.Equals("group") || kind.Equals("namespace")
             {
                 return;
             }
@@ -1632,7 +1644,7 @@ namespace Dune
             // Ignore helper, private classes and so on.
             String prot = world.Attributes.GetNamedItem("prot") == null ? null : world.Attributes.GetNamedItem("prot").Value;
             String kind = world.Attributes.GetNamedItem("kind") == null ? null : world.Attributes.GetNamedItem("kind").Value;
-            if (name.Contains("helper") || name.Contains("Helper") || (prot != null && prot.Equals("private")) || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("namespace") || kind.Equals("page")))  //|| kind.Equals("group")
+            if (name.Contains("helper") || name.Contains("Helper") || (prot != null && prot.Equals("private")) || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("page")))  //|| kind.Equals("group") || kind.Equals("namespace")
             {
                 return null;
             }
