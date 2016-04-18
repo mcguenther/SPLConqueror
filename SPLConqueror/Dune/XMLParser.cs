@@ -1684,6 +1684,8 @@ namespace Dune
                                         declmame_cont = innerNode.InnerText;
                                         break;
                                     case "defval":
+                                        if (innerNode.ChildNodes.Count > 3)
+                                            Console.WriteLine("");
                                         foreach (XmlNode defValRef in innerNode.ChildNodes)
                                         {
                                             switch (defValRef.Name)
@@ -1715,11 +1717,11 @@ namespace Dune
                                                     break;
                                                 default:
                                                     Console.WriteLine("foo");
-                                                    if (defValRef.InnerText.Equals("&gt"))
+                                                    if (defValRef.InnerText.Equals("&gt;"))
                                                     {
                                                         defVal_tree.decHierarchy();
                                                     }
-                                                    else if (defValRef.InnerText.Equals("&gt"))
+                                                    else if (defValRef.InnerText.Equals("&lt;"))
                                                     {
                                                         defVal_tree.incHierarchy();
                                                     }
@@ -1769,11 +1771,12 @@ namespace Dune
                                                     break;
                                                 default:
                                                     Console.WriteLine("foo");
-                                                    if (defValRef.InnerText.Equals("&gt"))
+                                                    if (defValRef.InnerText.Equals("&gt;"))
                                                     {
+                                                        // TODO: there are elements such as &gt; ::v . We need to split the string
                                                         type_tree.decHierarchy();
                                                     }
-                                                    else if (defValRef.InnerText.Equals("&gt"))
+                                                    else if (defValRef.InnerText.Equals("&lt;"))
                                                     {
                                                         type_tree.incHierarchy();
                                                     }
