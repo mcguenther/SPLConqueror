@@ -188,7 +188,7 @@ namespace Dune
 
         internal void addInvocation(string method)
         {
-            this.methodInvocation = method;
+            this.lastElement.methodInvocation = method;
         }
 
 

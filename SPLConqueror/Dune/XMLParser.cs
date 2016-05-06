@@ -47,6 +47,7 @@ namespace Dune
         static System.IO.StreamWriter file;
         static List<String> classNames = new List<String>();
         static int typedefCounter = 0;
+        static int stdCounter = 0;
 
         static List<DuneClass> featuresNotFound = new List<DuneClass>();
 
@@ -2034,6 +2035,7 @@ namespace Dune
                         break;
                     case "#text":
                         string[] splitText = textElementSplitter(defValRef.InnerText, type_tree);
+                        string[] wholeSplitText = textElementSplitter(wholeDef, type_tree);
 
                         foreach (string s in splitText)
                         {
@@ -2056,6 +2058,10 @@ namespace Dune
                                     {
                                         forelastArg = rest;
                                     }
+                                } else
+                                {
+                                    // Get the forelast argument from the whole string
+                                    forelastArg = getForelastArg(s, wholeSplitText);
                                 }
 
                                 if (lastArg.Equals(String.Empty))
@@ -2107,21 +2113,24 @@ namespace Dune
                                 }
                                 else if (forelastArg.Length > 0 && nameWithoutPackageToDuneFeatures.ContainsKey(forelastArg) || type_tree.isClass())
                                 {
-                                    string[] wholeSplitText = textElementSplitter(wholeDef, type_tree);
+                                    typedefCounter++;
+                                    if (forelastArg.Contains("std"))
+                                        stdCounter++;
+
                                     if (!hasFurtherElements(s, splitText) && !isFollowedByTemplate(s, splitText))
                                     {
                                         // internal variable
                                         type_tree.addInvocation(lastArg);
                                     } else
                                     {
-                                        typedefCounter++;
+                                        
                                         // add the whole string as information if no other case matches
-                                        type_tree.addInformation(s.Trim());
+                                        type_tree.addInformation(lastArg.Trim());
                                     }
                                 } else
                                 {
                                     // add the whole string as information if no other case matches
-                                    type_tree.addInformation(s.Trim());
+                                    type_tree.addInformation(lastArg.Trim());
                                 }
 
                             }
@@ -2166,6 +2175,53 @@ namespace Dune
                         break;
                 }
             }
+        }
+
+        private static string getForelastArg(string current, string[] wholeDef)
+        {
+            string result = "";
+
+            int currentLevel = -1;
+            int level = 0;
+            // Firstly, find the level the current string lies in
+            foreach (string s in wholeDef)
+            {
+                switch (s)
+                {
+                    case "<":
+                        level++;
+                        break;
+                    case ">":
+                        level--;
+                        break;
+                }
+                if (s.Equals(current))
+                {
+                    currentLevel = level;
+                }
+            }
+
+            foreach (string s in wholeDef)
+            {
+                switch (s)
+                {
+                    case "<":
+                        level++;
+                        break;
+                    case ">":
+                        level--;
+                        break;
+                }
+                if (s.Equals(current))
+                {
+                    return result;
+                } else if (level == currentLevel && !s.Equals(">"))
+                {
+                    result += s;
+                }
+            }
+
+            return result;
         }
 
 
