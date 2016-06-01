@@ -21,7 +21,7 @@ namespace Dune
         static char TemplateStart = '<';
 
         // The root of the whole feature-tree.
-        static DuneClass root = new DuneClass("", "root");
+        public static DuneClass root = new DuneClass("", "root");
 
         public static List<DuneClass> features = new List<DuneClass>();
         public static List<DuneEnum> enums = new List<DuneEnum>();
@@ -99,7 +99,7 @@ namespace Dune
 
             closeFoundOutput();
 
-            Environment.Exit(0);
+            //Environment.Exit(0);
 
             // Every class with no parent gets a connection to the root-node
             foreach (DuneFeature dfeature in features)
