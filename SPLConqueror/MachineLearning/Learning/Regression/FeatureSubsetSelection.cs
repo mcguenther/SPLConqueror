@@ -120,7 +120,7 @@ namespace MachineLearning.Learning.Regression
             public bool complete = true;
             public double error = Double.MaxValue;
         }
-        
+
 
         #endregion
 
@@ -263,7 +263,7 @@ namespace MachineLearning.Learning.Regression
             //Learn for each candidate a new model and compute the error for each newly learned model
             foreach (Feature candidate in candidates)
             {
-                Feature threadCandidate = new Feature(candidate.getPureString(),candidate.getVariabilityModel());
+                Feature threadCandidate = new Feature(candidate.getPureString(), candidate.getVariabilityModel());
                 if (MLsettings.ignoreBadFeatures && this.badFeatures.Keys.Contains(candidate) && this.badFeatures[candidate] > 0)
                 {
                     this.badFeatures[candidate]--;
@@ -278,8 +278,10 @@ namespace MachineLearning.Learning.Regression
                 newModel.Add(threadCandidate);
                 if (this.MLsettings.parallelization)
                 {//Parallel execution of fitting the model for the current candidate
+                    var customCulture = Thread.CurrentThread.CurrentCulture;
                     Task task = Task.Factory.StartNew(() =>
                     {
+                        Thread.CurrentThread.CurrentCulture = customCulture;
                         ModelFit fi = evaluateCandidate(newModel);
                         if (fi.complete)
                         {
@@ -304,12 +306,14 @@ namespace MachineLearning.Learning.Regression
                 Task.WaitAll(tasks.ToArray());
 
             // Evaluation of the candidates
+            List<Feature> sortedFeatures = errorOfFeature.Keys.ToList();
+            sortedFeatures.Sort(sortedFeatures.First());
             if (MLsettings.scoreMeasure == ML_Settings.ScoreMeasure.RELERROR)
             {
                 foreach (Feature candidate in errorOfFeature.Keys)
                 {
                     var candidateError = errorOfFeature[candidate];
-                    var candidateScore = previousRound.learningError_relative - candidateError;
+                    var candidateScore = previousRound.validationError_relative - candidateError;
                     if (candidateScore > 0)
                     {
                         if (MLsettings.candidateSizePenalty)
@@ -474,7 +478,7 @@ namespace MachineLearning.Learning.Regression
                     }
 
                     Feature newCandidate = new Feature(feature, basicFeature, basicFeature.getVariabilityModel());
-                    if (!currentModel.Contains(newCandidate))
+                    if (!currentModel.Contains(newCandidate) && !listOfCandidates.Contains(newCandidate))
                         listOfCandidates.Add(newCandidate);
                 nextRound:
                     { }
@@ -484,7 +488,7 @@ namespace MachineLearning.Learning.Regression
                 if (this.MLsettings.quadraticFunctionSupport && basicFeature.participatingNumOptions.Count > 0)
                 {
                     Feature newCandidate = new Feature(basicFeature, basicFeature, basicFeature.getVariabilityModel());
-                    if (!currentModel.Contains(newCandidate))
+                    if (!currentModel.Contains(newCandidate) && !listOfCandidates.Contains(newCandidate))
                         listOfCandidates.Add(newCandidate);
 
                     foreach (var feature in currentModel)
@@ -494,7 +498,7 @@ namespace MachineLearning.Learning.Regression
                         if (this.MLsettings.limitFeatureSize && (feature.getNumberOfParticipatingOptions() == this.MLsettings.featureSizeTreshold))
                             continue;
                         newCandidate = new Feature(feature, newCandidate, basicFeature.getVariabilityModel());
-                        if (!currentModel.Contains(newCandidate))
+                        if (!currentModel.Contains(newCandidate) && !listOfCandidates.Contains(newCandidate))
                             listOfCandidates.Add(newCandidate);
                     }
                 }
@@ -513,7 +517,7 @@ namespace MachineLearning.Learning.Regression
                         if (this.MLsettings.limitFeatureSize && (feature.getNumberOfParticipatingOptions() == this.MLsettings.featureSizeTreshold))
                             continue;
                         newCandidate = new Feature(feature.getPureString() + " * log10(" + basicFeature.getPureString() + ")", basicFeature.getVariabilityModel());
-                        if (!currentModel.Contains(newCandidate))
+                        if (!currentModel.Contains(newCandidate) && !listOfCandidates.Contains(newCandidate))
                             listOfCandidates.Add(newCandidate);
                     }
                 }
@@ -524,7 +528,7 @@ namespace MachineLearning.Learning.Regression
 
                     if (basicFeature.participatingBoolOptions.Count == 0 && basicFeature.participatingNumOptions.All(x => x.Min_value > 0))
                     {
-                        if (!currentModel.Contains(newCandidate))
+                        if (!currentModel.Contains(newCandidate) && !listOfCandidates.Contains(newCandidate))
                             listOfCandidates.Add(newCandidate);
                     }
 
@@ -537,7 +541,7 @@ namespace MachineLearning.Learning.Regression
                         newCandidate = new Feature(feature.getPureString() + " * 1 / " + basicFeature.getPureString(), basicFeature.getVariabilityModel());
                         if (newCandidate.participatingBoolOptions.Count == 0 && newCandidate.participatingNumOptions.All(x => x.Min_value > 0))
                         {
-                            if (!currentModel.Contains(newCandidate))
+                            if (!currentModel.Contains(newCandidate) && !listOfCandidates.Contains(newCandidate))
                                 listOfCandidates.Add(newCandidate);
                         }
                     }
@@ -562,7 +566,7 @@ namespace MachineLearning.Learning.Regression
 
                         }
 
-                        if (newCandidate != null && !currentModel.Contains(newCandidate))
+                        if (newCandidate != null && !currentModel.Contains(newCandidate) && !listOfCandidates.Contains(newCandidate))
                             listOfCandidates.Add(newCandidate);
                     }
                 }
@@ -570,7 +574,7 @@ namespace MachineLearning.Learning.Regression
                 // learn mirrowed function
                 if (this.MLsettings.learn_mirrowedFunction && basicFeature.participatingNumOptions.Count > 0)
                 {
-                    
+
                     Feature newCandidate = new Feature("(" + basicFeature.participatingNumOptions.First().Max_value + " - " + basicFeature.getPureString() + ")", basicFeature.getVariabilityModel());
                     if (!currentModel.Contains(newCandidate))
                         listOfCandidates.Add(newCandidate);
@@ -582,11 +586,11 @@ namespace MachineLearning.Learning.Regression
                         if (this.MLsettings.limitFeatureSize && (feature.getNumberOfParticipatingOptions() == this.MLsettings.featureSizeTreshold))
                             continue;
 
-                   
-                        newCandidate = new Feature(feature.getPureString() + "* (" + basicFeature.participatingNumOptions.First().Max_value + " - " + basicFeature.getPureString() + ")", basicFeature.getVariabilityModel());
-                       
 
-                        if (newCandidate != null && !currentModel.Contains(newCandidate))
+                        newCandidate = new Feature(feature.getPureString() + "* (" + basicFeature.participatingNumOptions.First().Max_value + " - " + basicFeature.getPureString() + ")", basicFeature.getVariabilityModel());
+
+
+                        if (newCandidate != null && !currentModel.Contains(newCandidate) && !listOfCandidates.Contains(newCandidate))
                             listOfCandidates.Add(newCandidate);
                     }
                 }
@@ -692,7 +696,7 @@ namespace MachineLearning.Learning.Regression
                     ++counter;
                 }
             }
-            return counter/GlobalState.allMeasurements.Configurations.Count();
+            return counter / GlobalState.allMeasurements.Configurations.Count();
         }
 
         /// <summary>
@@ -772,28 +776,36 @@ namespace MachineLearning.Learning.Regression
                 return current;
             bool abort = false;
             List<Feature> featureSet = copyCombination(current.FeatureSet);
+            double previousReducedModelValidationError = current.validationError_relative;
             while (!abort)
             {
-                double roundError = Double.MaxValue;
-                Feature toRemove = null;
-                foreach (Feature toDelete in featureSet)
+                double previousRelativeValidationError = Double.MaxValue;
+                Feature worstCandidate = null;
+                foreach (Feature delitionCandidate in featureSet)
                 {
-                    List<Feature> tempSet = copyCombination(featureSet);
-                    tempSet.Remove(toDelete);
-                    double relativeError = 0;
-                    double error = computeModelError(tempSet, out relativeError);
-                    if (error - this.MLsettings.backwardErrorDelta < current.validationError && error < roundError)
+                    List<Feature> reducedFeatureSet = copyCombination(featureSet);
+                    reducedFeatureSet.Remove(delitionCandidate);
+                    double relativeValidationError = 0;
+                    computeModelError(reducedFeatureSet, out relativeValidationError);
+                    if ((relativeValidationError <= previousRelativeValidationError)
+                        && (relativeValidationError - previousReducedModelValidationError < this.MLsettings.minImprovementPerRound))
                     {
-                        roundError = error;
-                        toRemove = toDelete;
+                        previousRelativeValidationError = relativeValidationError;
+                        worstCandidate = delitionCandidate;
                     }
                 }
-                if (toRemove != null)
-                    featureSet.Remove(toRemove);
-                if (featureSet.Count <= 2)
+                if (worstCandidate != null)
+                {
+                    featureSet.Remove(worstCandidate);
+                    previousReducedModelValidationError = previousRelativeValidationError;
+                }
+                else
+                {
                     abort = true;
+                }
             }
             current.FeatureSet = featureSet;
+            current.validationError_relative = previousReducedModelValidationError;
             return current;
         }
 
