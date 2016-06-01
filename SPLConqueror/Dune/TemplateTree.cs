@@ -191,6 +191,11 @@ namespace Dune
             this.lastElement.methodInvocation = method;
         }
 
+        internal TemplateTree getLastElement()
+        {
+            return lastElement;
+        }
+
 
         public String toString()
         {

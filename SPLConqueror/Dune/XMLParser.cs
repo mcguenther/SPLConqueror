@@ -112,7 +112,7 @@ namespace Dune
 
             closeFoundOutput();
 
-            Environment.Exit(0);
+            //Environment.Exit(0);
 
             // Every class with no parent gets a connection to the root-node
             foreach (DuneFeature dfeature in features)
@@ -2048,6 +2048,7 @@ namespace Dune
                                 string rest = s.Substring(0, s.LastIndexOf("::"));
                                 // The forelast argument is important in case of an internal variable and a method.
                                 string forelastArg = "";
+                                string forelastArgWithNS = "";
                                 if (rest.Length > 0)
                                 {
                                     if (rest.Contains("::"))
@@ -2058,10 +2059,12 @@ namespace Dune
                                     {
                                         forelastArg = rest;
                                     }
+                                    forelastArgWithNS = rest;
                                 } else
                                 {
                                     // Get the forelast argument from the whole string
                                     forelastArg = getForelastArg(s, wholeSplitText);
+                                    forelastArgWithNS = forelastArg;
                                 }
 
                                 if (lastArg.Equals(String.Empty))
@@ -2088,31 +2091,33 @@ namespace Dune
 
                                 } else if (!type_tree.isClass() && nameWithoutPackageToDuneFeatures.ContainsKey(lastArg))
                                 {
-                                    // Class or enumvalue
-                                    List<DuneFeature> nonGroupObjects = new List<DuneFeature>();
-                                    foreach (DuneFeature dfeature in nameWithoutPackageToDuneFeatures[lastArg])
-                                    {
-                                        if (!dfeature.getReference().Contains("group"))
-                                        {
-                                            nonGroupObjects.Add(dfeature);
-                                        }
-                                    }
-                                    if (nonGroupObjects.Count > 1)
-                                    {
-                                        System.Console.WriteLine("The feature it refers to is not unique.");
-                                    }
-                                    else if (nonGroupObjects.Count > 0)
-                                    {
-                                        type_tree.addInformation(nonGroupObjects.First());
-                                    }
-                                    else
-                                    {
-                                        type_tree.addInformation(nameWithoutPackageToDuneFeatures[lastArg].First());
-                                    }
+                                    initBaseClass(type_tree, lastArg);
 
                                 }
                                 else if (forelastArg.Length > 0 && nameWithoutPackageToDuneFeatures.ContainsKey(forelastArg) || type_tree.isClass())
                                 {
+
+                                    if (!type_tree.isClass() && type_tree.getLastElement() == null)
+                                    {
+                                        List<DuneFeature> fs;
+                                        if (nameWithPackageToDuneFeatures.ContainsKey(forelastArgWithNS))
+                                        {
+                                            nameWithPackageToDuneFeatures.TryGetValue(forelastArgWithNS, out fs);
+                                        }
+                                        else
+                                        {
+                                            nameWithoutPackageToDuneFeatures.TryGetValue(forelastArg, out fs);
+                                        }
+
+                                        if (fs.Count == 1)
+                                        {
+                                            type_tree.addInformation(fs[0]);
+                                        } else
+                                        {
+                                            { }
+                                        }
+                                    }
+
                                     typedefCounter++;
                                     if (forelastArg.Contains("std"))
                                         stdCounter++;
@@ -2174,6 +2179,36 @@ namespace Dune
                         }
                         break;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Initializes the base class
+        /// </summary>
+        /// <param name="type_tree">the template tree</param>
+        /// <param name="lastArg">the last argument</param>
+        private static void initBaseClass(TemplateTree type_tree, string lastArg)
+        {
+            // Class or enumvalue
+            List<DuneFeature> nonGroupObjects = new List<DuneFeature>();
+            foreach (DuneFeature dfeature in nameWithoutPackageToDuneFeatures[lastArg])
+            {
+                if (!dfeature.getReference().Contains("group"))
+                {
+                    nonGroupObjects.Add(dfeature);
+                }
+            }
+            if (nonGroupObjects.Count > 1)
+            {
+                System.Console.WriteLine("The feature it refers to is not unique.");
+            }
+            else if (nonGroupObjects.Count > 0)
+            {
+                type_tree.addInformation(nonGroupObjects.First());
+            }
+            else
+            {
+                type_tree.addInformation(nameWithoutPackageToDuneFeatures[lastArg].First());
             }
         }
 
