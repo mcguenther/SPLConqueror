@@ -32,6 +32,7 @@ namespace Dune
 
         private bool ignoreDuckTyping = false;
 
+        private List<string> alternatives = null;
 
         public LinkedList<TemplateTree> templat = new LinkedList<TemplateTree>();
 
@@ -463,7 +464,11 @@ namespace Dune
         /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
         public override List<string> getVariability(DuneFeature root)
         {
-            return getVariability(root, new List<DuneClass>(), this);
+            if (alternatives == null)
+            {
+                alternatives = getVariability(root, new List<DuneClass>(), this);
+            }
+            return alternatives;
         }
 
         /// <summary>
