@@ -39,12 +39,15 @@ namespace Dune
 
         static Dictionary<String, DuneFeature> refIdToFeature = new Dictionary<string, DuneFeature>();
         public static Dictionary<String, List<DuneFeature>> nameWithoutPackageToDuneFeatures = new Dictionary<string, List<DuneFeature>>();
+        public static Dictionary<String, List<DuneFeature>> nameWithPackageToDuneFeatures = new Dictionary<string, List<DuneFeature>>();
 
 
 
         // Is only here for debugging
         static System.IO.StreamWriter file;
         static List<String> classNames = new List<String>();
+        static int typedefCounter = 0;
+        static int stdCounter = 0;
 
         static List<DuneClass> featuresNotFound = new List<DuneClass>();
 
@@ -63,6 +66,16 @@ namespace Dune
             XmlElement current = dat.DocumentElement;
             XmlNodeList childList = current.ChildNodes;
             System.Console.WriteLine("Parsing the file...");
+
+            //List<XmlNode> namespaces = new List<XmlNode>();
+
+            //foreach (XmlNode child in childList)
+            //{
+            //    if (child.Attributes.GetNamedItem("kind") != null && !child.Attributes.GetNamedItem("kind").Equals("namespace"))
+            //        extractFeatures(child);
+            //    else
+            //        namespaces.Add(child);
+            //}
 
             foreach (XmlNode child in childList)
             {
@@ -210,24 +223,16 @@ namespace Dune
             // Ignore private classes
             String prot = child.Attributes.GetNamedItem("prot") == null ? null : child.Attributes.GetNamedItem("prot").Value;
             String kind = child.Attributes.GetNamedItem("kind") == null ? null : child.Attributes.GetNamedItem("kind").Value;
-            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("namespace") || kind.Equals("page"))) //  || kind.Equals("group")
+            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("page"))) //  || kind.Equals("group") || kind.Equals("namespace")
             {
                 return;
             }
-
 
             String template = "";
             String refId = child.Attributes["id"].Value.ToString();
             String name = "";
             String templateInName = "";
             List<Enum> enumerations = null;
-
-            if (refId.Equals("group__GridFunctionSpace"))
-            {
-                Console.Write("");
-            }
-
-            List<String> alternativeRefIds = new List<String>();
 
             foreach (XmlNode node in child.ChildNodes)
             {
@@ -247,22 +252,13 @@ namespace Dune
                         {
                             switch (node.Attributes.GetNamedItem("kind").Value)
                             {
-                                case "user-defined":
-                                case "typedef":
-                                case "enum":
+                                //case "user-defined":
+                                //case "typedef":
+                                //case "enum":
                                 // Only the public types are crucial for saving enums
                                 case "public-type":
                                     // Save the enums in the feature
                                     enumerations = saveEnums(node, name);
-
-                                    foreach (XmlNode c in node.ChildNodes)
-                                    {
-                                        if (c.Name.Equals("memberdef") && c.Attributes.GetNamedItem("kind") != null && c.Attributes.GetNamedItem("kind").Value.Equals("typedef"))
-                                        {
-                                            String id = c.Attributes["id"].InnerText;
-                                            alternativeRefIds.Add(id);
-                                        }
-                                    }
 
                                     break;
                                 // Only the public functions are crucial for saving methods
@@ -281,26 +277,23 @@ namespace Dune
             df = new DuneClass(refId, name, template, templateInName);
             features.Add(df);
 
-            string nameWithoutPackage = name.Substring(name.LastIndexOf(':') + 1);
+            string nameWithoutPackage = df.getFeatureNameWithoutTemplateAndNamespace();
 
             if (!refIdToFeature.ContainsKey(refId))
                 refIdToFeature.Add(refId, df);
 
-            foreach (String alternativeRefId in alternativeRefIds)
-            {
-                //refIdToFeature.Add(alternativeRefId, df);
-
-                if (alternativeRefId.Equals("group__GridFunctionSpace_1ga4ac2e3483d6f96786582dfb56a3eaaca"))
-                {
-                    String c = df.getFeatureName();
-                    Console.WriteLine(c);
-                }
-
-            }
             if (!nameWithoutPackageToDuneFeatures.ContainsKey(nameWithoutPackage))
                 nameWithoutPackageToDuneFeatures.Add(nameWithoutPackage, new List<DuneFeature>());
             
             nameWithoutPackageToDuneFeatures[nameWithoutPackage].Add(df);
+
+            string nameWithPackage = df.getFeatureNameWithoutTemplate();
+
+            if (!nameWithPackageToDuneFeatures.ContainsKey(nameWithPackage))
+            {
+                nameWithPackageToDuneFeatures.Add(nameWithPackage, new List<DuneFeature>());
+            }
+            nameWithPackageToDuneFeatures[nameWithPackage].Add(df);
 
 
             // This boolean indicates if the current child is an interface, an abstract class or a normal class.
@@ -365,10 +358,12 @@ namespace Dune
             // Ignore private classes
             String prot = child.Attributes.GetNamedItem("prot") == null ? null : child.Attributes.GetNamedItem("prot").Value;
             String kind = child.Attributes.GetNamedItem("kind") == null ? null : child.Attributes.GetNamedItem("kind").Value;
-            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("namespace") || kind.Equals("page"))) // || kind.Equals("group")
+            if (prot != null && prot.Equals("private") || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("page"))) // || kind.Equals("group") || kind.Equals("namespace")
             {
                 return;
             }
+
+            bool isNamespace = kind != null && kind.Equals("namespace");
 
             Dictionary<String, String> templateTypeMapping = null;
             String template = "";
@@ -379,6 +374,8 @@ namespace Dune
             MethodList methods = null;
             int max = -1;
             int min = -1;
+
+            List<String> alternativeRefIds = new List<String>();
 
             foreach (XmlNode node in child.ChildNodes)
             {
@@ -435,6 +432,28 @@ namespace Dune
                                 case "public-func":
                                     methods = saveMethods(node, name, templateTypeMapping);
                                     break;
+                                case "user-defined":
+                                case "typedef":
+                                case "enum":
+                                    foreach (XmlNode c in node.ChildNodes)
+                                    {
+                                        if (c.Name.Equals("memberdef") && c.Attributes.GetNamedItem("kind") != null && c.Attributes.GetNamedItem("kind").Value.Equals("typedef"))
+                                        {
+                                            String id = c.Attributes["id"].InnerText;
+                                            String localName = getChild("name", c.ChildNodes).InnerText;
+                                            XmlNode type = getChild("type", c.ChildNodes);
+                                            XmlNode definition = getChild("definition", c.ChildNodes);
+                                            XmlNode realDef = shortenDefinition(definition, type);
+                                            alternativeRefIds.Add(id);
+                                            if (!refIdToFeature.ContainsKey(id))
+                                                refIdToFeature.Add(id, new DuneTypeDef(id, localName, realDef));
+                                            else if (!isNamespace)
+                                                Console.Write("");
+
+                                        }
+                                    }
+                                    break;
+
                             }
                         }
                         break;
@@ -502,8 +521,61 @@ namespace Dune
                 }
             }
 
+            foreach (String alternativeRefId in alternativeRefIds)
+            {
+                //refIdToFeature.Add(alternativeRefId, df);
+
+                if (alternativeRefId.Equals("group__GridFunctionSpace_1ga4ac2e3483d6f96786582dfb56a3eaaca"))
+                {
+                    String c = df.getFeatureName();
+                    Console.WriteLine(c);
+                }
+
+            }
+
 
             output.Flush();
+        }
+
+        /// <summary>
+        /// Returns the XmlNode with a shortened InnerText.
+        /// </summary>
+        /// <param name="node">the node standing for the definition-tag of the typedef</param>
+        /// <param name="type">the node standing for the type-tag of the typedef</param>
+        /// <returns>the XmlNode with a shortened Innertext-element</returns>
+        internal static XmlNode shortenDefinition(XmlNode node, XmlNode type)
+        {
+            XmlNode result = node.Clone();
+            string def = node.InnerText.Replace(" ", "");
+            string typeText = type.InnerText.Replace(" ", "");
+            int offset = typeText.Length;
+            int start = def.IndexOf(typeText);
+            result.InnerText = def.Substring(def.IndexOf(typeText) + offset);
+            //int spaces = 2;
+            //int level = 0;
+            //int i = 0;
+            //while (spaces > 0 && i < def.Length)
+            //{
+            //    if (!(i >= 2 && def[i - 2] == ':' && def[i - 1] == ':' && def[i] == ' '))
+            //    {
+            //        switch (def[i])
+            //        {
+            //            case '<':
+            //                level++;
+            //                break;
+            //            case '>':
+            //                level--;
+            //                break;
+            //            case ' ':
+            //                if (level == 0)
+            //                    spaces--;
+            //                break;
+            //        }
+            //    }
+            //    i++;
+            //}
+            //result.InnerText = def.Substring(i);
+            return result;
         }
 
         /// <summary>
@@ -914,10 +986,10 @@ namespace Dune
         }
 
         /// <summary>
-        /// 
+        /// Splits the arguments from the given template.
         /// </summary>
-        /// <param name="toSplit"></param>
-        /// <returns></returns>
+        /// <param name="toSplit">the template to split</param>
+        /// <returns>the arguments of the template in a <code>List</code></returns>
         private static List<string> splitArgs(string toSplit)
         {
             List<string> args = new List<string>();
@@ -1632,7 +1704,7 @@ namespace Dune
             // Ignore helper, private classes and so on.
             String prot = world.Attributes.GetNamedItem("prot") == null ? null : world.Attributes.GetNamedItem("prot").Value;
             String kind = world.Attributes.GetNamedItem("kind") == null ? null : world.Attributes.GetNamedItem("kind").Value;
-            if (name.Contains("helper") || name.Contains("Helper") || (prot != null && prot.Equals("private")) || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("namespace") || kind.Equals("page")))  //|| kind.Equals("group")
+            if (name.Contains("helper") || name.Contains("Helper") || (prot != null && prot.Equals("private")) || kind != null && (kind.Equals("file") || kind.Equals("dir") || kind.Equals("example") || kind.Equals("page")))  //|| kind.Equals("group") || kind.Equals("namespace")
             {
                 return null;
             }
@@ -1672,57 +1744,7 @@ namespace Dune
                                         declmame_cont = innerNode.InnerText;
                                         break;
                                     case "defval":
-                                        if (innerNode.ChildNodes.Count > 3)
-                                            Console.WriteLine("");
-                                        foreach (XmlNode defValRef in innerNode.ChildNodes)
-                                        {
-                                            switch (defValRef.Name)
-                                            {
-                                                case "ref":
-                                                    String classNameInDefValue = defValRef.InnerText;
-                                                    String defValRef_curr_id = defValRef.Attributes["refid"].InnerText;
-                                                    DuneFeature df = null;
-                                                    if (XMLParser.refIdToFeature.ContainsKey(defValRef_curr_id))
-                                                        df = XMLParser.refIdToFeature[defValRef_curr_id];
-                                                    else
-                                                    {
-                                                        if (!XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(defValRef.InnerText))
-                                                        {
-                                                            // ignore such cases:::
-                                                            Console.WriteLine("id not found " + defValRef_curr_id);
-                                                            idNotFound += 1;
-                                                            Console.WriteLine("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNEEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNN");
-                                                        }
-                                                        else
-                                                        {
-                                                            df = XMLParser.nameWithoutPackageToDuneFeatures[defValRef.InnerText].First();
-                                                        }
-                                                    }
-
-                                                    if (df != null)
-                                                        defVal_tree.addInformation(df);
-
-                                                    break;
-                                                default:
-                                                    Console.WriteLine("foo");
-                                                    if (defValRef.InnerText.Equals("&gt;"))
-                                                    {
-                                                        defVal_tree.decHierarchy();
-                                                    }
-                                                    else if (defValRef.InnerText.Equals("&lt;"))
-                                                    {
-                                                        defVal_tree.incHierarchy();
-                                                    }
-                                                    else
-                                                    {
-                                                        defVal_tree.addInformation(defValRef.InnerText);
-                                                        Console.Write(defValRef.InnerText);
-                                                        Console.Write(defValRef.InnerText);
-                                                    }
-                                                    break;
-                                            }
-                                        }
-
+                                        addTemplateTreeOf(innerNode, type_tree);
                                         break;
                                     case "defname":
                                         defname_cont = innerNode.InnerText;
@@ -1945,6 +1967,445 @@ namespace Dune
             return templateTree;
 
 
+        }
+
+        /// <summary>
+        /// Creates a new <code>TemplateTree</code> and adds the information which is included in the given node.
+        /// </summary>
+        /// <param name="node">the <code>XmlNode</code> with the needed information</param>
+        /// <returns>the <code>TemplateTree</code> created out of the information from the node</returns>
+        internal static TemplateTree getTemplateTreeOf(XmlNode node)
+        {
+            TemplateTree type_tree = new TemplateTree();
+            addTemplateTreeOf(node, type_tree);
+            return type_tree;
+        }
+
+        /// <summary>
+        /// Adds the information given in the node to the template tree.
+        /// </summary>
+        /// <param name="node">the node with the information</param>
+        /// <param name="type_tree">the <code>TemplateTree</code> which will be used to add the information from the given node</param>
+        private static void addTemplateTreeOf(XmlNode node, TemplateTree type_tree)
+        {
+            string wholeDef = node.InnerText;
+            foreach (XmlNode defValRef in node.ChildNodes)
+            {
+                switch (defValRef.Name)
+                {
+                    case "ref":
+                        String classNameInDefValue = defValRef.InnerText;
+                        String defValRef_curr_id = defValRef.Attributes["refid"].InnerText;
+                        DuneFeature df = null;
+                        if (XMLParser.refIdToFeature.ContainsKey(defValRef_curr_id))
+                        {
+                            df = XMLParser.refIdToFeature[defValRef_curr_id];
+
+                        } else
+                        {
+                            if (!XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(defValRef.InnerText))
+                            {
+                                // ignore such cases:::
+                                Console.WriteLine("id not found type " + defValRef_curr_id);
+                                idNotFound += 1;
+                                Console.WriteLine("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNEEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNN");
+                            }
+                            else
+                            {
+                                df = XMLParser.nameWithoutPackageToDuneFeatures[defValRef.InnerText].First();
+                            }
+                        }
+
+                        if (df != null)
+                        {
+                            type_tree.addInformation(df);
+
+                            if (df.GetType() == typeof(DuneTypeDef))
+                            {
+                                // Add the namespace if there is one
+                                DuneTypeDef dtd = (DuneTypeDef)df;
+                                string typedefNamespace = classNameInDefValue.Contains("::") ? classNameInDefValue.Substring(0, classNameInDefValue.Length - classNameInDefValue.LastIndexOf("::") - 1) : "";
+                                if (!typedefNamespace.Equals("") && !typedefNamespace.Equals(dtd.getNamespace()))
+                                {
+                                    dtd.setNamespace(typedefNamespace);
+                                }
+                            }
+                        }
+
+                        break;
+                    case "#text":
+                        string[] splitText = textElementSplitter(defValRef.InnerText, type_tree);
+                        string[] wholeSplitText = textElementSplitter(wholeDef, type_tree);
+
+                        foreach (string s in splitText)
+                        {
+
+                            // The string is either a class, an enumvalue, an internal variable or a method call.
+                            if (s.Contains("::"))
+                            {
+                                string lastArg = s.Substring(s.LastIndexOf("::") + 2);
+
+                                string rest = s.Substring(0, s.LastIndexOf("::"));
+                                // The forelast argument is important in case of an internal variable and a method.
+                                string forelastArg = "";
+                                string forelastArgWithNS = "";
+                                if (rest.Length > 0)
+                                {
+                                    if (rest.Contains("::"))
+                                    {
+                                        forelastArg = rest.Substring(rest.LastIndexOf("::") + 2);
+                                    }
+                                    else
+                                    {
+                                        forelastArg = rest;
+                                    }
+                                    forelastArgWithNS = rest;
+                                } else
+                                {
+                                    // Get the forelast argument from the whole string
+                                    forelastArg = getForelastArg(s, wholeSplitText);
+                                    forelastArgWithNS = forelastArg;
+                                }
+
+                                if (lastArg.Equals(String.Empty))
+                                    continue;
+
+                                // In case of a method
+                                if (s.Contains("(") && s.Contains(")"))
+                                {
+                                    type_tree.addInvocation(lastArg);
+                                }
+                                else if (!type_tree.isClass() && nameWithPackageToDuneFeatures.ContainsKey(s))
+                                {
+                                    // Class or enumvalue
+                                    List<DuneFeature> multiple = nameWithPackageToDuneFeatures[s];
+                                    if (nameWithPackageToDuneFeatures[s].Count > 1)
+                                    {
+                                        System.Console.WriteLine("The feature it refers to is not unique.");
+                                        type_tree.addInformation(nameWithPackageToDuneFeatures[s]);
+                                    }
+                                    else if (nameWithPackageToDuneFeatures[s].Count > 0)
+                                    {
+                                        type_tree.addInformation(nameWithPackageToDuneFeatures[s].First());
+                                    } 
+
+                                } else if (!type_tree.isClass() && nameWithoutPackageToDuneFeatures.ContainsKey(lastArg))
+                                {
+                                    initBaseClass(type_tree, lastArg);
+
+                                }
+                                else if (forelastArg.Length > 0 && nameWithoutPackageToDuneFeatures.ContainsKey(forelastArg) || type_tree.isClass())
+                                {
+
+                                    if (!type_tree.isClass() && type_tree.getLastElement() == null)
+                                    {
+                                        List<DuneFeature> fs;
+                                        if (nameWithPackageToDuneFeatures.ContainsKey(forelastArgWithNS))
+                                        {
+                                            nameWithPackageToDuneFeatures.TryGetValue(forelastArgWithNS, out fs);
+                                        }
+                                        else
+                                        {
+                                            nameWithoutPackageToDuneFeatures.TryGetValue(forelastArg, out fs);
+                                        }
+
+                                        if (fs.Count == 1)
+                                        {
+                                            type_tree.addInformation(fs[0]);
+                                        } else
+                                        {
+                                            { }
+                                        }
+                                    }
+
+                                    typedefCounter++;
+                                    if (forelastArg.Contains("std"))
+                                        stdCounter++;
+
+                                    if (!hasFurtherElements(s, splitText) && !isFollowedByTemplate(s, splitText))
+                                    {
+                                        // internal variable
+                                        type_tree.addInvocation(lastArg);
+                                    } else
+                                    {
+                                        
+                                        // add the whole string as information if no other case matches
+                                        type_tree.addInformation(lastArg.Trim());
+                                    }
+                                } else
+                                {
+                                    // add the whole string as information if no other case matches
+                                    type_tree.addInformation(lastArg.Trim());
+                                }
+
+                            }
+                            else
+                            {
+                                switch (s)
+                                {
+                                    case "<":
+                                        type_tree.incHierarchy();
+                                        break;
+                                    case ">":
+                                        type_tree.decHierarchy();
+                                        break;
+                                    case ",":
+                                        break;
+                                    default:
+                                        if (!s.Trim().Equals(String.Empty))
+                                            type_tree.addInformation(s.Trim());
+                                        break;
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        Console.WriteLine("foo");
+                        // TODO: What about "Dune::PDELab::DOFIndex&lt; std::size_t, <ref refid="structDune_1_1TypeTree_1_1TreeInfo" kindref="compound">TypeTree::TreeInfo</ref>&lt; GFS &gt;::depth, 2 &gt;"?
+                        if (defValRef.InnerText.Equals("&gt;"))
+                        {
+                            // TODO: there are elements such as &gt; ::v . We need to split the string
+                            type_tree.decHierarchy();
+                        }
+                        else if (defValRef.InnerText.Equals("&lt;"))
+                        {
+                            type_tree.incHierarchy();
+                        }
+                        else
+                        {
+                            type_tree.addInformation(defValRef.InnerText);
+                            Console.Write(defValRef.InnerText);
+                            Console.Write(defValRef.InnerText);
+                        }
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Initializes the base class
+        /// </summary>
+        /// <param name="type_tree">the template tree</param>
+        /// <param name="lastArg">the last argument</param>
+        private static void initBaseClass(TemplateTree type_tree, string lastArg)
+        {
+            // Class or enumvalue
+            List<DuneFeature> nonGroupObjects = new List<DuneFeature>();
+            foreach (DuneFeature dfeature in nameWithoutPackageToDuneFeatures[lastArg])
+            {
+                if (!dfeature.getReference().Contains("group"))
+                {
+                    nonGroupObjects.Add(dfeature);
+                }
+            }
+            if (nonGroupObjects.Count > 1)
+            {
+                System.Console.WriteLine("The feature it refers to is not unique.");
+            }
+            else if (nonGroupObjects.Count > 0)
+            {
+                type_tree.addInformation(nonGroupObjects.First());
+            }
+            else
+            {
+                type_tree.addInformation(nameWithoutPackageToDuneFeatures[lastArg].First());
+            }
+        }
+
+        private static string getForelastArg(string current, string[] wholeDef)
+        {
+            string result = "";
+
+            int currentLevel = -1;
+            int level = 0;
+            // Firstly, find the level the current string lies in
+            foreach (string s in wholeDef)
+            {
+                switch (s)
+                {
+                    case "<":
+                        level++;
+                        break;
+                    case ">":
+                        level--;
+                        break;
+                }
+                if (s.Equals(current))
+                {
+                    currentLevel = level;
+                }
+            }
+
+            foreach (string s in wholeDef)
+            {
+                switch (s)
+                {
+                    case "<":
+                        level++;
+                        break;
+                    case ">":
+                        level--;
+                        break;
+                }
+                if (s.Equals(current))
+                {
+                    return result;
+                } else if (level == currentLevel && !s.Equals(">"))
+                {
+                    result += s;
+                }
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Returns <code>true</code> iff the given argument is followed by a template.
+        /// </summary>
+        /// <param name="current">the current element</param>
+        /// <param name="wholeDef">the whole definition as a splitted string array</param>
+        /// <returns><code>true</code> iff the given argument is followed by a template</returns>
+        private static bool isFollowedByTemplate(string current, string[] wholeDef)
+        {
+            int currentLevel = -1;
+            int level = 0;
+            foreach (string s in wholeDef)
+            {
+                switch (s)
+                {
+                    case "<":
+                        if (level == currentLevel)
+                            return true;
+                        level++;
+                        break;
+                    case ">":
+                        level--;
+                        break;
+                }
+                if (s.Equals(current))
+                {
+                    currentLevel = level;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns <code>true</code> if the given argument has another elements that use it (as methods and variables do with classes and classes do with namespaces).
+        /// </summary>
+        /// <param name="current">the current element</param>
+        /// <param name="wholeDef">the whole definition as a splitted string array</param>
+        /// <returns><code>true</code> iff the given argument has another elements that use it</returns>
+        private static bool hasFurtherElements(string current, string[] wholeDef)
+        {
+            int currentLevel = -1;
+            int level = 0;
+            foreach(string s in wholeDef)
+            {
+                switch(s)
+                {
+                    case "<":
+                        level++;
+                        break;
+                    case ">":
+                        level--;
+                        break;
+                }
+
+                if (s.Equals(current))
+                {
+                    currentLevel = level;
+                } else if (currentLevel >= 0 && currentLevel == level && s.Contains("::"))
+                {
+                    return true;
+                }
+
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// The symbols to split the string for.
+        /// </summary>
+        private static char[] splitSymbols = { ',', '<', '>' };
+        /// <summary>
+        /// The outer split symbols.
+        /// </summary>
+        private static string[] outerSplitSymbols = {  };
+
+        /// <summary>
+        /// Splits the text element according to <code>splitSymbols</code> and <code>outerSplitSymbols</code>.
+        /// </summary>
+        /// <param name="textElement">the string with the needed information</param>
+        /// <param name="tt">the according <code>TemplateTree</code></param>
+        /// <returns>the string array split by the given symbols. Note that the split symbols are also included</returns>
+        private static string[] textElementSplitter(string textElement, TemplateTree tt)
+        {
+            List<string> result = new List<string>();
+            string temp = "";
+            bool skip = false;
+
+            foreach (char c in textElement)
+            {
+                if (splitSymbols.Contains(c))
+                {
+                    if (temp.Trim().Length > 0)
+                    {
+                        result.Add(temp);
+                    }
+                    result.Add(c.ToString());
+                    temp = "";
+                    skip = true;
+                } else if (tt.isRoot())  {
+                    string[] splittedByOuter = getSplittedStringByOuterSymbol(temp, c);
+                    if (splittedByOuter != null)
+                    {
+                        skip = true;
+                        if (splittedByOuter[0].Trim().Length > 0)
+                        {
+                            result.Add(splittedByOuter[0]);
+                        }
+                        temp = splittedByOuter[1];
+
+                    }
+                }
+
+                if (!tt.isRoot() || tt.isRoot() && !skip)
+                {
+                    temp += c;
+                }
+
+                skip = false;
+            }
+
+            if (temp.Trim().Length > 0)
+            {
+                result.Add(temp);
+            }
+
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// Returns an array of <code>string</code> containing two elements iff an <code>outerSplitSymbol</code> is found; <code>null</code> otherwise.
+        /// </summary>
+        /// <param name="temp">the temporary string</param>
+        /// <param name="c">the current character</param>
+        /// <returns>an array of <code>string</code> containing two elements iff an <code>outerSplitSymbol</code> is found</returns>
+        private static string[] getSplittedStringByOuterSymbol (string temp, char c)
+        {
+            foreach (string o in outerSplitSymbols)
+            {
+                if (c.Equals(o[o.Length - 1]) && temp.EndsWith(o.Substring(0, o.Length - 1)))
+                {
+                    string[] result = new string[2];
+                    result[0] = temp.Substring(0, temp.LastIndexOf(o.Substring(0, o.Length - 1)));
+                    result[1] = o;
+                    return result;
+                }
+            }
+            return null;
         }
 
         /// <summary>

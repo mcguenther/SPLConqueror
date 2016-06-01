@@ -10,7 +10,7 @@ namespace Dune
         List<TemplateTree> children = new List<TemplateTree>();
 
         TemplateTree currElement;
-        TemplateTree parent;
+        TemplateTree parent = null;
 
         TemplateTree lastElement;
 
@@ -37,10 +37,30 @@ namespace Dune
         {
             
             TemplateTree newPart = new TemplateTree(this);
-
-            newPart.referseTo = df;
+            List<DuneFeature> dfs = new List<DuneFeature>();
+            dfs.Add(df);
+            newPart.referseTo = dfs;
             newPart.type = Kind.concrete;
             newPart.artificalString = df.getFeatureNameWithoutTemplateAndNamespace();
+            newPart.isTerminal = true;
+
+            newPart.parent = currElement;
+            currElement.children.Add(newPart);
+
+            lastElement = newPart;
+        }
+
+        public void addInformation(List<DuneFeature> dfs)
+        {
+            if (this.referseTo != null)
+            {
+                this.referseTo.AddRange(dfs);
+            } else
+            {
+                this.referseTo = dfs;
+            }
+            TemplateTree newPart = new TemplateTree(this);
+            newPart.type = Kind.concrete;
             newPart.isTerminal = true;
 
             newPart.parent = currElement;
@@ -55,6 +75,14 @@ namespace Dune
             return currElement.children[currElement.children.Count - 1];
         }
 
+        internal bool isClass()
+        {
+            if (lastElement != null)
+                return lastElement.referseTo != null;
+            else
+                return false;
+        }
+
         internal void incHierarchy()
         {
             TemplateTree nonTerminal = lastChild();
@@ -66,6 +94,15 @@ namespace Dune
         {
             currElement = currElement.parent;
             lastElement = lastElement.parent;
+        }
+
+        /// <summary>
+        /// Returns <code>true</code> if the <code>TemplateTree</code> has no parents; <code>false</code> otherwise.
+        /// </summary>
+        /// <returns><code>true</code> if the <code>TemplateTree</code> has no parents; <code>false</code> otherwise</returns>
+        internal bool isRoot()
+        {
+            return this.parent == null;
         }
 
         internal void addFurtherInformation(string token)
@@ -111,7 +148,9 @@ namespace Dune
                     Console.WriteLine("TODO:: addInformation with mehrdeutigkeit");
                 }
 
-                newPart.referseTo = XMLParser.nameWithoutPackageToDuneFeatures[token].First();
+                List<DuneFeature> dfs = new List<DuneFeature>();
+                dfs.Add(XMLParser.nameWithoutPackageToDuneFeatures[token].First());
+                newPart.referseTo = dfs;
                 newPart.artificalString = token;
                 newPart.type = Kind.concrete;
                 newPart.isTerminal = true;
@@ -147,9 +186,14 @@ namespace Dune
             lastElement = newPart;
         }
 
-        internal void addMethodInvocation(string method)
+        internal void addInvocation(string method)
         {
-            this.methodInvocation = method;
+            this.lastElement.methodInvocation = method;
+        }
+
+        internal TemplateTree getLastElement()
+        {
+            return lastElement;
         }
 
 

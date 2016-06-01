@@ -62,7 +62,6 @@ namespace Dune
                 TextWriter errorWriter = Console.Error;
                 errorWriter.WriteLine(e.Message);
             }
-
             XMLParser.parse(PATH);
 
             List<String> alternativesFIM =  getAlternativesRecursive("Dune::PDELab::QkLocalFiniteElementMap < GV, GV::ctype , Real , degree > ");

@@ -76,6 +76,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DuneTypeDef.cs" />
     <Compile Include="Enum.cs" />
     <Compile Include="DuneEnumValue.cs" />
     <Compile Include="Shell.cs" />

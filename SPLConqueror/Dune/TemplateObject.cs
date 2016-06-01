@@ -14,7 +14,7 @@ namespace Dune
         public Kind type;
         public Boolean isTerminal = true;
 
-        public DuneFeature referseTo = null;
+        public List<DuneFeature> referseTo = null;
 
         public string artificalString = "";
 
