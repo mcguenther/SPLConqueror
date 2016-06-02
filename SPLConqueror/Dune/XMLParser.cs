@@ -1713,7 +1713,6 @@ namespace Dune
 
             DuneFeature currFeature = refIdToFeature[refId];
 
-
             Dictionary<String, TemplateElement> templateParamList = new Dictionary<String, TemplateElement>();
 
             // analyse the templateparamlist-elements.
@@ -1721,6 +1720,11 @@ namespace Dune
             XmlNode type = getChild("templateparamlist", world.ChildNodes);
             if (type != null)
             {
+                TemplateTree type_tree = new TemplateTree();
+
+                // Only classes have templateparamlists
+                ((DuneClass)currFeature).setTemplateTree(type_tree);
+
                 foreach (XmlNode node in type.ChildNodes)
                 {
                     switch (node.Name)
@@ -1733,8 +1737,6 @@ namespace Dune
                             String defVal_cont_ref_id = "";
                             String defname_cont = "";
                             String deftype_cont = "";
-                            TemplateTree defVal_tree = new TemplateTree();
-                            TemplateTree type_tree = new TemplateTree();
 
                             foreach (XmlNode innerNode in node.ChildNodes)
                             {
