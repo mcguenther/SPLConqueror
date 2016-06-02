@@ -21,7 +21,7 @@ namespace Dune
         static char TemplateStart = '<';
 
         // The root of the whole feature-tree.
-        static DuneClass root = new DuneClass("", "root");
+        public static DuneClass root = new DuneClass("", "root");
 
         public static List<DuneClass> features = new List<DuneClass>();
         public static List<DuneEnum> enums = new List<DuneEnum>();

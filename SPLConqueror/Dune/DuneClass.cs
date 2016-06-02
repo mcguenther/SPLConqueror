@@ -16,7 +16,7 @@ namespace Dune
         private Range templateArgumentCount;
         private List<TemplateElement> templateElements;
         private String templateForCode;
-        private String implementingTemplate;
+        public String implementingTemplate;
         private Boolean isStruct = false;
         private Boolean isAbstract = false;
         private List<DuneClass> parents;
@@ -100,6 +100,9 @@ namespace Dune
             this.templateForCode = "";
             this.implementingTemplate = "";
             this.templateElements = new List<TemplateElement>();
+
+            template = template.Replace("typename", "");
+            template = template.Replace("class", "");
 
             if (template != null && !template.Equals(""))
             {
