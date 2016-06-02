@@ -72,13 +72,18 @@ namespace Dune
                         StreamWriter positives = new System.IO.StreamWriter(Program.DEBUG_PATH + "positives.txt");
 
                         List<List<string>> globalResult = new List<List<string>>();
+                        Dictionary<String, List<String>> resultsByVariabilityPoints = new Dictionary<string, List<string>>();
+
                         RefersToAliasing refersTo = new RefersToAliasing();
                         while (!inputFile.EndOfStream)
                         {
-                            String line = inputFile.ReadLine();
-                            if (!line.Trim().Equals(""))
+                            String line = inputFile.ReadLine().Trim();
+                            if (!line.Equals(""))
                             {
-                                List<string> analyzationResult = XMLParser.getVariability(line, refersTo);
+                                Console.WriteLine("Identify Alternatives for class  " + line);
+                                List<String> analyzationResult = Program.getAlternativesRecursive(line);
+                                resultsByVariabilityPoints.Add(line, new List<string>());
+
                                 if (analyzationResult != null)
                                 {
                                     globalResult.Add(analyzationResult);
@@ -87,8 +92,14 @@ namespace Dune
                                 {
                                     globalResult.Add(new List<string>());
                                 }
+
+                                foreach(String oneAlternative in analyzationResult)
+                                    resultsByVariabilityPoints[line].Add(oneAlternative);
+
                             }
                         }
+
+                        Program.generateVariabilityModel(resultsByVariabilityPoints);
 
                         int c = 0;
                         int foundMin = 0;
