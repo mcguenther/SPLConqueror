@@ -5,11 +5,14 @@ using System.Text;
 using System.IO;
 using System.Threading;
 using System.Globalization;
+using SPLConqueror_Core;
+
 
 namespace Dune
 {
     static class Program
     {
+
         // The path of the xml-file to read the dependencies from
         // Please adjust it, as I have not found a solution not to do so...
         static String PATH = @"D:\HiWi\SPLConqueror_Dune\all1.xml";
@@ -54,24 +57,15 @@ namespace Dune
                 StreamWriter writer = new StreamWriter(DEBUG_PATH + "out.txt");
                 writer.AutoFlush = true;
                 // Redirect standard output from the console to the output file.
-                Console.SetOut(writer);
+                //Console.SetOut(writer);
 
-                //Console.SetOut(
-
+                
             }catch(IOException e) {
                 TextWriter errorWriter = Console.Error;
                 errorWriter.WriteLine(e.Message);
             }
             XMLParser.parse(PATH);
 
-            List<String> alternativesFIM =  getAlternativesRecursive("Dune::PDELab::QkLocalFiniteElementMap < GV, GV::ctype , Real , degree > ");
-
-            foreach (String t in alternativesFIM)
-                Console.WriteLine(t);
-
-            System.Environment.Exit(1);
-
-            // Needed for debugging purposes.
             Shell.showShell();
             
 
@@ -79,12 +73,12 @@ namespace Dune
             System.Console.ReadKey();
         }
 
-
+        
         public static List<String> getAlternativesRecursive(String input)
         {
             List<String> alternatives = new List<string>();
 
-            DuneClass improtantClass = null;
+            DuneFeature improtantClass = null;
 
             TemplateTree treeOfInterest = new TemplateTree();
 
@@ -107,67 +101,101 @@ namespace Dune
             }
             if (allOthers.Count > 1 || improtantClass == null)
             {
-                Console.WriteLine("Potentiel Error in getAlternativesRecursive() in the identification of the DuneClass of the given class ");
-                System.Environment.Exit(1);
+                Console.WriteLine("Potentiel Error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input);
+                if (allOthers.Count > 1)
+                    Console.WriteLine("more than one internal class could macht the given one");
+                if (improtantClass == null)
+                    Console.WriteLine("no internal representation for the given class could be found");
+                //System.Environment.Exit(1);
             }
 
 
             // mapping from the default placeholder strings of the templte in the strings of the given input template
             Dictionary<String, String> mapping = new Dictionary<string, string>();
-            String[] templateInInput = improtantClass.implementingTemplate.Split(',');
 
-
-            // we start with 1 because element is the name of the class
-            int offset = 1;
-            for (int i = 1; i < nameAndTemplateOfClassSplitted.Length; i++)
+            if (improtantClass == null)
             {
-                String token = nameAndTemplateOfClassSplitted[i];
-                if (token.Equals(">") || token.Equals("<"))
+                // input is the value of an enum
+                foreach(DuneEnum currEnum in XMLParser.enums){
+                    bool found = false;
+                    foreach (String s in currEnum.getValues())
+                    {
+                        if (s.Equals(input))
+                        {
+                            improtantClass = currEnum;
+                        }
+                    }
+                }
+            }
+            else
+            {
+
+                
+                String[] templateInInput = ((DuneClass) improtantClass).implementingTemplate.Split(',');
+
+
+                // we start with 1 because element is the name of the class
+                int offset = 1;
+                for (int i = 1; i < nameAndTemplateOfClassSplitted.Length; i++)
                 {
-                    offset += 1;
-                    continue;
+                    String token = nameAndTemplateOfClassSplitted[i];
+                    if (token.Equals(">") || token.Equals("<"))
+                    {
+                        offset += 1;
+                        continue;
+                    }
+
+                    mapping.Add(templateInInput[i - offset].Trim(), token);
+
+
                 }
 
-                mapping.Add(templateInInput[i - offset].Trim(), token);
-
-
             }
-
-
 
             List<String> alternativesFirstLevel = ((DuneFeature)improtantClass).getVariability(XMLParser.root);
             List<String> alternativesFirstLevelWithConcreteParameters = new List<string>();
 
-            for (int i = 0; i < alternativesFirstLevel.Count; i++)
+            if (input.Contains('<'))
             {
-                
-                String[] splitted = alternativesFirstLevel[i].Substring(0,alternativesFirstLevel[i].Length-1).Split('<');
-                if(splitted.Length > 2)
-                {
-                    Console.WriteLine("Potentiel Error in getAlternativesRecursive():: element in alternativesFirstLevel have a template hierarchy of more than one, see:: "+alternativesFirstLevel[i]);
-                    System.Environment.Exit(1);
-                }
 
-                String newName = splitted[0]+"<";
-                String[] templateElements = splitted[1].Split(',');
-                for (int j = 0; j < templateElements.Length; j++)
+                for (int i = 0; i < alternativesFirstLevel.Count; i++)
                 {
-                    String token = templateElements[j].Trim();
-                    if (mapping.ContainsKey(token))
-                    {
-                        newName += mapping[token];
-                    }
-                    else
-                    {
-                        newName += "??" + token + "??";
-                    }
-                    if (j < templateElements.Length - 1)
-                        newName += ",";
-                    else
-                        newName += ">";
-                }
 
-                alternativesFirstLevelWithConcreteParameters.Add(newName);
+                    String[] splitted = alternativesFirstLevel[i].Substring(0, alternativesFirstLevel[i].Length - 1).Split('<');
+                    if (splitted.Length > 2)
+                    {
+                        Console.WriteLine("Potentiel Error in getAlternativesRecursive():: element in alternativesFirstLevel have a template hierarchy of more than one, see:: " + alternativesFirstLevel[i]);
+                        //System.Environment.Exit(1);
+                    }
+
+                    String newName = splitted[0] + "<";
+                    String[] templateElements = splitted[1].Split(',');
+                    for (int j = 0; j < templateElements.Length; j++)
+                    {
+                        String token = templateElements[j].Trim();
+                        if (mapping.ContainsKey(token))
+                        {
+                            newName += mapping[token];
+                        }
+                        else
+                        {
+                            newName += "??" + token + "??";
+                        }
+                        if (j < templateElements.Length - 1)
+                            newName += ",";
+                        else
+                            newName += ">";
+                    }
+
+                    alternativesFirstLevelWithConcreteParameters.Add(newName);
+                }
+            }
+            else
+            {
+                foreach (string alt in alternativesFirstLevel)
+                {
+                    alternativesFirstLevelWithConcreteParameters.Add(alt);
+                }
             }
 
 
@@ -175,5 +203,44 @@ namespace Dune
         }
 
 
+
+        internal static void generateVariabilityModel(Dictionary<string, List<string>> resultsByVariabilityPoints)
+        {
+            VariabilityModel varModel = new VariabilityModel("DuneCaseStudy");
+            
+
+            foreach (KeyValuePair<String, List<String>> resultForOne in resultsByVariabilityPoints)
+            {
+                BinaryOption alternativeParent = new BinaryOption(varModel, "group" + resultForOne.Key);
+                alternativeParent.Optional = false;
+                alternativeParent.Parent = varModel.Root;
+                alternativeParent.OutputString = "NoOutput";
+                varModel.addConfigurationOption(alternativeParent);
+
+                List<BinaryOption> elementsOfGroup = new List<BinaryOption>();
+                foreach (String alternative in resultForOne.Value)
+                {
+                    BinaryOption oneAlternative = new BinaryOption(varModel, alternative);
+                    oneAlternative.Optional = false;
+                    oneAlternative.OutputString = alternative;
+                    oneAlternative.Parent = alternativeParent;
+                    varModel.addConfigurationOption(oneAlternative);
+                    elementsOfGroup.Add(oneAlternative);
+                }
+
+                foreach (BinaryOption alternative in elementsOfGroup)
+                {
+                    foreach (BinaryOption other in elementsOfGroup)
+                    {
+                        if (alternative.Equals(other))
+                            continue;
+
+                        alternative.Excluded_Options.Add(new List<ConfigurationOption>() { other });
+                    }
+                }
+            }
+
+            varModel.saveXML(DEBUG_PATH + varModel.Name+".xml");
+        }
     }
 }
