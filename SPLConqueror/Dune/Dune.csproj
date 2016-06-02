@@ -83,7 +83,6 @@
     <Compile Include="TemplateElement.cs" />
     <Compile Include="TemplateObject.cs" />
     <Compile Include="TemplateTree.cs" />
-    <Compile Include="Tree\Tree.cs" />
     <Compile Include="DuneFeature.cs" />
     <Compile Include="DuneEnum.cs" />
     <Compile Include="DuneClass.cs" />

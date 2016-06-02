@@ -21,7 +21,7 @@ namespace Dune
         private Boolean isAbstract = false;
         private List<DuneClass> parents;
         private List<DuneClass> children;
-        private Tree template;
+        private TemplateTree template;
 
         private List<string> methodArguments;
         private List<List<int>> replaceableArguments;
@@ -539,7 +539,7 @@ namespace Dune
         /// Sets the template tree of the <code>DuneClass</code> to the given template tree.
         /// </summary>
         /// <param name="t">the template tree to set to</param>
-        public void setTemplateTree(Tree t)
+        public void setTemplateTree(TemplateTree t)
         {
             this.template = t;
         }
