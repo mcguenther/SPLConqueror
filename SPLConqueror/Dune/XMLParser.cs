@@ -49,6 +49,8 @@ namespace Dune
         static int typedefCounter = 0;
         static int stdCounter = 0;
 
+        static int globalNumerator = 1;
+
         static List<DuneClass> featuresNotFound = new List<DuneClass>();
 
         static StreamWriter output;
@@ -1667,6 +1669,17 @@ namespace Dune
                 }
 
                 template += c.FirstChild.InnerText;
+
+                if (c.FirstChild.InnerText.Equals("class") && c.ChildNodes.Count > 1)
+                {
+                    template += " " + c.ChildNodes[1].InnerText;
+                }
+                // If only the class-type is given, a specific character with its numeration is inserted
+                else if (c.FirstChild.InnerText.Equals("class") && c.ChildNodes.Count == 1)
+                {
+                    template += "$" + globalNumerator;
+                    globalNumerator++;
+                }
             }
 
             return template;

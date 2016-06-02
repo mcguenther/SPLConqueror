@@ -101,8 +101,8 @@ namespace Dune
             this.implementingTemplate = "";
             this.templateElements = new List<TemplateElement>();
 
-            template = template.Replace("typename", "");
-            template = template.Replace("class", "");
+            template = template.Replace("typename", "").Trim();
+            template = template.Replace("class", "").Trim();
 
             if (template != null && !template.Equals(""))
             {
@@ -485,7 +485,7 @@ namespace Dune
         {
             List<string> result = new List<string>();
 
-            if (analyzed.Contains(this) || this.Equals(root))
+            if (analyzed.Contains(this) || this.Equals(root) || this.getFeatureNameWithoutTemplateAndNamespace().Contains("Interface"))
             {
                 return result;
             }
