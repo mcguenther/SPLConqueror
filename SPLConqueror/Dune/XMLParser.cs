@@ -583,7 +583,7 @@ namespace Dune
         /// </summary>
         /// <param name="df">the class to return the variability for</param>
         /// <returns>the variability of the class or enum</returns>
-        public static List<String> getVariability(DuneFeature df)
+        public static Dictionary<string, DuneFeature> getVariability(DuneFeature df)
         {
             if (df == null)
             {
@@ -599,7 +599,7 @@ namespace Dune
         /// </summary>
         /// <param name="feature">the feature to analyze</param>
         /// <returns>a list of strings in which every element is a possible replacement for the given feature</returns>
-        public static List<String> getVariability(string feature, RefersToAliasing refersTo)
+        public static Dictionary<string, DuneFeature> getVariability(string feature, RefersToAliasing refersTo)
         {
 
             // Extract the name and the template

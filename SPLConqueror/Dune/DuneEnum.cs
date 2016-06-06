@@ -122,10 +122,17 @@ namespace Dune
             return base.GetHashCode();
         }
 
-        public override List<string> getVariability(DuneFeature root)
+        public override Dictionary<string, DuneFeature> getVariability(DuneFeature root)
         {
+            Dictionary<string, DuneFeature> elements = new Dictionary<string, DuneFeature>();
+
+            foreach (String s in this.enumObject.getValues())
+            {
+                elements.Add(s, this);
+            }
+            
             // The root feature is not needed until now (but DuneClass needs it because of the tree-like structure)
-            return this.enumObject.getValues();
+            return elements;
         }
     }
 }

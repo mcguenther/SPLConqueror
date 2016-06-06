@@ -98,7 +98,7 @@ namespace Dune
             return this.reference;
         }
 
-        public override List<string> getVariability(DuneFeature root)
+        public override Dictionary<string, DuneFeature> getVariability(DuneFeature root)
         {
             throw new NotImplementedException();
         }

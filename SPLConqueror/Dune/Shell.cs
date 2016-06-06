@@ -49,11 +49,11 @@ namespace Dune
                     case "analyze":
                     case "a":
                         DuneFeature df = findFeature(arguments);
-                        List<string> result = XMLParser.getVariability(df);
+                        Dictionary<string, DuneFeature> result = XMLParser.getVariability(df);
 
                         if (result != null)
                         {
-                            foreach (string s in result)
+                            foreach (string s in result.Keys)
                             {
                                 System.Console.WriteLine(s);
                             }

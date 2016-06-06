@@ -152,19 +152,18 @@ namespace Dune
 
             }
 
-            List<String> alternativesFirstLevel = ((DuneFeature)improtantClass).getVariability(XMLParser.root);
+            Dictionary<String, DuneFeature> alternativesFirstLevel = ((DuneFeature)improtantClass).getVariability(XMLParser.root);
             List<String> alternativesFirstLevelWithConcreteParameters = new List<string>();
 
             if (input.Contains('<'))
             {
-
-                for (int i = 0; i < alternativesFirstLevel.Count; i++)
+                foreach(KeyValuePair<String,DuneFeature> element in alternativesFirstLevel)
                 {
 
-                    String[] splitted = alternativesFirstLevel[i].Substring(0, alternativesFirstLevel[i].Length - 1).Split('<');
+                    String[] splitted = element.Key.Substring(0, element.Key.Length - 1).Split('<');
                     if (splitted.Length > 2)
                     {
-                        Console.WriteLine("Potentiel Error in getAlternativesRecursive():: element in alternativesFirstLevel have a template hierarchy of more than one, see:: " + alternativesFirstLevel[i]);
+                        Console.WriteLine("Potentiel Error in getAlternativesRecursive():: element in alternativesFirstLevel have a template hierarchy of more than one, see:: " + element.Key);
                         //System.Environment.Exit(1);
                     }
 
@@ -179,7 +178,22 @@ namespace Dune
                         }
                         else
                         {
-                            newName += "??" + token + "??";
+                            TemplateElement te = ((DuneClass)element.Value).templateElements[j];
+                            if (te.defval_cont != "")
+                            {
+                                newName += te.defval_cont;
+                            }
+                            else
+                            {
+                                double d;
+                                if(Double.TryParse(token,out d))
+                                {
+                                    newName += token;
+                                }
+                                newName += "??" + token + "??";
+                            }
+
+
                         }
                         if (j < templateElements.Length - 1)
                             newName += ",";
@@ -192,9 +206,9 @@ namespace Dune
             }
             else
             {
-                foreach (string alt in alternativesFirstLevel)
+                foreach(KeyValuePair<String,DuneFeature> element in alternativesFirstLevel)
                 {
-                    alternativesFirstLevelWithConcreteParameters.Add(alt);
+                    alternativesFirstLevelWithConcreteParameters.Add(element.Key);
                 }
             }
 

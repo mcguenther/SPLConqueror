@@ -21,7 +21,7 @@ namespace Dune
         /// </summary>
         /// <param name="root">the root feature. This is needed in case of trees</param>
         /// <returns>the whole list of variability that was found by the program</returns>
-        public abstract List<String> getVariability(DuneFeature root);
+        public abstract Dictionary<String, DuneFeature> getVariability(DuneFeature root);
 
         /// <summary>
         /// Returns the namespace of the feature.
