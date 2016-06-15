@@ -21,8 +21,9 @@ namespace Dune
 
         public const bool INCLUDE_CLASSES_FROM_STD = false;
 
+        public static char SPLIT_SYMBOL = '=';
 
-        public static bool USE_DUCK_TYPING = false;
+        public static bool USE_DUCK_TYPING = true;
 
 
         /// <summary>
@@ -78,7 +79,7 @@ namespace Dune
         {
             List<String> alternatives = new List<string>();
 
-            DuneFeature improtantClass = null;
+            DuneFeature importantClass = null;
 
             TemplateTree treeOfInterest = new TemplateTree();
 
@@ -94,17 +95,17 @@ namespace Dune
             {
                 if(others.getFeatureNameWithoutTemplate().Equals(nameAndTemplateOfClassSplitted[0]))
                 {
-                    improtantClass = others;
+                    importantClass = others;
                     allOthers.Add(others);
                     Console.WriteLine("");
                 }
             }
-            if (allOthers.Count > 1 || improtantClass == null)
+            if (allOthers.Count > 1 || importantClass == null)
             {
                 Console.WriteLine("Potentiel Error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input);
                 if (allOthers.Count > 1)
                     Console.WriteLine("more than one internal class could macht the given one");
-                if (improtantClass == null)
+                if (importantClass == null)
                     Console.WriteLine("no internal representation for the given class could be found");
                 //System.Environment.Exit(1);
             }
@@ -113,7 +114,7 @@ namespace Dune
             // mapping from the default placeholder strings of the templte in the strings of the given input template
             Dictionary<String, String> mapping = new Dictionary<string, string>();
 
-            if (improtantClass == null)
+            if (importantClass == null)
             {
                 // input is the value of an enum
                 foreach(DuneEnum currEnum in XMLParser.enums){
@@ -122,7 +123,7 @@ namespace Dune
                     {
                         if (s.Equals(input))
                         {
-                            improtantClass = currEnum;
+                            importantClass = currEnum;
                         }
                     }
                 }
@@ -131,7 +132,7 @@ namespace Dune
             {
 
                 
-                String[] templateInInput = ((DuneClass) improtantClass).implementingTemplate.Split(',');
+                String[] templateInInput = ((DuneClass) importantClass).implementingTemplate.Split(',');
 
 
                 // we start with 1 because element is the name of the class
@@ -152,7 +153,7 @@ namespace Dune
 
             }
 
-            Dictionary<String, DuneFeature> alternativesFirstLevel = ((DuneFeature)improtantClass).getVariability(XMLParser.root);
+            Dictionary<String, DuneFeature> alternativesFirstLevel = ((DuneFeature)importantClass).getVariability(XMLParser.root);
             List<String> alternativesFirstLevelWithConcreteParameters = new List<string>();
 
             if (input.Contains('<'))
