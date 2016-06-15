@@ -14,7 +14,7 @@ namespace Dune
         private String fullClassName;
         private String className;
         private Range templateArgumentCount;
-        private List<TemplateElement> templateElements;
+        public List<TemplateElement> templateElements;
         private String templateForCode;
         public String implementingTemplate;
         private Boolean isStruct = false;
@@ -32,7 +32,7 @@ namespace Dune
 
         private bool ignoreDuckTyping = false;
 
-        private List<string> alternatives = null;
+        private Dictionary<string, DuneFeature> alternatives = null;
 
         public LinkedList<TemplateTree> templat = new LinkedList<TemplateTree>();
 
@@ -465,7 +465,7 @@ namespace Dune
         /// </summary>
         /// <param name="root">the root node which is excluded</param>
         /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
-        public override List<string> getVariability(DuneFeature root)
+        public override Dictionary<string, DuneFeature> getVariability(DuneFeature root)
         {
             if (alternatives == null)
             {
@@ -481,9 +481,9 @@ namespace Dune
         /// <param name="analyzed">the list which contains the features that were analyzed already</param>
         /// <param name="baseClass">the class the variability is searched for</param>
         /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
-        private List<string> getVariability(DuneFeature root, List<DuneClass> analyzed, DuneClass baseClass)
+        private Dictionary<string, DuneFeature> getVariability(DuneFeature root, List<DuneClass> analyzed, DuneClass baseClass)
         {
-            List<string> result = new List<string>();
+            Dictionary<string, DuneFeature> result = new Dictionary<string, DuneFeature>();
 
             if (analyzed.Contains(this) || this.Equals(root) || this.getFeatureNameWithoutTemplateAndNamespace().Contains("Interface"))
             {
@@ -494,17 +494,17 @@ namespace Dune
 
             if (this.methodNameHashes != null && (baseClass.isPotentialSubclassOff(this) || this.isPotentialSubclassOff(baseClass))) //this.methodNameHashes.Capacity >= baseClass.methodHashes.Capacity)
             {
-                result.Add(ToString());
+                result.Add(ToString(),this);
             }
 
             foreach (DuneClass p in children)
             {
-                result.AddRange(p.getVariability(root, analyzed, baseClass));
+                result.Union(p.getVariability(root, analyzed, baseClass));
             }
 
             foreach (DuneClass p in parents)
             {
-                result.AddRange(p.getVariability(root, analyzed, baseClass));
+                result.Union(p.getVariability(root, analyzed, baseClass));
                 
             }
 

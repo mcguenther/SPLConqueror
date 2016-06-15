@@ -244,5 +244,10 @@ namespace Dune
         {
             lastElement.parent.hasUnlimitedNumberOfParameters = true;
         }
+
+        internal TemplateTree getElement(int j)
+        {
+            return children[j];
+        }
     }
 }
