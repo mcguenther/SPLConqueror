@@ -1103,11 +1103,6 @@ namespace Dune
                 pureClassName = classname.Substring(indx + 1, classname.Length - indx - 1);
             }
 
-            if (pureClassName != null && (pureClassName.Equals("GridDefaultImplementation") || pureClassName.Equals("UGGrid")))
-            {
-                System.Console.Write("");
-            }
-
             List<int> methodHashes = new List<int>();
             List<int> methodNameHashes = new List<int>();
             List<int> argumentCount = new List<int>();
