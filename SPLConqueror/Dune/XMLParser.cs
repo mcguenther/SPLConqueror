@@ -891,20 +891,20 @@ namespace Dune
                 {
                     continue;
                 }
-                //System.Console.WriteLine(df.ToString());
 
                 // Show the progress bar:
                 Console.Write("\r{0}%   ", finished * 100 / total);
 
                 foreach (DuneClass comp in featuresToCompare)
                 {
-                    if (df.isIgnored())
+                    if (comp.isIgnored())
                     {
                         continue;
                     }
 
                     // If there is no transitive relation between the classes, the classes are analyzed
-                    if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes() && !df.hasRelationTo(comp, root))
+                    // TODO: Add the commented part of the next line as soon as possible
+                    if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes()) // && !df.hasRelationTo(comp, root))
                     {
                         Boolean isSubclassOf = true;
                         for (int i = 0; i < comp.getMethodHashes().Count; i++)
