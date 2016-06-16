@@ -103,17 +103,13 @@ namespace Dune
 
                         // Use the whole information and generate the output (ini-files)
                         int[] configCount = new int[glResult.Count];
-                        for (int i = 0; i < configCount.Length; i++)
-                        {
-                            // Initialize the list with the value 1
-                            configCount[i] = 1;
-                        }
 
                         bool stop = false;
                         while (!stop)
                         {
                             // Print the current configuration
-                            StreamWriter outp = new System.IO.StreamWriter(Program.DEBUG_PATH + "diffusion_" + String.Format("0:0000", count) +".ini");
+                            StreamWriter outp = new System.IO.StreamWriter(Program.DEBUG_PATH + "diffusion_" + String.Format("{0:0000}", count) +".ini");
+                            count++;
                             for (int j = 0; j < configCount.Length; j++)
                             {
                                 outp.WriteLine(iniFilePlaceHolder[j] + " " + Program.SPLIT_SYMBOL + " " + glResult[j][configCount[j]]);
@@ -123,26 +119,27 @@ namespace Dune
                             // Check if there is another configuration
                             bool backwards = true;
                             int i = configCount.Length - 1;
-                            while (i > 0 && i < configCount.Length)
+                            while (i >= 0 && i < configCount.Length)
                             {
                                 if (backwards)
                                 {
-                                    if (configCount[i] < glResult[i].Count)
+                                    if (configCount[i] < glResult[i].Count - 1)
                                     {
                                         configCount[i]++;
                                         backwards = false;
+                                        i++;
                                     } else
                                     {
                                         i--;
                                     }
                                 } else
                                 {
-                                    configCount[i] = 1;
+                                    configCount[i] = 0;
                                     i++;
                                 }
                             }
 
-                            if (i == 0)
+                            if (i == -1 && backwards)
                             {
                                 stop = true;
                             }
