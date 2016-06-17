@@ -12,7 +12,6 @@ namespace Dune
         private string name;
         private string wholeName;
         private string reference;
-        private TemplateTree type;
 
         /// <summary>
         /// Creates a new <code>DuneTypeDef</code> by the given reference, name and type.
@@ -20,14 +19,12 @@ namespace Dune
         /// <param name="reference">the reference id of the typedef</param>
         /// <param name="name">the name of the typedef</param>
         /// <param name="type">the type(or definition) of the typedef</param>
-        public DuneTypeDef(string reference, string name, XmlNode type)
+        public DuneTypeDef(string reference, string name)
         {
             this.name = name;
             this.reference = reference;
             this.typeNamespace = "";
             this.wholeName = this.name;
-            // TODO: Call the analyzeTemplate-method
-            this.type = XMLParser.getTemplateTreeOf(type);
 
         }
 
@@ -38,7 +35,7 @@ namespace Dune
         /// <param name="typeNamespace">the namespace of the typedef</param>
         /// <param name="name">the name of the typedef</param>
         /// <param name="type">the type(or definition) of the typedef</param>
-        public DuneTypeDef(string reference, string typeNamespace, string name, XmlNode type) : this(reference, name, type)
+        public DuneTypeDef(string reference, string typeNamespace, string name) : this(reference, name)
         {
             setNamespace(typeNamespace);
         }

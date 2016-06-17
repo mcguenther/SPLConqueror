@@ -445,10 +445,9 @@ namespace Dune
                                             String localName = getChild("name", c.ChildNodes).InnerText;
                                             XmlNode type = getChild("type", c.ChildNodes);
                                             XmlNode definition = getChild("definition", c.ChildNodes);
-                                            XmlNode realDef = shortenDefinition(definition, type);
                                             alternativeRefIds.Add(id);
                                             if (!refIdToFeature.ContainsKey(id))
-                                                refIdToFeature.Add(id, new DuneTypeDef(id, localName, realDef));
+                                                refIdToFeature.Add(id, new DuneTypeDef(id, localName));
                                             else if (!isNamespace)
                                                 Console.Write("");
 
