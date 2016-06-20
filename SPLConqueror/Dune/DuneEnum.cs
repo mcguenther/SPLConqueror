@@ -122,7 +122,7 @@ namespace Dune
             return base.GetHashCode();
         }
 
-        public override Dictionary<string, DuneFeature> getVariability(DuneFeature root)
+        public override Dictionary<string, DuneFeature> getVariability()
         {
             Dictionary<string, DuneFeature> elements = new Dictionary<string, DuneFeature>();
 

@@ -52,6 +52,7 @@ namespace Dune
                         arguments = arguments.Replace("<", " <");
                         arguments = arguments.Replace(">", " >");
                         //Dictionary<string, DuneFeature> result = XMLParser.getVariability(df);
+
                         List<string> result = Program.getAlternativesRecursive(arguments);
 
                         if (result != null)

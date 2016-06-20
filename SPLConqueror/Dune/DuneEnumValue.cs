@@ -75,9 +75,8 @@ namespace Dune
         /// <summary>
         /// Returns a list with one element.
         /// </summary>
-        /// <param name="root">the root-feature. Not needed here</param>
         /// <returns>a list containing the value</returns>
-        public override Dictionary<string, DuneFeature> getVariability(DuneFeature root)
+        public override Dictionary<string, DuneFeature> getVariability()
         {
             Dictionary<string, DuneFeature> result = new Dictionary<string, DuneFeature>();
             result.Add(this.enumNamespace + "::" + this.value, this);

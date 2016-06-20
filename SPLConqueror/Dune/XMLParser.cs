@@ -36,6 +36,8 @@ namespace Dune
 
         static Dictionary<string, string> typeMapping = new Dictionary<string, string>();
 
+        static Dictionary<DuneFeature, List<DuneFeature>> alternativeClasses = new Dictionary<DuneFeature, List<DuneFeature>>();
+
 
         static Dictionary<String, DuneFeature> refIdToFeature = new Dictionary<string, DuneFeature>();
         public static Dictionary<String, List<DuneFeature>> nameWithoutPackageToDuneFeatures = new Dictionary<string, List<DuneFeature>>();
@@ -584,14 +586,15 @@ namespace Dune
         /// </summary>
         /// <param name="df">the class to return the variability for</param>
         /// <returns>the variability of the class or enum</returns>
-        public static Dictionary<string, DuneFeature> getVariability(DuneFeature df)
+        public static List<DuneFeature> getVariability(DuneFeature df)
         {
             if (df == null)
             {
                 return null;
             }
-
-            return df.getVariability(root);
+            List<DuneFeature> result;
+            alternativeClasses.TryGetValue(df, out result);
+            return result;
         }
 
 
@@ -640,7 +643,7 @@ namespace Dune
                 {
                     analyzeTemplate(template, (DuneClass)df);
                 }
-                return df.getVariability(root);
+                return df.getVariability();
             }
             else
             {
@@ -878,8 +881,6 @@ namespace Dune
                 }
             }
 
-            List<Tuple<DuneClass, DuneClass>> toInsert = new List<Tuple<DuneClass, DuneClass>>();
-
             int total = featuresToCompare.Count;
             int finished = 0;
             // The newer version with optimizations
@@ -918,19 +919,21 @@ namespace Dune
 
                         if (isSubclassOf)
                         {
-                            toInsert.Add(new Tuple<DuneClass, DuneClass>(comp, df));
+                            List<DuneFeature> values;
+                            if (alternativeClasses.TryGetValue(df, out values))
+                            {
+                                values.Add(comp);
+                            } else
+                            {
+                                values = new List<DuneFeature>();
+                                values.Add(comp);
+                                alternativeClasses.Add(df, values);
+                            }
                             file.WriteLine(df.ToString() + " -> " + comp.ToString());
                         }
                     }
 
                 }
-            }
-
-            // Only now the relations are added.
-            foreach (Tuple<DuneClass, DuneClass> t in toInsert)
-            {
-                t.Item1.addParent(t.Item2);
-                t.Item2.addChildren(t.Item1);
             }
             file.Flush();
             file.Close();

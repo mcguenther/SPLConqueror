@@ -104,7 +104,7 @@ namespace Dune
             }
             if (allOthers.Count > 1 || importantClass == null)
             {
-                Console.WriteLine("Potentiel Error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input);
+                Console.WriteLine("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input);
                 if (allOthers.Count > 1)
                     Console.WriteLine("more than one internal class could macht the given one");
                 if (importantClass == null)
@@ -113,7 +113,7 @@ namespace Dune
             }
 
 
-            // mapping from the default placeholder strings of the templte in the strings of the given input template
+            // mapping from the default placeholder strings of the template in the strings of the given input template
             Dictionary<String, String> mapping = new Dictionary<string, string>();
 
             if (importantClass == null)
@@ -155,7 +155,7 @@ namespace Dune
 
             }
 
-            Dictionary<String, DuneFeature> alternativesFirstLevel = ((DuneFeature)importantClass).getVariability(XMLParser.root);
+            Dictionary<String, DuneFeature> alternativesFirstLevel = ((DuneFeature)importantClass).getVariability();
             List<String> alternativesFirstLevelWithConcreteParameters = new List<string>();
 
             if (input.Contains('<'))
@@ -166,7 +166,7 @@ namespace Dune
                     String[] splitted = element.Key.Substring(0, element.Key.Length - 1).Split('<');
                     if (splitted.Length > 2)
                     {
-                        Console.WriteLine("Potentiel Error in getAlternativesRecursive():: element in alternativesFirstLevel have a template hierarchy of more than one, see:: " + element.Key);
+                        Console.WriteLine("Potential error in getAlternativesRecursive():: element in alternativesFirstLevel have a template hierarchy of more than one, see:: " + element.Key);
                         //System.Environment.Exit(1);
                     }
 

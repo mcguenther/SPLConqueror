@@ -463,51 +463,17 @@ namespace Dune
         /// <summary>
         /// Returns the classes with which the current class may be replaced with.
         /// </summary>
-        /// <param name="root">the root node which is excluded</param>
         /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
-        public override Dictionary<string, DuneFeature> getVariability(DuneFeature root)
+        public override Dictionary<string, DuneFeature> getVariability()
         {
-            if (alternatives == null)
-            {
-                alternatives = getVariability(root, new List<DuneClass>(), this);
-            }
-            return alternatives;
-        }
-
-        /// <summary>
-        /// Returns the classes with which the current class may be replaced with.
-        /// </summary>
-        /// <param name="root">the root node which is excluded</param>
-        /// <param name="analyzed">the list which contains the features that were analyzed already</param>
-        /// <param name="baseClass">the class the variability is searched for</param>
-        /// <returns>the classes in a list of strings with which the current class may be replaced with</returns>
-        private Dictionary<string, DuneFeature> getVariability(DuneFeature root, List<DuneClass> analyzed, DuneClass baseClass)
-        {
+            List<DuneFeature> variability = XMLParser.getVariability(this);
             Dictionary<string, DuneFeature> result = new Dictionary<string, DuneFeature>();
 
-            if (analyzed.Contains(this) || this.Equals(root) || this.getFeatureNameWithoutTemplateAndNamespace().Contains("Interface"))
+            foreach(DuneFeature df in variability)
             {
-                return result;
+                //TODO: Be aware of an ArgumentException...
+                result.Add(df.ToString(), df);
             }
-            
-            analyzed.Add(this);
-
-            if (this.methodNameHashes != null && (baseClass.isPotentialSubclassOff(this) || this.isPotentialSubclassOff(baseClass))) //this.methodNameHashes.Capacity >= baseClass.methodHashes.Capacity)
-            {
-                result.Add(ToString(),this);
-            }
-
-            foreach (DuneClass p in children)
-            {
-                result.Union(p.getVariability(root, analyzed, baseClass));
-            }
-
-            foreach (DuneClass p in parents)
-            {
-                result.Union(p.getVariability(root, analyzed, baseClass));
-                
-            }
-
             return result;
         }
 
