@@ -917,6 +917,9 @@ namespace Dune
                             }
                         }
 
+                        if(!alternativeClasses.ContainsKey(df))
+                            alternativeClasses.Add(df,new List<DuneFeature>()); 
+
                         if (isSubclassOf)
                         {
                             List<DuneFeature> values;

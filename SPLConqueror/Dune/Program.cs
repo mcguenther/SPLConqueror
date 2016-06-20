@@ -181,19 +181,27 @@ namespace Dune
                         }
                         else
                         {
-                            TemplateElement te = ((DuneClass)element.Value).templateElements[j];
-                            if (te.defval_cont != "")
+                            if (((DuneClass)element.Value).templateElements.Count > j)
                             {
-                                newName += te.defval_cont;
+
+                                TemplateElement te = ((DuneClass)element.Value).templateElements[j];
+                                if (te.defval_cont != "")
+                                {
+                                    newName += te.defval_cont;
+                                }
+                                else
+                                {
+                                    double d;
+                                    if (Double.TryParse(token, out d))
+                                    {
+                                        newName += token;
+                                    }
+                                    newName += "??" + token + "??";
+                                }
                             }
                             else
                             {
-                                double d;
-                                if(Double.TryParse(token,out d))
-                                {
-                                    newName += token;
-                                }
-                                newName += "??" + token + "??";
+                                newName += "??__??";
                             }
 
 
