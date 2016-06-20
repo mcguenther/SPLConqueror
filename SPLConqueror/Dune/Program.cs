@@ -25,6 +25,8 @@ namespace Dune
 
         public static bool USE_DUCK_TYPING = true;
 
+        public static bool INCLUDE_CONSTRUCTORS = false;
+
 
         /// <summary>
         /// The main-method of the Dune-plugin. This calls the corresponding <code>XMLParser</code>-methods.

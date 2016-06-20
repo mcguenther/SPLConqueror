@@ -48,12 +48,15 @@ namespace Dune
                         break;
                     case "analyze":
                     case "a":
-                        DuneFeature df = findFeature(arguments);
-                        Dictionary<string, DuneFeature> result = XMLParser.getVariability(df);
+                        //DuneFeature df = findFeature(arguments);
+                        arguments = arguments.Replace("<", " <");
+                        arguments = arguments.Replace(">", " >");
+                        //Dictionary<string, DuneFeature> result = XMLParser.getVariability(df);
+                        List<string> result = Program.getAlternativesRecursive(arguments);
 
                         if (result != null)
                         {
-                            foreach (string s in result.Keys)
+                            foreach (string s in result)
                             {
                                 System.Console.WriteLine(s);
                             }

@@ -901,7 +901,7 @@ namespace Dune
                         continue;
                     }
 
-                    // If there is no transitive relation between the classes, the classes are analyzed
+                    // Every class is analyzed with every other class
                     // TODO: Add the commented part of the next line as soon as possible
                     if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes()) // && !df.hasRelationTo(comp, root))
                     {
@@ -1147,7 +1147,7 @@ namespace Dune
                     if (pureClassName != null && name.InnerText.EndsWith(pureClassName))
                     {
                         // add only the constructor WITH arguments. 
-                        if (!methodArgs.Equals("()"))
+                        if (Program.INCLUDE_CONSTRUCTORS && !methodArgs.Equals("()"))
                         {
                             // In case of a constructor, the name remains empty
                             methodNameHashes.Add("".GetHashCode());
