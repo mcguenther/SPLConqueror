@@ -1733,6 +1733,7 @@ namespace Dune
             XmlNode type = getChild("templateparamlist", world.ChildNodes);
             if (type != null)
             {
+                
                 TemplateTree type_tree = new TemplateTree();
 
                 // Only classes have templateparamlists
@@ -1795,7 +1796,6 @@ namespace Dune
 
                                                     break;
                                                 default:
-                                                    Console.WriteLine("foo");
                                                     if (defValRef.InnerText.Equals("&gt;"))
                                                     {
                                                         // TODO: there are elements such as &gt; ::v . We need to split the string
@@ -1834,6 +1834,7 @@ namespace Dune
                                 te.deftype_cont = deftype_cont;
                                 te.defVal_tree = new TemplateTree();
                                 te.type_tree = new TemplateTree();
+
 
                                 String identifier = "";
                                 if (declmame_cont != "")
@@ -1977,7 +1978,16 @@ namespace Dune
                 Console.WriteLine("parsed:: " + templateTree.toString());
             //Console.WriteLine("");
 
-            currFeature.tempTree = templateTree;
+            if (currFeature.tempTree != null && templateTree == null)
+            {
+
+            }
+            else
+            {
+                currFeature.tempTree = templateTree;
+            }
+
+
 
             return templateTree;
 
