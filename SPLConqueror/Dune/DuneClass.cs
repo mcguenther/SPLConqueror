@@ -103,6 +103,7 @@ namespace Dune
 
             template = template.Replace("typename", "").Trim();
             template = template.Replace("class", "").Trim();
+            template = template.Replace("template", "").Trim();
 
             if (template != null && !template.Equals(""))
             {

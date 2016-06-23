@@ -923,15 +923,9 @@ namespace Dune
                         if (isSubclassOf)
                         {
                             List<DuneFeature> values;
-                            if (alternativeClasses.TryGetValue(df, out values))
-                            {
-                                values.Add(comp);
-                            } else
-                            {
-                                values = new List<DuneFeature>();
-                                values.Add(comp);
-                                alternativeClasses.Add(df, values);
-                            }
+                            alternativeClasses.TryGetValue(df, out values);
+                            values.Add(comp);
+
                             file.WriteLine(df.ToString() + " -> " + comp.ToString());
                         }
                     }
