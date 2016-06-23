@@ -21,7 +21,6 @@ namespace Dune
         private Boolean isAbstract = false;
         private List<DuneClass> parents;
         private List<DuneClass> children;
-        private TemplateTree template;
 
         private List<string> methodArguments;
         private List<List<int>> replaceableArguments;
@@ -511,7 +510,7 @@ namespace Dune
         /// <param name="t">the template tree to set to</param>
         public void setTemplateTree(TemplateTree t)
         {
-            this.template = t;
+            this.tempTree = t;
         }
 
         /// <summary>
@@ -622,7 +621,7 @@ namespace Dune
         /// <returns><code>true</code> if the features template tree was initialised; <code>false</code> otherwise</returns>
         public Boolean hasTree()
         {
-            return template != null;
+            return tempTree != null;
         }
 
         public override bool Equals(System.Object obj)

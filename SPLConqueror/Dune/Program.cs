@@ -183,8 +183,9 @@ namespace Dune
                         {
                             if (((DuneClass)element.Value).templateElements.Count > j)
                             {
-
+                                TemplateTree tree =  element.Value.tempTree.getElement(j);
                                 TemplateElement te = ((DuneClass)element.Value).templateElements[j];
+                                
                                 if (te.defval_cont != "")
                                 {
                                     newName += te.defval_cont;
