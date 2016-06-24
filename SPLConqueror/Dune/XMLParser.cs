@@ -920,6 +920,8 @@ namespace Dune
                         if(!alternativeClasses.ContainsKey(df))
                             alternativeClasses.Add(df,new List<DuneFeature>()); 
 
+
+
                         if (isSubclassOf)
                         {
                             List<DuneFeature> values;
@@ -931,6 +933,11 @@ namespace Dune
                     }
 
                 }
+                List<DuneFeature> features;
+                alternativeClasses.TryGetValue(df, out features);
+
+                // The own class is also an alternative (duck-typing is reflexive)
+                features.Add(df);
             }
             file.Flush();
             file.Close();
