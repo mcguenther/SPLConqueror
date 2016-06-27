@@ -79,37 +79,49 @@ namespace Dune
         
         public static List<String> getAlternativesRecursive(String input)
         {
+            input = input.Trim();
+
             List<String> alternatives = new List<string>();
 
             DuneFeature importantClass = null;
 
             TemplateTree treeOfInterest = new TemplateTree();
 
-            input = input.Replace(",","").Trim();
-            while (input.Contains("  "))
+            String name = input.Substring(0,input.IndexOf('<')).Trim();
+
+            List<char> reverseName = input.Reverse().ToList();
+            int closingIndex = input.Count();
+            for (int i = 0; i < reverseName.Count; i++)
             {
-                input = input.Replace("  "," ");
+                if(reverseName[i].Equals('>')){
+                    closingIndex = i;
+                    break;
+                }
+
             }
-            String[] nameAndTemplateOfClassSplitted = input.Split(' '); 
+           int templateLength = (input.Count()) + (closingIndex) - input.IndexOf('<') - 2;
+
+           String[] templateDefinedByUser = input.Substring(input.IndexOf('<') + 1, templateLength).Split(','); 
 
             List<DuneClass> allOthers = new List<DuneClass>();
             foreach (DuneClass others in XMLParser.features)
             {
-                if(others.getFeatureNameWithoutTemplate().Equals(nameAndTemplateOfClassSplitted[0]))
+                if (others.getFeatureNameWithoutTemplate().Equals(name))
                 {
                     importantClass = others;
                     allOthers.Add(others);
                     Console.WriteLine("");
                 }
             }
-            if (allOthers.Count > 1 || importantClass == null)
+
+            if (allOthers.Count > 1)
             {
-                Console.WriteLine("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input);
-                if (allOthers.Count > 1)
-                    Console.WriteLine("more than one internal class could macht the given one");
-                if (importantClass == null)
-                    Console.WriteLine("no internal representation for the given class could be found");
+                Console.Write("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input+".  ");
+                Console.WriteLine("more than one internal class could macht the given one");
                 //System.Environment.Exit(1);
+
+                importantClass = getDuneClassByNumberOfTemplateParameters(allOthers, templateDefinedByUser.Count());
+
             }
 
 
@@ -138,10 +150,10 @@ namespace Dune
 
 
                 // we start with 1 because element is the name of the class
-                int offset = 1;
-                for (int i = 1; i < nameAndTemplateOfClassSplitted.Length; i++)
+                int offset = 0;
+                for (int i = 1; i < templateDefinedByUser.Length; i++)
                 {
-                    String token = nameAndTemplateOfClassSplitted[i];
+                    String token = templateDefinedByUser[i];
                     if (token.Equals(">") || token.Equals("<"))
                     {
                         offset += 1;
@@ -153,6 +165,13 @@ namespace Dune
 
                 }
 
+            }
+
+            if (importantClass == null)
+            {
+                Console.Write("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input + ".  ");
+                Console.WriteLine("no internal representation for the given class could be found");
+                //System.Environment.Exit(1);
             }
 
             Dictionary<String, DuneFeature> alternativesFirstLevel = ((DuneFeature)importantClass).getVariability();
@@ -184,20 +203,28 @@ namespace Dune
                             if (((DuneClass)element.Value).templateElements.Count > j)
                             {
                                 TemplateTree tree =  element.Value.tempTree.getElement(j);
-                                TemplateElement te = ((DuneClass)element.Value).templateElements[j];
-                                
-                                if (te.defval_cont != "")
+                                TemplateTree te = ((DuneClass)element.Value).templateElements[j];
+
+                                if (te.isNotParsable)
                                 {
-                                    newName += te.defval_cont;
+
                                 }
                                 else
                                 {
-                                    double d;
-                                    if (Double.TryParse(token, out d))
+
+                                    if (te.defval_cont != "")
                                     {
-                                        newName += token;
+                                        newName += te.defval_cont;
                                     }
-                                    newName += "??" + token + "??";
+                                    else
+                                    {
+                                        double d;
+                                        if (Double.TryParse(token, out d))
+                                        {
+                                            newName += token;
+                                        }
+                                        newName += "??" + token + "??";
+                                    }
                                 }
                             }
                             else
@@ -226,6 +253,22 @@ namespace Dune
 
 
             return alternativesFirstLevelWithConcreteParameters;
+        }
+
+        private static DuneClass getDuneClassByNumberOfTemplateParameters(List<DuneClass> allOthers, int p)
+        {
+            DuneClass f = null;
+            
+            for(int i = 0; i < allOthers.Count; i++)
+            {
+                if (allOthers[i].getTemplateArgumentCount().getLowerBound() <= p && allOthers[i].getTemplateArgumentCount().getUpperBound() >= p)
+                    if (f == null)
+                        f = allOthers[i];
+                    else
+                        Console.WriteLine("Multiple classes found that could match with the input");
+            }
+
+            return f;
         }
 
 
