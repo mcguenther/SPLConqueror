@@ -224,13 +224,10 @@ namespace Dune
         /// <param name="child">the node in the xml-file pointing on the <code>compounddef</code> tag</param>
         private static void extractFeatures(XmlNode child)
         {
-            // wenn ein Feature keine Public methoden hat soll es einfach ignoriert werden 
-
-
             // TODO::: Parse Name
-            // Input::: Dune::ALUGrid&lt; 3, 3, elType, refineType, Comm &gt;::Partition
+            // Input::: Dune::ALUGrid< 3, 3, elType, refineType, Comm >::Partition
             // Output:: Name: Dune::ALUGrid::Partition
-                // 
+               
 
             // TODO:::: Input: Dune::ALUGrid&lt; 3, 3, elType, refineType, Comm &gt;
             // Output::: name of the feature: Dune::ALUGrid
@@ -251,6 +248,7 @@ namespace Dune
             String refId = child.Attributes["id"].Value.ToString();
             String name = "";
             String templateInName = "";
+            String suffix = "";
             List<Enum> enumerations = null;
 
             bool hasPublicMethods = false;
@@ -275,11 +273,11 @@ namespace Dune
                             name = name.Replace("  ", " ");
                         }
                         templateInName = extractTemplateInName(name);
-                        name = convertName(name);
-
-                        if (name.Contains("Dune::ALUGrid"))
+                        if (!templateInName.Equals(String.Empty) && name.LastIndexOf("::") > name.LastIndexOf(">"))
                         {
+                            suffix = name.Substring(name.LastIndexOf("::") + 2);
                         }
+                        name = convertName(name);
 
                         if (name.Contains("helper") || name.Contains("Helper"))
                         {
@@ -311,11 +309,7 @@ namespace Dune
                         }
                         break;
                     case "templateparamlist":
-                        if (name.StartsWith("Dune::ALUGrid"))
-                        {
-                        }
-
-                        template = extractOnlyTemplate(node, templateInName);
+                        template = extractOnlyTemplate(node);
                         break;
                 }
             }
@@ -325,7 +319,7 @@ namespace Dune
                 return;
             }
 
-            df = new DuneClass(refId, name, template, templateInName);
+            df = new DuneClass(refId, name, template, templateInName, suffix);
             features.Add(df);
 
             string nameWithoutPackage = df.getFeatureNameWithoutTemplateAndNamespace();
@@ -421,6 +415,7 @@ namespace Dune
             String refId = child.Attributes["id"].Value.ToString();
             String name = "";
             String templateInName = "";
+            String suffix = "";
             List<DuneClass> inherits = new List<DuneClass>();
             MethodList methods = null;
             int max = -1;
@@ -435,6 +430,10 @@ namespace Dune
                     case "compoundname":
                         name = node.InnerText.ToString();
                         templateInName = extractTemplateInName(name);
+                        if (!templateInName.Equals(String.Empty) && name.LastIndexOf("::") > name.LastIndexOf(">"))
+                        {
+                            suffix = name.Substring(name.LastIndexOf("::") + 2);
+                        }
                         name = convertName(name);
                         if (name.Contains("helper") || name.Contains("Helper"))
                         {
@@ -510,7 +509,7 @@ namespace Dune
                 }
             }
 
-            DuneClass df = getClass(new DuneClass(refId, name, template, templateInName));
+            DuneClass df = getClass(new DuneClass(refId, name, template, templateInName, suffix));
 
             // Abort if the class was not loaded previously.
             if (df == null)
@@ -951,9 +950,6 @@ namespace Dune
             // The newer version with optimizations
             foreach (DuneClass df in featuresToCompare)
             {
-                if (df.getFeatureName().Contains("Dune::ALUGrid"))
-                {
-                }
 
 
                 finished++;
@@ -1724,15 +1720,15 @@ namespace Dune
         /// </summary>
         /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
         /// <returns>the string containing the template</returns>
-        private static String extractOnlyTemplate(XmlNode child, String templateFromCompoundName)
+        private static String extractOnlyTemplate(XmlNode child) //, String templateFromCompoundName)
         {
           // TODO here could be an error...... inside
             
             // parse template in name
             //2, dimw, elType, refinementType, Comm
-            Dictionary<String, int> templetFromNameWithID = new Dictionary<string, int>();
-            if (templateFromCompoundName.Count(f => f == '<') > 1)
-                Console.WriteLine();
+            //Dictionary<String, int> templetFromNameWithID = new Dictionary<string, int>();
+            //if (templateFromCompoundName.Count(f => f == '<') > 1)
+            //    Console.WriteLine();
 
             string template = "";
             for (int j = 0; j < child.ChildNodes.Count; j++)
@@ -1760,7 +1756,7 @@ namespace Dune
                 }
             }
 
-            return templateFromCompoundName;
+            return template;
         }
 
         public static int ifConds = 0;

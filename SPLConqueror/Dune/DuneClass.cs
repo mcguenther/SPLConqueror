@@ -22,6 +22,8 @@ namespace Dune
         private List<DuneClass> parents;
         private List<DuneClass> children;
 
+        private String suffix = "";
+
         private List<string> methodArguments;
         private List<List<int>> replaceableArguments;
 
@@ -30,8 +32,6 @@ namespace Dune
         private List<int> methodArgumentCount;
 
         private bool ignoreDuckTyping = false;
-
-        private Dictionary<string, DuneFeature> alternatives = null;
 
         public LinkedList<TemplateTree> templat = new LinkedList<TemplateTree>();
 
@@ -97,12 +97,13 @@ namespace Dune
         /// <param name="className">the name of the class</param>
         /// <param name="template">the template of the class</param>
         /// <param name="templateInName">the template in the name of the class (may be null)</param>
-        public DuneClass(String reference, String className, String template, String templateInName)
+        /// <param name="suffix">the suffix of the class</param>
+        public DuneClass(String reference, String className, String template, String templateInName, String suffix)
         {
-            if (className.Contains("Dune::ALUGrid"))
+            if (!suffix.Equals(String.Empty))
             {
+                this.suffix = "::" + suffix;
             }
-
 
             this.templateForCode = "";
             this.implementingTemplate = "";
@@ -120,12 +121,12 @@ namespace Dune
                 this.templateArgumentCount = new Range(minmax, minmax);
                 if (templateInName == null || templateInName.Equals(""))
                 {
-                    this.fullClassName = this.className + "<" + template + ">";
+                    this.fullClassName = this.className + "<" + template + ">" + this.suffix;
                     this.templateForCode = this.implementingTemplate;
                 }
                 else
                 {
-                    this.fullClassName = this.className + "<" + templateInName + ">";
+                    this.fullClassName = this.className + "<" + templateInName + ">" + this.suffix;
                     this.templateForCode = templateInName;
                 }
             }
@@ -133,7 +134,7 @@ namespace Dune
             {
                 this.className = className;
                 this.templateArgumentCount = new Range(0,0);
-                this.fullClassName = this.className;
+                this.fullClassName = this.className + this.suffix;
             }
 
             // Post-processing the name of the class
@@ -602,7 +603,7 @@ namespace Dune
         /// <returns>the name of the feature/class</returns>
         public override String getFeatureNameWithoutTemplate()
         {
-            return (this.featureNamespace + "::" + this.className).Trim();
+            return (this.featureNamespace + "::" + this.className).Trim() + this.suffix.Trim();
         }
 
         /// <summary>
@@ -611,7 +612,7 @@ namespace Dune
         /// <returns>the name of the feature/class</returns>
         public override String getFeatureNameWithoutTemplateAndNamespace()
         {
-            return this.className;
+            return this.className + this.suffix.Trim();
         }
 
         /// <summary>
