@@ -6,7 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Globalization;
 using SPLConqueror_Core;
-
+using Dune.util;
 
 namespace Dune
 {
@@ -134,7 +134,7 @@ namespace Dune
             {
 
                 
-                String[] templateInInput = ((DuneClass) importantClass).implementingTemplate.Split(',');
+                String[] templateInInput = ((DuneClass) importantClass).getImplementingTemplate().Split(',');
 
 
                 // we start with 1 because element is the name of the class

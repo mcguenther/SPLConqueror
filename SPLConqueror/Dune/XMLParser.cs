@@ -998,7 +998,7 @@ namespace Dune
         /// </summary>
         /// <param name="toSplit">the template to split</param>
         /// <returns>the arguments of the template in a <code>List</code></returns>
-        private static List<string> splitArgs(string toSplit)
+        internal static List<string> splitArgs(string toSplit)
         {
             List<string> args = new List<string>();
             int level = 0;
@@ -1669,14 +1669,15 @@ namespace Dune
                     template += ",";
                 }
 
-                template += c.FirstChild.InnerText;
+                if (!c.FirstChild.InnerText.Equals("int") && !c.FirstChild.InnerText.Equals("string"))
+                    template += c.FirstChild.InnerText;
 
-                if (c.FirstChild.InnerText.Equals("class") && c.ChildNodes.Count > 1)
+                if ((c.FirstChild.InnerText.Equals("class") || c.FirstChild.InnerText.Equals("int") || c.FirstChild.InnerText.Equals("string") ) && c.ChildNodes.Count > 1)
                 {
                     template += " " + c.ChildNodes[1].InnerText;
                 }
                 // If only the class-type is given, a specific character with its numeration is inserted
-                else if (c.FirstChild.InnerText.Equals("class") && c.ChildNodes.Count == 1)
+                else if ((c.FirstChild.InnerText.Equals("class") || c.FirstChild.InnerText.Equals("int") || c.FirstChild.InnerText.Equals("string")) && c.ChildNodes.Count == 1)
                 {
                     template += "$" + globalNumerator;
                     globalNumerator++;

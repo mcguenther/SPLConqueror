@@ -16,7 +16,7 @@ namespace Dune
         private Range templateArgumentCount;
         public List<TemplateElement> templateElements;
         private String templateForCode;
-        public String implementingTemplate;
+        private String implementingTemplate;
         private Boolean isStruct = false;
         private Boolean isAbstract = false;
         private List<DuneClass> parents;
@@ -146,6 +146,15 @@ namespace Dune
             this.parents = new List<DuneClass>();
             this.children = new List<DuneClass>();
             this.methodHashes = new List<int>();
+        }
+
+        /// <summary>
+        /// Returns the implementing template.
+        /// </summary>
+        /// <returns>the implementing template (which is the template the class has to be called with)</returns>
+        public String getImplementingTemplate()
+        {
+            return this.implementingTemplate;
         }
 
         /// <summary>
