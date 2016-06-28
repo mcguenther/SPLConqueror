@@ -31,6 +31,11 @@ namespace Dune
         String furtherInformation = "";
         String methodInvocation = "";
 
+        public override String ToString()
+        {
+            return declmame_cont;
+        }
+
         public TemplateTree()
         {
             currElement = this;

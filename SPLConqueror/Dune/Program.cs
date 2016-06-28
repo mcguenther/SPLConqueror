@@ -76,10 +76,36 @@ namespace Dune
             System.Console.ReadKey();
         }
 
-        
+
+        public static String[] getTemplateParts(String input)
+        {
+            List<char> reverseName = input.Reverse().ToList();
+            int closingIndex = input.Count();
+            for (int i = 0; i < reverseName.Count; i++)
+            {
+                if (reverseName[i].Equals('>'))
+                {
+                    closingIndex = i;
+                    break;
+                }
+
+            }
+            int templateLength = (input.Count()) + (closingIndex) - input.IndexOf('<') - 2;
+
+            String[] templateDefinedByUser = input.Substring(input.IndexOf('<') + 1, templateLength).Split(',');
+
+            return templateDefinedByUser;
+        }
+
         public static List<String> getAlternativesRecursive(String input)
         {
             input = input.Trim();
+
+            if (input.Contains("Dune::PDELab::QkLocalFiniteElementMap"))
+            {
+            }
+
+           
 
             List<String> alternatives = new List<string>();
 
@@ -87,25 +113,34 @@ namespace Dune
 
             TemplateTree treeOfInterest = new TemplateTree();
 
-            String name = input.Substring(0,input.IndexOf('<')).Trim();
+            String name = "";
+            String[] templateDefinedByUser = new String[0];
 
-            List<char> reverseName = input.Reverse().ToList();
-            int closingIndex = input.Count();
-            for (int i = 0; i < reverseName.Count; i++)
+            if (input.Contains('<'))
             {
-                if(reverseName[i].Equals('>')){
-                    closingIndex = i;
-                    break;
-                }
-
+                name = input.Substring(0, input.IndexOf('<')).Trim();
+                templateDefinedByUser = getTemplateParts(input);
             }
-           int templateLength = (input.Count()) + (closingIndex) - input.IndexOf('<') - 2;
+            else
+            {
+                name = input; 
+            }
 
-           String[] templateDefinedByUser = input.Substring(input.IndexOf('<') + 1, templateLength).Split(','); 
+
+
+           
+
 
             List<DuneClass> allOthers = new List<DuneClass>();
             foreach (DuneClass others in XMLParser.features)
             {
+                if (others.getFeatureNameWithoutTemplate().Contains("Dune::ALUGrid"))
+                {
+                    var x = others.getFeatureNameWithoutTemplate();
+
+                }
+
+
                 if (others.getFeatureNameWithoutTemplate().Equals(name))
                 {
                     importantClass = others;
@@ -145,9 +180,24 @@ namespace Dune
             else
             {
 
-                
-                String[] templateInInput = ((DuneClass) importantClass).implementingTemplate.Split(',');
+                List<TemplateTree> templateOfClass = ((DuneClass)importantClass).templateElements;
 
+                String cont = "";
+                for (int i = 0; i < templateOfClass.Count; i++)
+                {
+                    cont += templateOfClass[i].declmame_cont + " | ";
+
+                    if (mapping.ContainsKey(templateOfClass[i].declmame_cont))
+                    {
+                        mapping.Add(templateOfClass[i].declmame_cont+"_"+i, templateDefinedByUser[i]);
+                    }
+                    else
+                    {
+                        mapping.Add(templateOfClass[i].declmame_cont, templateDefinedByUser[i]);
+                    }
+                }
+
+                String s = cont;
 
                 // we start with 1 because element is the name of the class
                 int offset = 0;
@@ -160,7 +210,7 @@ namespace Dune
                         continue;
                     }
 
-                    mapping.Add(templateInInput[i - offset].Trim(), token);
+                    
 
 
                 }
@@ -182,65 +232,73 @@ namespace Dune
                 foreach(KeyValuePair<String,DuneFeature> element in alternativesFirstLevel)
                 {
 
-                    String[] splitted = element.Key.Substring(0, element.Key.Length - 1).Split('<');
-                    if (splitted.Length > 2)
+                    if (element.Key.Contains('<'))
                     {
-                        Console.WriteLine("Potential error in getAlternativesRecursive():: element in alternativesFirstLevel have a template hierarchy of more than one, see:: " + element.Key);
-                        //System.Environment.Exit(1);
-                    }
 
-                    String newName = splitted[0] + "<";
-                    String[] templateElements = splitted[1].Split(',');
-                    for (int j = 0; j < templateElements.Length; j++)
-                    {
-                        String token = templateElements[j].Trim();
-                        if (mapping.ContainsKey(token))
+                        String nameAlternative = element.Key.Substring(0, input.IndexOf('<')).Trim();
+
+                        String[] templateOfAlternative = getTemplateParts(element.Key);
+
+
+                        String alternativeWithUserInput = nameAlternative;
+
+                        for (int j = 0; j < templateOfAlternative.Length; j++)
                         {
-                            newName += mapping[token];
-                        }
-                        else
-                        {
-                            if (((DuneClass)element.Value).templateElements.Count > j)
+                            String token = templateOfAlternative[j].Trim();
+                            if (mapping.ContainsKey(token))
                             {
-                                TemplateTree tree =  element.Value.tempTree.getElement(j);
-                                TemplateTree te = ((DuneClass)element.Value).templateElements[j];
-
-                                if (te.isNotParsable)
-                                {
-
-                                }
-                                else
-                                {
-
-                                    if (te.defval_cont != "")
-                                    {
-                                        newName += te.defval_cont;
-                                    }
-                                    else
-                                    {
-                                        double d;
-                                        if (Double.TryParse(token, out d))
-                                        {
-                                            newName += token;
-                                        }
-                                        newName += "??" + token + "??";
-                                    }
-                                }
+                                alternativeWithUserInput += mapping[token];
                             }
                             else
                             {
-                                newName += "??__??";
-                            }
+                                if (((DuneClass)element.Value).templateElements.Count > j)
+                                {
+                                    TemplateTree tree = element.Value.tempTree.getElement(j);
+                                    TemplateTree te = ((DuneClass)element.Value).templateElements[j];
 
+                                    if (te.isNotParsable)
+                                    {
+
+                                    }
+                                    else
+                                    {
+
+                                        if (te.defval_cont != "")
+                                        {
+                                            alternativeWithUserInput += te.defval_cont;
+                                        }
+                                        else
+                                        {
+                                            double d;
+                                            if (Double.TryParse(token, out d))
+                                            {
+                                                alternativeWithUserInput += token;
+                                            }
+                                            alternativeWithUserInput += "??" + token + "??";
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    alternativeWithUserInput += "??__??";
+                                }
+
+
+                            }
+                            if (j < templateOfAlternative.Length - 1)
+                                alternativeWithUserInput += ",";
+                            else
+                                alternativeWithUserInput += ">";
 
                         }
-                        if (j < templateElements.Length - 1)
-                            newName += ",";
-                        else
-                            newName += ">";
-                    }
 
-                    alternativesFirstLevelWithConcreteParameters.Add(newName);
+
+                        alternativesFirstLevelWithConcreteParameters.Add(alternativeWithUserInput);
+                    }
+                    else
+                    {
+                        alternativesFirstLevelWithConcreteParameters.Add(element.Key);
+                    }
                 }
             }
             else

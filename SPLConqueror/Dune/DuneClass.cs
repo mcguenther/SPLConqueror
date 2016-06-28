@@ -593,7 +593,7 @@ namespace Dune
         /// <returns>the name of the feature/class</returns>
         public override String getFeatureNameWithoutTemplate()
         {
-            return this.featureNamespace + "::" + this.className;
+            return (this.featureNamespace + "::" + this.className).Trim();
         }
 
         /// <summary>
