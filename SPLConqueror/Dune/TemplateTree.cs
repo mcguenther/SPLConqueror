@@ -9,6 +9,20 @@ namespace Dune
     {
         List<TemplateTree> children = new List<TemplateTree>();
 
+        public String declmame_cont = "";
+        public String defval_cont = "";
+        public String defVal_cont_ref = "";
+        public String defVal_cont_ref_id = "";
+        public String defname_cont = "";
+        public String deftype_cont = "";
+        public DuneFeature o = null;
+
+        public TemplateTree defVal_tree = null;
+        public TemplateTree type_tree = null;
+
+        public bool isNotParsable = false;
+
+
         TemplateTree currElement;
         TemplateTree parent = null;
 
@@ -16,6 +30,11 @@ namespace Dune
 
         String furtherInformation = "";
         String methodInvocation = "";
+
+        public override String ToString()
+        {
+            return declmame_cont;
+        }
 
         public TemplateTree()
         {
@@ -43,6 +62,7 @@ namespace Dune
             newPart.type = Kind.concrete;
             newPart.artificalString = df.getFeatureNameWithoutTemplateAndNamespace();
             newPart.isTerminal = true;
+            newPart.isNotParsable = df.isNotParsable;
 
             newPart.parent = currElement;
             currElement.children.Add(newPart);
@@ -168,7 +188,7 @@ namespace Dune
             lastElement = newPart;
         }
 
-        internal void addInformation(string token, TemplateElement furtherInformation)
+        internal void addInformation(string token, TemplateTree furtherInformation)
         {
             TemplateTree newPart = new TemplateTree(this);
 

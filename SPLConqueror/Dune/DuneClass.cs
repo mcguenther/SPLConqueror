@@ -14,7 +14,7 @@ namespace Dune
         private String fullClassName;
         private String className;
         private Range templateArgumentCount;
-        public List<TemplateElement> templateElements;
+        public List<TemplateTree> templateElements;
         private String templateForCode;
         private String implementingTemplate;
         private Boolean isStruct = false;
@@ -35,6 +35,9 @@ namespace Dune
 
         public LinkedList<TemplateTree> templat = new LinkedList<TemplateTree>();
 
+        public DuneClass()
+        {
+        }
 
         /// <summary>
         /// Constructs a new DuneClass with the given reference and the given className
@@ -47,7 +50,7 @@ namespace Dune
             int index = className.IndexOf('<');
             this.templateForCode = "";
             this.implementingTemplate = "";
-            this.templateElements = new List<TemplateElement>();
+            this.templateElements = new List<TemplateTree>();
             if (index > 0)
             {
                 this.className = className.Substring(0, index);
@@ -96,9 +99,14 @@ namespace Dune
         /// <param name="templateInName">the template in the name of the class (may be null)</param>
         public DuneClass(String reference, String className, String template, String templateInName)
         {
+            if (className.Contains("Dune::ALUGrid"))
+            {
+            }
+
+
             this.templateForCode = "";
             this.implementingTemplate = "";
-            this.templateElements = new List<TemplateElement>();
+            this.templateElements = new List<TemplateTree>();
 
             template = template.Replace("typename", "").Trim();
             template = template.Replace("class", "").Trim();
@@ -110,7 +118,7 @@ namespace Dune
                 this.implementingTemplate = template;
                 int minmax = XMLParser.getCountOfArgs(this.implementingTemplate);
                 this.templateArgumentCount = new Range(minmax, minmax);
-                if (templateInName == null)
+                if (templateInName == null || templateInName.Equals(""))
                 {
                     this.fullClassName = this.className + "<" + template + ">";
                     this.templateForCode = this.implementingTemplate;
@@ -287,7 +295,7 @@ namespace Dune
         /// Adds a template element to the list of template elements.
         /// </summary>
         /// <param name="te">the template element to add</param>
-        public void addTemplateElement(TemplateElement te)
+        public void addTemplateElement(TemplateTree te)
         {
             this.templateElements.Add(te);
         }
@@ -554,7 +562,7 @@ namespace Dune
         /// </summary>
         /// <param name="min">the lower bound</param>
         /// <param name="max">the uppder bound</param>
-        public void setRange(int min, int max)
+        public void setTemplateArgumentCount(int min, int max)
         {
             this.templateArgumentCount = new Range(min, max);
         }
@@ -594,7 +602,7 @@ namespace Dune
         /// <returns>the name of the feature/class</returns>
         public override String getFeatureNameWithoutTemplate()
         {
-            return this.featureNamespace + "::" + this.className;
+            return (this.featureNamespace + "::" + this.className).Trim();
         }
 
         /// <summary>

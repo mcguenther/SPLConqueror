@@ -48,5 +48,8 @@ namespace Dune
 
 
         public TemplateTree tempTree;
+
+        public bool isNotParsable;
+
     }
 }

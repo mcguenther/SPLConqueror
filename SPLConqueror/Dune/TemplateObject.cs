@@ -26,7 +26,7 @@ namespace Dune
 
         public bool hasUnlimitedNumberOfParameters = false;
 
-        public TemplateElement informationFromTemplateParamlist = null;
+        public TemplateTree informationFromTemplateParamlist = null;
 
     }
 }

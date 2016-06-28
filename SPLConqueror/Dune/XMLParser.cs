@@ -216,12 +216,27 @@ namespace Dune
             output.Close();
         }
 
+        static List<String> innerClassNames = new List<string>();
+
         /// <summary>
         /// Extracts the information needed for a <code>DuneClass</code> and also constructs one.
         /// </summary>
         /// <param name="child">the node in the xml-file pointing on the <code>compounddef</code> tag</param>
         private static void extractFeatures(XmlNode child)
         {
+            // wenn ein Feature keine Public methoden hat soll es einfach ignoriert werden 
+
+
+            // TODO::: Parse Name
+            // Input::: Dune::ALUGrid&lt; 3, 3, elType, refineType, Comm &gt;::Partition
+            // Output:: Name: Dune::ALUGrid::Partition
+                // 
+
+            // TODO:::: Input: Dune::ALUGrid&lt; 3, 3, elType, refineType, Comm &gt;
+            // Output::: name of the feature: Dune::ALUGrid
+                // Liste der Template Parameter: [3,3, elType -> ALUGridElementType, refineType -> ALUGridRefinementType, Comm]
+
+
             DuneClass df = null;
 
             // Ignore private classes
@@ -238,14 +253,38 @@ namespace Dune
             String templateInName = "";
             List<Enum> enumerations = null;
 
+
+            if (refId.Contains("classDune_1_1ALUGrid"))
+            {
+            }
+
+
             foreach (XmlNode node in child.ChildNodes)
             {
                 switch (node.Name)
                 {
+                    case "memberdef":
+                        // extract inner classes
+                        name = node.InnerText.ToString();
+                        Console.WriteLine("innernamespace  " + name);
+                        innerClassNames.Add(name);
+                        break;
+
                     case "compoundname":
                         name = node.InnerText.ToString();
+                        name = name.Replace("<", " < ");
+                        name = name.Replace(">", " > ");
+                        while (name.Contains("  "))
+                        {
+                            name = name.Replace("  ", " ");
+                        }
                         templateInName = extractTemplateInName(name);
                         name = convertName(name);
+
+                        if (name.Contains("Dune::ALUGrid"))
+                        {
+                        }
+
                         if (name.Contains("helper") || name.Contains("Helper"))
                         {
                             return;
@@ -254,12 +293,14 @@ namespace Dune
                     case "sectiondef":
                         if (node.Attributes.GetNamedItem("kind") != null)
                         {
+
                             switch (node.Attributes.GetNamedItem("kind").Value)
                             {
                                 //case "user-defined":
                                 //case "typedef":
-                                //case "enum":
-                                // Only the public types are crucial for saving enums
+                                 
+                                //case "group":
+                                case "enum":
                                 case "public-type":
                                     // Save the enums in the feature
                                     enumerations = saveEnums(node, name);
@@ -273,10 +314,16 @@ namespace Dune
                         }
                         break;
                     case "templateparamlist":
-                        template = extractOnlyTemplate(node);
+                        if (name.StartsWith("Dune::ALUGrid"))
+                        {
+                        }
+
+                        template = extractOnlyTemplate(node, templateInName);
                         break;
                 }
             }
+
+
 
             df = new DuneClass(refId, name, template, templateInName);
             features.Add(df);
@@ -486,7 +533,7 @@ namespace Dune
             // Set the range; Note that this can be variable because of the default values.
             if (min > -1 && max > -1)
             {
-                df.setRange(min, max);
+                df.setTemplateArgumentCount(min, max);
             }
 
             // Now add all relations
@@ -594,6 +641,15 @@ namespace Dune
             }
             List<DuneFeature> result;
             alternativeClasses.TryGetValue(df, out result);
+            foreach (KeyValuePair<DuneFeature, List<DuneFeature>> foo in alternativeClasses)
+            {
+                if (foo.Key.getFeatureName().Contains("ALUGrid"))
+                {
+                    var x = foo.Key.getFeatureName();
+                    Console.WriteLine();
+                }
+            }
+            
             return result;
         }
 
@@ -875,17 +931,25 @@ namespace Dune
             // Compare only classes with at least one public method
             foreach (DuneClass df in features)
             {
+
                 if (df.getNumberOfMethodHashes() > 0)
                 {
                     featuresToCompare.Add(df);
                 }
             }
 
+
+
             int total = featuresToCompare.Count;
             int finished = 0;
             // The newer version with optimizations
             foreach (DuneClass df in featuresToCompare)
             {
+                if (df.getFeatureName().Contains("Dune::ALUGrid"))
+                {
+                }
+
+
                 finished++;
                 if (df.isIgnored())
                 {
@@ -894,6 +958,8 @@ namespace Dune
 
                 // Show the progress bar:
                 Console.Write("\r{0}%   ", finished * 100 / total);
+
+
 
                 foreach (DuneClass comp in featuresToCompare)
                 {
@@ -933,11 +999,11 @@ namespace Dune
                     }
 
                 }
-                List<DuneFeature> features;
-                alternativeClasses.TryGetValue(df, out features);
+                List<DuneFeature> altFeature;
+                alternativeClasses.TryGetValue(df, out altFeature);
 
                 // The own class is also an alternative (duck-typing is reflexive)
-                features.Add(df);
+                altFeature.Add(df);
             }
             file.Flush();
             file.Close();
@@ -1652,13 +1718,17 @@ namespace Dune
         /// </summary>
         /// <param name="child">the xml-element containing the feature where the template should be extracted from</param>
         /// <returns>the string containing the template</returns>
-        private static String extractOnlyTemplate(XmlNode child)
+        private static String extractOnlyTemplate(XmlNode child, String templateFromCompoundName)
         {
+          // TODO here could be an error...... inside
+            
+            // parse template in name
+            //2, dimw, elType, refinementType, Comm
+            Dictionary<String, int> templetFromNameWithID = new Dictionary<string, int>();
+            if (templateFromCompoundName.Count(f => f == '<') > 1)
+                Console.WriteLine();
 
             string template = "";
-
-            //bool found = false;
-            //bool tooFar = false;
             for (int j = 0; j < child.ChildNodes.Count; j++)
             {
                 // XmlNode c = cur.ChildNodes.Item(j);
@@ -1684,7 +1754,7 @@ namespace Dune
                 }
             }
 
-            return template;
+            return templateFromCompoundName;
         }
 
         public static int ifConds = 0;
@@ -1726,9 +1796,22 @@ namespace Dune
 
             String refId = world.Attributes["id"].Value.ToString();
 
+            if (refId.Contains("classDune_1_1ALUGrid"))
+            {
+            }
+
             DuneFeature currFeature = refIdToFeature[refId];
 
-            Dictionary<String, TemplateElement> templateParamList = new Dictionary<String, TemplateElement>();
+            Dictionary<String, TemplateTree> templateParamList = new Dictionary<String, TemplateTree>();
+
+            if (name.Contains("Dune::YaspGrid"))
+            {
+
+            }
+
+            if (name.Contains("Dune::PDELab::QkLocalFiniteElementMap"))
+            {
+            }
 
             // analyse the templateparamlist-elements.
             // I assume, here we have one element for each placeholder in the template
@@ -1785,7 +1868,13 @@ namespace Dune
                                                             // ignore such cases:::
                                                             Console.WriteLine("id not found type " + defValRef_curr_id);
                                                             idNotFound += 1;
+                                                            if (defValRef_curr_id.Contains("structDune_1_1PDELab_1_1FunctionTraits"))
+                                                                Console.WriteLine("");
                                                             Console.WriteLine("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNEEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNN");
+
+                                                            df = new DuneClass();
+                                                            df.isNotParsable = true;
+
                                                         }
                                                         else
                                                         {
@@ -1809,7 +1898,7 @@ namespace Dune
                                                     }
                                                     else
                                                     {
-                                                        type_tree.addInformation(defValRef.InnerText);
+                                                        //type_tree.addInformation(defValRef.InnerText);
                                                         Console.Write(defValRef.InnerText);
                                                         Console.Write(defValRef.InnerText);
                                                     }
@@ -1827,7 +1916,7 @@ namespace Dune
 
                             if (declmame_cont != "" || deftype_cont != "")
                             {
-                                TemplateElement te = new TemplateElement();
+                                TemplateTree te = new TemplateTree();
                                 te.declmame_cont = declmame_cont;
                                 te.defval_cont = defval_cont;
                                 te.defVal_cont_ref = defVal_cont_ref;
@@ -1856,27 +1945,27 @@ namespace Dune
 
                             }
 
-                            //if (getChild("declname", node.ChildNodes) != null)
-                            //{
+                            if (getChild("declname", node.ChildNodes) != null)
+                            {
 
-                            //    string placeHolderName = getChild("declname", node.ChildNodes).InnerText;
-                            //    XmlNode defval = getChild("defval", node.ChildNodes);
-                            //    //String typ = getChild("defval", node.ChildNodes).InnerText;
-                            //    if (defval != null)
-                            //    {
-                            //        if (getChild("ref", defval.ChildNodes) != null)
-                            //        {
-                            //            String defValue = getChild("ref", defval.ChildNodes).InnerText;
-                            //            XmlAttribute att = getAttribute("refid", getChild("ref", defval.ChildNodes));
-                            //            if (att != null)
-                            //            {
-                            //                String refId = att.InnerText;
-                            //            }
-                            //        }
-                            //        string defValueTemplate = defval.InnerText;
-                            //        //Console.WriteLine(defValueTemplate);
-                            //    }
-                            //}
+                                string placeHolderName = getChild("declname", node.ChildNodes).InnerText;
+                                XmlNode defval = getChild("defval", node.ChildNodes);
+                                //String typ = getChild("defval", node.ChildNodes).InnerText;
+                                if (defval != null)
+                                {
+                                    if (getChild("ref", defval.ChildNodes) != null)
+                                    {
+                                        String defValue = getChild("ref", defval.ChildNodes).InnerText;
+                                        XmlAttribute att = getAttribute("refid", getChild("ref", defval.ChildNodes));
+                                        if (att != null)
+                                        {
+                                            //String refId = att.InnerText;
+                                        }
+                                    }
+                                    string defValueTemplate = defval.InnerText;
+                                    //Console.WriteLine(defValueTemplate);
+                                }
+                            }
                             break;
                     }
                 }
@@ -1915,7 +2004,7 @@ namespace Dune
 
 
                 templateTree = new TemplateTree();
-                String[] templateParts = templateString.Split(' ');
+                String[] templateParts = templateString.Trim().Split(' ');
                 for (int i = 0; i < templateParts.Count(); i++)
                 {
                     string token = templateParts[i];
@@ -2033,7 +2122,7 @@ namespace Dune
                             if (!XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(defValRef.InnerText))
                             {
                                 // ignore such cases:::
-                                Console.WriteLine("id not found type " + defValRef_curr_id);
+                                Console.WriteLine("id not found type " + defValRef.InnerText);
                                 idNotFound += 1;
                                 Console.WriteLine("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNEEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNN");
                             }
@@ -2445,7 +2534,7 @@ namespace Dune
 
             if (!toConv.Contains("<"))
             {
-                return null;
+                return "";
             }
             return toConv.Substring(toConv.IndexOf("<") + 1, toConv.LastIndexOf(">") - toConv.IndexOf("<") - 1);
         }
