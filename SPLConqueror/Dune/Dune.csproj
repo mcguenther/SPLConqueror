@@ -80,7 +80,6 @@
     <Compile Include="Enum.cs" />
     <Compile Include="DuneEnumValue.cs" />
     <Compile Include="Shell.cs" />
-    <Compile Include="TemplateElement.cs" />
     <Compile Include="TemplateObject.cs" />
     <Compile Include="TemplateTree.cs" />
     <Compile Include="DuneFeature.cs" />

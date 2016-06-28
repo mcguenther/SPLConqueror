@@ -639,13 +639,19 @@ namespace Dune
             {
                 return null;
             }
-            List<DuneFeature> result;
+            List<DuneFeature> result = new List<DuneFeature>(); ;
             alternativeClasses.TryGetValue(df, out result);
-            foreach (KeyValuePair<DuneFeature, List<DuneFeature>> foo in alternativeClasses)
+            foreach (KeyValuePair<DuneFeature, List<DuneFeature>> curr in alternativeClasses)
             {
-                if (foo.Key.getFeatureName().Contains("ALUGrid"))
+                if (curr.Key.getFeatureNameWithoutTemplate().Contains("ALUGrid"))
                 {
-                    var x = foo.Key.getFeatureName();
+                    var x = curr.Key.getFeatureNameWithoutTemplate();
+                    Console.WriteLine("");
+                }
+
+                if (curr.Key.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()))
+                {   
+                    
                     Console.WriteLine();
                 }
             }

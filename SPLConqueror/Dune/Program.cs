@@ -100,24 +100,20 @@ namespace Dune
         public static List<String> getAlternativesRecursive(String input)
         {
             input = input.Trim();
-
-            if (input.Contains("Dune::PDELab::QkLocalFiniteElementMap"))
-            {
-            }
-
-           
+            bool inputHasTemplate = false;
 
             List<String> alternatives = new List<string>();
-
             DuneFeature importantClass = null;
-
             TemplateTree treeOfInterest = new TemplateTree();
 
+            // split input in name and template parameters
             String name = "";
             String[] templateDefinedByUser = new String[0];
 
             if (input.Contains('<'))
             {
+                inputHasTemplate = true;
+
                 name = input.Substring(0, input.IndexOf('<')).Trim();
                 templateDefinedByUser = getTemplateParts(input);
             }
@@ -127,25 +123,14 @@ namespace Dune
             }
 
 
-
-           
-
-
+            // Search for internal representations of the given class...
             List<DuneClass> allOthers = new List<DuneClass>();
             foreach (DuneClass others in XMLParser.features)
             {
-                if (others.getFeatureNameWithoutTemplate().Contains("Dune::ALUGrid"))
-                {
-                    var x = others.getFeatureNameWithoutTemplate();
-
-                }
-
-
                 if (others.getFeatureNameWithoutTemplate().Equals(name))
                 {
                     importantClass = others;
                     allOthers.Add(others);
-                    Console.WriteLine("");
                 }
             }
 
@@ -153,16 +138,12 @@ namespace Dune
             {
                 Console.Write("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input+".  ");
                 Console.WriteLine("more than one internal class could macht the given one");
-                //System.Environment.Exit(1);
-
                 importantClass = getDuneClassByNumberOfTemplateParameters(allOthers, templateDefinedByUser.Count());
-
             }
 
 
             // mapping from the default placeholder strings of the template in the strings of the given input template
             Dictionary<String, String> mapping = new Dictionary<string, string>();
-
             if (importantClass == null)
             {
                 // input is the value of an enum
@@ -179,7 +160,6 @@ namespace Dune
             }
             else
             {
-
                 List<TemplateTree> templateOfClass = ((DuneClass)importantClass).templateElements;
 
                 String cont = "";
@@ -199,22 +179,6 @@ namespace Dune
 
                 String s = cont;
 
-                // we start with 1 because element is the name of the class
-                int offset = 0;
-                for (int i = 1; i < templateDefinedByUser.Length; i++)
-                {
-                    String token = templateDefinedByUser[i];
-                    if (token.Equals(">") || token.Equals("<"))
-                    {
-                        offset += 1;
-                        continue;
-                    }
-
-                    
-
-
-                }
-
             }
 
             if (importantClass == null)
@@ -227,73 +191,39 @@ namespace Dune
             Dictionary<String, DuneFeature> alternativesFirstLevel = ((DuneFeature)importantClass).getVariability();
             List<String> alternativesFirstLevelWithConcreteParameters = new List<string>();
 
-            if (input.Contains('<'))
+            if (inputHasTemplate)
             {
                 foreach(KeyValuePair<String,DuneFeature> element in alternativesFirstLevel)
                 {
-
-                    if (element.Key.Contains('<'))
+                    if(((DuneClass)element.Value).templateElements.Count > 0)
                     {
 
-                        String nameAlternative = element.Key.Substring(0, input.IndexOf('<')).Trim();
+                        DuneClass alternative = (DuneClass)element.Value;
 
-                        String[] templateOfAlternative = getTemplateParts(element.Key);
+                        String alternativStringWithUserInput = element.Key+"<";
 
 
-                        String alternativeWithUserInput = nameAlternative;
-
-                        for (int j = 0; j < templateOfAlternative.Length; j++)
+                        for (int i = 0; i < alternative.templateElements.Count; i++)
                         {
-                            String token = templateOfAlternative[j].Trim();
-                            if (mapping.ContainsKey(token))
+
+                            String nameTemplateParameter = alternative.templateElements[i].declmame_cont;
+
+                            if (mapping.ContainsKey(nameTemplateParameter))
                             {
-                                alternativeWithUserInput += mapping[token];
+                                alternativStringWithUserInput += mapping[nameTemplateParameter];
                             }
                             else
                             {
-                                if (((DuneClass)element.Value).templateElements.Count > j)
-                                {
-                                    TemplateTree tree = element.Value.tempTree.getElement(j);
-                                    TemplateTree te = ((DuneClass)element.Value).templateElements[j];
-
-                                    if (te.isNotParsable)
-                                    {
-
-                                    }
-                                    else
-                                    {
-
-                                        if (te.defval_cont != "")
-                                        {
-                                            alternativeWithUserInput += te.defval_cont;
-                                        }
-                                        else
-                                        {
-                                            double d;
-                                            if (Double.TryParse(token, out d))
-                                            {
-                                                alternativeWithUserInput += token;
-                                            }
-                                            alternativeWithUserInput += "??" + token + "??";
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    alternativeWithUserInput += "??__??";
-                                }
-
-
+                                alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
                             }
-                            if (j < templateOfAlternative.Length - 1)
-                                alternativeWithUserInput += ",";
-                            else
-                                alternativeWithUserInput += ">";
 
+
+                            if (i < alternative.templateElements.Count - 1)
+                                alternativStringWithUserInput += ",";
+                            else
+                                alternativStringWithUserInput += ">";
                         }
-
-
-                        alternativesFirstLevelWithConcreteParameters.Add(alternativeWithUserInput);
+                        alternativesFirstLevelWithConcreteParameters.Add(alternativStringWithUserInput);
                     }
                     else
                     {
