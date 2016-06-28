@@ -195,12 +195,14 @@ namespace Dune
             {
                 foreach(KeyValuePair<String,DuneFeature> element in alternativesFirstLevel)
                 {
+                   
+
                     if(((DuneClass)element.Value).templateElements.Count > 0)
                     {
 
                         DuneClass alternative = (DuneClass)element.Value;
 
-                        String alternativStringWithUserInput = element.Key+"<";
+                        String alternativStringWithUserInput = element.Value.getFeatureNameWithoutTemplate()+"<";
 
 
                         for (int i = 0; i < alternative.templateElements.Count; i++)
@@ -214,7 +216,10 @@ namespace Dune
                             }
                             else
                             {
-                                alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
+                                if(alternative.templateElements[i].defval_cont.Length > 0 )
+                                    alternativStringWithUserInput += alternative.templateElements[i].defval_cont;
+                                else
+                                    alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
                             }
 
 
@@ -233,9 +238,54 @@ namespace Dune
             }
             else
             {
+               
                 foreach(KeyValuePair<String,DuneFeature> element in alternativesFirstLevel)
                 {
-                    alternativesFirstLevelWithConcreteParameters.Add(element.Key);
+
+                    if (element.Value.GetType() == typeof(DuneEnum))
+                    {
+
+                        alternativesFirstLevelWithConcreteParameters.Add(element.Key);
+                    }
+                    else
+                    {
+
+                        DuneClass alternative = (DuneClass)element.Value;
+
+                        String alternativStringWithUserInput = alternative.getFeatureNameWithoutTemplate();
+
+                        if (alternative.templateElements.Count > 0)
+                        {
+                            alternativStringWithUserInput += " < ";
+
+                            for (int i = 0; i < alternative.templateElements.Count; i++)
+                            {
+
+                                String nameTemplateParameter = alternative.templateElements[i].declmame_cont;
+
+                                if (mapping.ContainsKey(nameTemplateParameter))
+                                {
+                                    alternativStringWithUserInput += mapping[nameTemplateParameter];
+                                }
+                                else
+                                {
+                                    if (alternative.templateElements[i].defval_cont.Length > 0)
+                                        alternativStringWithUserInput += alternative.templateElements[i].defval_cont;
+                                    else
+                                        alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
+                                }
+
+
+                                if (i < alternative.templateElements.Count - 1)
+                                    alternativStringWithUserInput += ",";
+                                else
+                                    alternativStringWithUserInput += ">";
+                            }
+
+                        }
+
+                        alternativesFirstLevelWithConcreteParameters.Add(alternativStringWithUserInput);
+                    }
                 }
             }
 

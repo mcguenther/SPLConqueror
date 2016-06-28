@@ -606,6 +606,12 @@ namespace Dune
             return (this.featureNamespace + "::" + this.className).Trim() + this.suffix.Trim();
         }
 
+        public String getSuffix()
+        {
+            return this.suffix.Trim();
+        }
+
+
         /// <summary>
         /// Returns the name of the class without its template and its namespace.
         /// </summary>
