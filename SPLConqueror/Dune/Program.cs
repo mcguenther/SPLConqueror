@@ -27,6 +27,8 @@ namespace Dune
 
         public static bool INCLUDE_CONSTRUCTORS = false;
 
+        public static bool IGNORE_CLASSES_WITH_NO_PUBLIC_METHODS = false;
+
 
         /// <summary>
         /// The main-method of the Dune-plugin. This calls the corresponding <code>XMLParser</code>-methods.
