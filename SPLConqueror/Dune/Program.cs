@@ -27,8 +27,6 @@ namespace Dune
 
         public static bool INCLUDE_CONSTRUCTORS = false;
 
-        public static bool IGNORE_CLASSES_WITH_NO_PUBLIC_METHODS = false;
-
 
         /// <summary>
         /// The main-method of the Dune-plugin. This calls the corresponding <code>XMLParser</code>-methods.
@@ -101,13 +99,7 @@ namespace Dune
 
         public static List<String> getAlternativesRecursive(String input)
         {
-            input = input.Trim();
-
-            if (input.Contains("Dune::PDELab::QkLocalFiniteElementMap"))
-            {
-            }
-
-           
+            input = input.Trim();           
 
             List<String> alternatives = new List<string>();
 
@@ -128,26 +120,13 @@ namespace Dune
                 name = input; 
             }
 
-
-
-           
-
-
             List<DuneClass> allOthers = new List<DuneClass>();
-            foreach (DuneClass others in XMLParser.features)
+            foreach (DuneClass others in XMLParser.featuresWithPublicMethods)
             {
-                if (others.getFeatureNameWithoutTemplate().Contains("Dune::ALUGrid"))
-                {
-                    var x = others.getFeatureNameWithoutTemplate();
-
-                }
-
-
                 if (others.getFeatureNameWithoutTemplate().Equals(name))
                 {
                     importantClass = others;
                     allOthers.Add(others);
-                    Console.WriteLine("");
                 }
             }
 
