@@ -6,7 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Globalization;
 using SPLConqueror_Core;
-
+using Dune.util;
 
 namespace Dune
 {
@@ -26,6 +26,8 @@ namespace Dune
         public static bool USE_DUCK_TYPING = true;
 
         public static bool INCLUDE_CONSTRUCTORS = false;
+
+        public static bool IGNORE_CLASSES_WITH_NO_PUBLIC_METHODS = false;
 
 
         /// <summary>

@@ -253,11 +253,7 @@ namespace Dune
             String templateInName = "";
             List<Enum> enumerations = null;
 
-
-            if (refId.Contains("classDune_1_1ALUGrid"))
-            {
-            }
-
+            bool hasPublicMethods = false;
 
             foreach (XmlNode node in child.ChildNodes)
             {
@@ -308,6 +304,7 @@ namespace Dune
                                     break;
                                 // Only the public functions are crucial for saving methods
                                 case "public-func":
+                                    hasPublicMethods = true;
                                     saveTemplateMapping(node);
                                     break;
                             }
@@ -323,7 +320,10 @@ namespace Dune
                 }
             }
 
-
+            if (Program.IGNORE_CLASSES_WITH_NO_PUBLIC_METHODS && !hasPublicMethods)
+            {
+                return;
+            }
 
             df = new DuneClass(refId, name, template, templateInName);
             features.Add(df);
@@ -511,6 +511,12 @@ namespace Dune
             }
 
             DuneClass df = getClass(new DuneClass(refId, name, template, templateInName));
+
+            // Abort if the class was not loaded previously.
+            if (df == null)
+            {
+                return;
+            }
 
             if (methods != null)
             {
@@ -1070,7 +1076,7 @@ namespace Dune
         /// </summary>
         /// <param name="toSplit">the template to split</param>
         /// <returns>the arguments of the template in a <code>List</code></returns>
-        private static List<string> splitArgs(string toSplit)
+        internal static List<string> splitArgs(string toSplit)
         {
             List<string> args = new List<string>();
             int level = 0;
@@ -1745,14 +1751,15 @@ namespace Dune
                     template += ",";
                 }
 
-                template += c.FirstChild.InnerText;
+                if (!c.FirstChild.InnerText.Equals("int") && !c.FirstChild.InnerText.Equals("string"))
+                    template += c.FirstChild.InnerText;
 
-                if (c.FirstChild.InnerText.Equals("class") && c.ChildNodes.Count > 1)
+                if ((c.FirstChild.InnerText.Equals("class") || c.FirstChild.InnerText.Equals("int") || c.FirstChild.InnerText.Equals("string") ) && c.ChildNodes.Count > 1)
                 {
                     template += " " + c.ChildNodes[1].InnerText;
                 }
                 // If only the class-type is given, a specific character with its numeration is inserted
-                else if (c.FirstChild.InnerText.Equals("class") && c.ChildNodes.Count == 1)
+                else if ((c.FirstChild.InnerText.Equals("class") || c.FirstChild.InnerText.Equals("int") || c.FirstChild.InnerText.Equals("string")) && c.ChildNodes.Count == 1)
                 {
                     template += "$" + globalNumerator;
                     globalNumerator++;
@@ -1801,22 +1808,13 @@ namespace Dune
 
             String refId = world.Attributes["id"].Value.ToString();
 
-            if (refId.Contains("classDune_1_1ALUGrid"))
+            if (!refIdToFeature.ContainsKey(refId))
             {
+                return templateTree;
             }
-
             DuneFeature currFeature = refIdToFeature[refId];
 
             Dictionary<String, TemplateTree> templateParamList = new Dictionary<String, TemplateTree>();
-
-            if (name.Contains("Dune::YaspGrid"))
-            {
-
-            }
-
-            if (name.Contains("Dune::PDELab::QkLocalFiniteElementMap"))
-            {
-            }
 
             // analyse the templateparamlist-elements.
             // I assume, here we have one element for each placeholder in the template

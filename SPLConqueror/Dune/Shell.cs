@@ -78,7 +78,6 @@ namespace Dune
                         List<string> iniFilePlaceHolder = new List<string>();
 
                         // Find the alternatives of those classes
-                        RefersToAliasing rt = new RefersToAliasing();
                         while (!inFile.EndOfStream)
                         {
                             String line = inFile.ReadLine().Trim();
@@ -163,7 +162,6 @@ namespace Dune
                         List<List<string>> globalResult = new List<List<string>>();
                         Dictionary<String, List<String>> resultsByVariabilityPoints = new Dictionary<string, List<string>>();
 
-                        RefersToAliasing refersTo = new RefersToAliasing();
                         while (!inputFile.EndOfStream)
                         {
                             String line = inputFile.ReadLine().Trim();
