@@ -23,6 +23,7 @@ namespace Dune
         // The root of the whole feature-tree.
         public static DuneClass root = new DuneClass("", "root");
 
+        public static List<DuneClass> featuresWithPublicMethods = new List<DuneClass>();
         public static List<DuneClass> features = new List<DuneClass>();
         public static List<DuneEnum> enums = new List<DuneEnum>();
 
@@ -224,11 +225,6 @@ namespace Dune
         /// <param name="child">the node in the xml-file pointing on the <code>compounddef</code> tag</param>
         private static void extractFeatures(XmlNode child)
         {
-            // TODO::: Parse Name
-            // Input::: Dune::ALUGrid< 3, 3, elType, refineType, Comm >::Partition
-            // Output:: Name: Dune::ALUGrid::Partition
-               
-
             // TODO:::: Input: Dune::ALUGrid&lt; 3, 3, elType, refineType, Comm &gt;
             // Output::: name of the feature: Dune::ALUGrid
                 // Liste der Template Parameter: [3,3, elType -> ALUGridElementType, refineType -> ALUGridRefinementType, Comm]
@@ -314,13 +310,15 @@ namespace Dune
                 }
             }
 
-            if (Program.IGNORE_CLASSES_WITH_NO_PUBLIC_METHODS && !hasPublicMethods)
-            {
-                return;
-            }
-
             df = new DuneClass(refId, name, template, templateInName, suffix);
+
             features.Add(df);
+
+            if (hasPublicMethods)
+            {
+                featuresWithPublicMethods.Add(df);
+            }
+            
 
             string nameWithoutPackage = df.getFeatureNameWithoutTemplateAndNamespace();
 
