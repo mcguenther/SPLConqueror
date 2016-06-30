@@ -17,6 +17,7 @@ namespace Dune
         public List<TemplateTree> templateElements;
         private String templateForCode;
         private String implementingTemplate;
+        private String templateTypes;
         private Boolean isStruct = false;
         private Boolean isAbstract = false;
         private List<DuneClass> parents;
@@ -49,6 +50,7 @@ namespace Dune
             // Separate the classname from the template
             int index = className.IndexOf('<');
             this.templateForCode = "";
+            this.templateTypes = "";
             this.implementingTemplate = "";
             this.templateElements = new List<TemplateTree>();
             if (index > 0)
@@ -102,10 +104,11 @@ namespace Dune
         {
             if (!suffix.Equals(String.Empty))
             {
-                this.suffix = "::" + suffix;
+                this.suffix = "::" + suffix.Trim();
             }
 
             this.templateForCode = "";
+            this.templateTypes = extractTemplateParameterTypes(template);
             this.implementingTemplate = "";
             this.templateElements = new List<TemplateTree>();
 
@@ -155,6 +158,38 @@ namespace Dune
             this.parents = new List<DuneClass>();
             this.children = new List<DuneClass>();
             this.methodHashes = new List<int>();
+        }
+
+        /// <summary>
+        /// Extracts the types from each of the template parameters.
+        /// </summary>
+        /// <param name="template">the template to extract the types from</param>
+        /// <returns>a <code>string</code> with the types of the template arguments</returns>
+        public String extractTemplateParameterTypes(String template)
+        {
+            String result = "";
+
+            String[] parameters = template.Split(',');
+            bool first = true;
+            foreach (String param in parameters)
+            {
+                String p = param.Trim();
+                if (p.Contains(" "))
+                {
+                    p = p.Substring(0, p.IndexOf(" "));
+                }
+
+                if (first)
+                {
+                    first = false;
+                } else
+                {
+                    result += ",";
+                }
+                result += p;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -603,12 +638,16 @@ namespace Dune
         /// <returns>the name of the feature/class</returns>
         public override String getFeatureNameWithoutTemplate()
         {
-            return (this.featureNamespace + "::" + this.className).Trim() + this.suffix.Trim();
+            return (this.featureNamespace + "::" + this.className).Trim() + this.suffix;
         }
 
+        /// <summary>
+        /// Returns the suffix of the class.
+        /// </summary>
+        /// <returns>the suffix of the class (may be <code>null</code>)</returns>
         public String getSuffix()
         {
-            return this.suffix.Trim();
+            return this.suffix;
         }
 
 
@@ -618,7 +657,7 @@ namespace Dune
         /// <returns>the name of the feature/class</returns>
         public override String getFeatureNameWithoutTemplateAndNamespace()
         {
-            return this.className + this.suffix.Trim();
+            return this.className + this.suffix;
         }
 
         /// <summary>

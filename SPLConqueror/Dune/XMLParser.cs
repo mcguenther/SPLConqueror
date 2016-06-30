@@ -975,8 +975,7 @@ namespace Dune
                     }
 
                     // Every class is analyzed with every other class
-                    // TODO: Add the commented part of the next line as soon as possible
-                    if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes()) // && !df.hasRelationTo(comp, root))
+                    if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes())
                     {
                         Boolean isSubclassOf = true;
                         for (int i = 0; i < comp.getMethodHashes().Count; i++)
@@ -1865,9 +1864,6 @@ namespace Dune
                                                             // ignore such cases:::
                                                             Console.WriteLine("id not found type " + defValRef_curr_id);
                                                             idNotFound += 1;
-                                                            if (defValRef_curr_id.Contains("structDune_1_1PDELab_1_1FunctionTraits"))
-                                                                Console.WriteLine("");
-                                                            Console.WriteLine("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNEEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNN");
 
                                                             df = new DuneClass();
                                                             df.isNotParsable = true;
