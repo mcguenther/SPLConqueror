@@ -310,6 +310,8 @@ namespace Dune
                 }
             }
 
+           
+
             df = new DuneClass(refId, name, template, templateInName, suffix);
 
             features.Add(df);
@@ -1809,6 +1811,12 @@ namespace Dune
 
             Dictionary<String, TemplateTree> templateParamList = new Dictionary<String, TemplateTree>();
 
+
+            if (name.Contains("Dune::PDELab::QkLocalFiniteElementMap"))
+            {
+
+            }
+
             // analyse the templateparamlist-elements.
             // I assume, here we have one element for each placeholder in the template
             XmlNode type = getChild("templateparamlist", world.ChildNodes);
@@ -1842,11 +1850,13 @@ namespace Dune
                                         break;
                                     case "defval":
                                         addTemplateTreeOf(innerNode, type_tree);
+                                        defval_cont = innerNode.InnerText;
                                         break;
                                     case "defname":
                                         defname_cont = innerNode.InnerText;
                                         break;
                                     case "type":
+                                        deftype_cont = innerNode.InnerText;
                                         foreach (XmlNode defValRef in innerNode.ChildNodes)
                                         {
                                             switch (defValRef.Name)
@@ -1936,6 +1946,15 @@ namespace Dune
                                 //if(!identifier.Equals("typename"))
                                 //    templateParamList.Add(declmame_cont, te);
 
+                            }
+                            else
+                            {
+                                if (currFeature.GetType() == typeof(DuneClass))
+                                {
+                                    TemplateTree te = new TemplateTree();
+                                    te.deftype_cont = deftype_cont;
+                                    ((DuneClass)currFeature).addTemplateElement(te);
+                                }
                             }
 
                             if (getChild("declname", node.ChildNodes) != null)

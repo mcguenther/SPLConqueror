@@ -102,6 +102,12 @@ namespace Dune
             input = input.Trim();           
             bool inputHasTemplate = false;
 
+            if (input.Contains("Dune::PDELab::QkLocalFiniteElementMap"))
+            {
+
+            }
+            
+
             List<String> alternatives = new List<string>();
             DuneFeature importantClass = null;
             TemplateTree treeOfInterest = new TemplateTree();
@@ -167,13 +173,27 @@ namespace Dune
                 {
                     cont += templateOfClass[i].declmame_cont + " | ";
 
-                    if (mapping.ContainsKey(templateOfClass[i].declmame_cont))
+                    if (templateOfClass[i].declmame_cont.Trim().Length == 0)
                     {
-                        mapping.Add(templateOfClass[i].declmame_cont+"_"+i, templateDefinedByUser[i]);
+                        if (mapping.ContainsKey(templateOfClass[i].deftype_cont))
+                        {
+                            mapping.Add(templateOfClass[i].deftype_cont + "_" + i, templateDefinedByUser[i]);
+                        }
+                        else
+                        {
+                            mapping.Add(templateOfClass[i].deftype_cont, templateDefinedByUser[i]);
+                        }
                     }
                     else
                     {
-                        mapping.Add(templateOfClass[i].declmame_cont, templateDefinedByUser[i]);
+                        if (mapping.ContainsKey(templateOfClass[i].declmame_cont))
+                        {
+                            mapping.Add(templateOfClass[i].declmame_cont + "_" + i, templateDefinedByUser[i]);
+                        }
+                        else
+                        {
+                            mapping.Add(templateOfClass[i].declmame_cont, templateDefinedByUser[i]);
+                        }
                     }
                 }
 
@@ -210,18 +230,34 @@ namespace Dune
 
                             String nameTemplateParameter = alternative.templateElements[i].declmame_cont;
 
-                            if (mapping.ContainsKey(nameTemplateParameter))
+                            if (nameTemplateParameter.Trim().Length == 0)
                             {
-                                alternativStringWithUserInput += mapping[nameTemplateParameter];
+                                if (mapping.ContainsKey(alternative.templateElements[i].deftype_cont))
+                                {
+                                    alternativStringWithUserInput += mapping[alternative.templateElements[i].deftype_cont];
+                                }
+                                else
+                                {
+                                    if (alternative.templateElements[i].deftype_cont.Length > 0)
+                                        alternativStringWithUserInput += alternative.templateElements[i].deftype_cont;
+                                    else
+                                        alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
+                                }
                             }
                             else
                             {
-                                if(alternative.templateElements[i].defval_cont.Length > 0 )
-                                    alternativStringWithUserInput += alternative.templateElements[i].defval_cont;
+                                if (mapping.ContainsKey(nameTemplateParameter))
+                                {
+                                    alternativStringWithUserInput += mapping[nameTemplateParameter];
+                                }
                                 else
-                                    alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
+                                {
+                                    if (alternative.templateElements[i].defval_cont.Length > 0)
+                                        alternativStringWithUserInput += alternative.templateElements[i].defval_cont;
+                                    else
+                                        alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
+                                }
                             }
-
 
                             if (i < alternative.templateElements.Count - 1)
                                 alternativStringWithUserInput += ",";
