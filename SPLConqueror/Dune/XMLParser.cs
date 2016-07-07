@@ -517,6 +517,7 @@ namespace Dune
 
             if (methods != null)
             {
+                df.setAllPossibleMethodHashes(methods.getAllPossibleMethodHashes());
                 df.setMethods(methods.getMethodHashes());
                 df.setMethodNameHashes(methods.getMethodNameHashes());
                 df.setMethodArgumentCount(methods.getArgumentCount());
@@ -1163,6 +1164,7 @@ namespace Dune
                 pureClassName = classname.Substring(indx + 1, classname.Length - indx - 1);
             }
 
+            List<int> allPossibleHashes = new List<int>();
             List <int> methodHashes = new List<int>();
             List<int> methodNameHashes = new List<int>();
             List<int> argumentCount = new List<int>();
@@ -1201,7 +1203,6 @@ namespace Dune
                             }
                         }
                     }
-
                     String methodArgs = convertMethodArgs(args.InnerText, true).Trim();
 
                     // In case that the method is a constructor...
@@ -1225,7 +1226,9 @@ namespace Dune
                         methodNameHashes.Add(methodName.GetHashCode());
                         //methodHashes.Add((type.InnerText + " " + name.InnerText + methodArgs).GetHashCode());
                         string typename = retrieveType(type, template, templateTypeMapping);
-                        methodHashes.Add((typename + " " + name.InnerText + methodArgs).GetHashCode());
+                        string method = typename + " " + name.InnerText + methodArgs;
+                        allPossibleHashes.AddRange(generateAllPossibilitiesByDefaultValues(args.InnerText, method));
+                        methodHashes.Add(method.GetHashCode());
                         methodArguments.Add(convertMethodArgs(args.InnerText, false));
                         // Retrieve the number of arguments and the name of the method 
                         argumentCount.Add(getCountOfArgs(args.InnerText));
@@ -1234,8 +1237,127 @@ namespace Dune
                 }
             }
 
-            return new MethodList(methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs, !hasNormalMethods);
+            return new MethodList(allPossibleHashes, methodHashes, methodNameHashes, argumentCount, methodArguments, replaceableArgs, !hasNormalMethods);
 
+        }
+
+        /// <summary>
+        /// Generates a <code>List</code> of hashes for different variants of the method header according to default values.
+        /// For example, a method x(y,z=1) can be called with x(y,z) or x(y).
+        /// </summary>
+        /// <param name="methodArguments">the original method arguments</param>
+        /// <param name="methodHeader">the whole method header including its method arguments</param>
+        /// <returns>a <code>List</code> of hashes for different variants of the method header</returns>
+        private static List<int> generateAllPossibilitiesByDefaultValues(String methodArguments, String methodHeader)
+        {
+            List<int> result = new List<int>();
+            result.Add(methodHeader.GetHashCode());
+            int level = 0;
+            int suffix = -1;
+            int paraLevel = 0;
+            bool hasDefaultValue = false;
+            bool abort = false;
+            string curr = methodHeader;
+
+            // The string has to be searched for default values
+            for (int i = methodArguments.Length - 1; i >= 0; i--)
+            {
+                char c = methodArguments[i];
+                switch(c)
+                {
+                    case '=':
+                        if (suffix > 0 && paraLevel == 1)
+                            hasDefaultValue = true;
+                        break;
+                    case ')':
+                        if (suffix == -1)
+                        {
+                            suffix = i;
+                            paraLevel++;
+                        }
+                        break;
+                    case '(':
+                        paraLevel--;
+                        break;
+                    case ',':
+                        if (hasDefaultValue && level == 0 && paraLevel == 1)
+                        {
+                            //string resultString = methodHeader.Substring(0, i - 1) + methodHeader.Substring(suffix);
+                            curr = excludeLastArgument(methodHeader);
+                            //result.Add((methodHeader.Substring(0, i - 1) + methodHeader.Substring(suffix)).GetHashCode());
+                            result.Add(curr.GetHashCode());
+                            hasDefaultValue = false;
+                        } else if (level == 0 && paraLevel == 1)
+                        {
+                            abort = true;
+                        }
+
+                        break;
+                    case '<':
+                        level--;
+                        break;
+                    case '>':
+                        level++;
+                        break;
+                }
+                if (abort)
+                {
+                    break;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Excludes the last argument from the header.
+        /// </summary>
+        /// <param name="methodHeader">the header to remove the last argument from</param>
+        /// <returns>the header without the last argument</returns>
+        private static string excludeLastArgument(String methodHeader)
+        {
+            string result = "";
+            int paraLevel = 0;
+            int level = 0;
+            int suffix = -1;
+            bool abort = false;
+
+            for (int i = methodHeader.Length - 1; i >= 0; i--)
+            {
+                char c = methodHeader[i];
+                switch(c)
+                {
+                    case ')':
+                        if (suffix == -1)
+                        {
+                            paraLevel++;
+                            suffix = i;
+                        }
+                        break;
+                    case '(':
+                        paraLevel--;
+                        break;
+                    case '<':
+                        level--;
+                        break;
+                    case '>':
+                        level++;
+                        break;
+                    case ',':
+                        if (paraLevel == 1 && level == 0)
+                        {
+                            result = methodHeader.Substring(0, i) + methodHeader.Substring(suffix);
+                            abort = true;
+                        }
+                        break;
+                }
+                if (abort)
+                {
+                    break;
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -1405,6 +1527,7 @@ namespace Dune
             for (int i = 0; i < splitted.Count; i++)
             {
                 string s = splitted[i];
+                int defValPos = s.IndexOf("=");
 
                 if (i > 0)
                 {
@@ -1423,7 +1546,7 @@ namespace Dune
                         result += trimmed.Substring(0, j + 1);
                         break;
                     }
-                    else if (c.Equals(' '))
+                    else if (c.Equals(' ') && (defValPos == -1 ||  j < defValPos))
                     {
                         name = false;
                     }

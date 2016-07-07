@@ -10,6 +10,7 @@ namespace Dune
     /// </summary>
     class MethodList
     {
+        private List<int> allPossibleMethodHashes;
         private List<int> methodHashes;
         private List<int> methodNameHashes;
         private List<int> argumentCount;
@@ -20,20 +21,31 @@ namespace Dune
         /// <summary>
         /// The constructor of this list.
         /// </summary>
+        /// <param name="allPossibleMethodHashes">all possible hashes of the methods according to default values</param>
         /// <param name="methodHashes">the hashes of the methods</param>
         /// <param name="methodNameHashes">the hashes of the names of the methods</param>
         /// <param name="argumentCount">the number of arguments of the methods</param>
         /// <param name="methodArguments">the arguments of the methods</param>
         /// <param name="replaceableArgs">the arguments that may be replaced by other arguments</param>
         /// <param name="hasNormalMethods">indicates if the class includes not only constructors</param>
-        public MethodList(List<int> methodHashes, List<int> methodNameHashes, List<int> argumentCount, List<string> methodArguments, List<List<int>> replaceableArgs, bool hasNormalMethods)
+        public MethodList(List<int> allPossibleMethodHashes, List<int> methodHashes, List<int> methodNameHashes, List<int> argumentCount, List<string> methodArguments, List<List<int>> replaceableArgs, bool hasNormalMethods)
         {
+            this.allPossibleMethodHashes = allPossibleMethodHashes;
             this.methodHashes = methodHashes;
             this.methodNameHashes = methodNameHashes;
             this.argumentCount = argumentCount;
             this.methodArguments = methodArguments;
             this.replaceableArgs = replaceableArgs;
             this.hasNormalMethods = hasNormalMethods;
+        }
+
+        /// <summary>
+        /// Returns a list including all possible method hashes regarding default values.
+        /// </summary>
+        /// <returns>a list including all possible method hashes</returns>
+        public List<int> getAllPossibleMethodHashes()
+        {
+            return this.allPossibleMethodHashes;
         }
 
         /// <summary>

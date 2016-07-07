@@ -31,6 +31,7 @@ namespace Dune
         private List<int> methodHashes;
         private List<int> methodNameHashes;
         private List<int> methodArgumentCount;
+        private List<int> allPossibleMethodHashes;
 
         private bool ignoreDuckTyping = false;
 
@@ -380,7 +381,7 @@ namespace Dune
         /// <returns><code>true</code> iff the hash is included in the <code>methodHases</code>-list</returns>
         public Boolean containsMethodHash(int hash)
         {
-            return methodHashes.Contains(hash);
+            return allPossibleMethodHashes.Contains(hash);
         }
 
         /// <summary>
@@ -408,6 +409,15 @@ namespace Dune
         public void setMethodNameHashes(List<int> methodNames)
         {
             this.methodNameHashes = methodNames;
+        }
+
+        /// <summary>
+        /// Sets the list of possible method hashes to the given argument.
+        /// </summary>
+        /// <param name="allPossibleMethodHashes">the list of possible method hashes</param>
+        public void setAllPossibleMethodHashes(List<int> allPossibleMethodHashes)
+        {
+            this.allPossibleMethodHashes = allPossibleMethodHashes;
         }
 
         /// <summary>
@@ -544,24 +554,6 @@ namespace Dune
                 }
             }
             return result;
-        }
-
-        /// <summary>
-        /// Returns <code>true</code> if the class could be a subclass of the given class(duck typing).
-        /// </summary>
-        /// <param name="f">the class to be subclass of</param>
-        /// <returns><code>true</code> if this class is a subclass of the other class; <code>false</code> otherwise</returns>
-        public bool isPotentialSubclassOff(DuneClass f)
-        {
-            for (int i = 0; i < f.getMethodHashes().Count; i++)
-            {
-                int methodHash = f.getMethodHashes()[i];
-                if (!this.containsMethodHash(methodHash))
-                {
-                    return false;
-                }
-            }
-            return true;
         }
 
         /// <summary>
