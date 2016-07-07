@@ -27,6 +27,8 @@ namespace Dune
 
         public static bool INCLUDE_CONSTRUCTORS = false;
 
+        public static Logger infoLogger = new DuneAnalyzationLogger(DEBUG_PATH + "analyzation.log");
+
 
         /// <summary>
         /// The main-method of the Dune-plugin. This calls the corresponding <code>XMLParser</code>-methods.
@@ -55,18 +57,6 @@ namespace Dune
                 return;
             }
 
-
-            try {
-                StreamWriter writer = new StreamWriter(DEBUG_PATH + "out.txt");
-                writer.AutoFlush = true;
-                // Redirect standard output from the console to the output file.
-                //Console.SetOut(writer);
-
-                
-            }catch(IOException e) {
-                TextWriter errorWriter = Console.Error;
-                errorWriter.WriteLine(e.Message);
-            }
             XMLParser.parse(PATH);
 
             Shell.showShell();
@@ -137,8 +127,8 @@ namespace Dune
 
             if (allOthers.Count > 1)
             {
-                Console.Write("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input+".  ");
-                Console.WriteLine("more than one internal class could macht the given one");
+                infoLogger.log("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input+".  ");
+                infoLogger.logLine("More than one internal class could match the given one.");
                 importantClass = getDuneClassByNumberOfTemplateParameters(allOthers, templateDefinedByUser.Count());
             }
 
@@ -198,8 +188,8 @@ namespace Dune
 
             if (importantClass == null)
             {
-                Console.Write("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input + ".  ");
-                Console.WriteLine("no internal representation for the given class could be found");
+                infoLogger.log("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input + ".  ");
+                infoLogger.logLine("No internal representation for the given class could be found.");
                 return new List<String>();
                 //System.Environment.Exit(1);
             }
@@ -347,7 +337,7 @@ namespace Dune
                     if (f == null)
                         f = allOthers[i];
                     else
-                        Console.WriteLine("Multiple classes found that could match with the input");
+                        infoLogger.logLine("Multiple classes found that could match with the input");
             }
 
             return f;

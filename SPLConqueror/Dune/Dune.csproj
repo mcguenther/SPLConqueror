@@ -87,6 +87,7 @@
     <Compile Include="DuneClass.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="util\DuneAnalyzationLogger.cs" />
     <Compile Include="util\Range.cs" />
     <Compile Include="util\RefersToAliasing.cs" />
     <Compile Include="XMLParser.cs" />

@@ -164,7 +164,7 @@ namespace Dune
                 if (XMLParser.nameWithoutPackageToDuneFeatures[token].Count > 1)
                 {
                     XMLParser.mehrdeutigkeit += 1;
-                    Console.WriteLine("TODO:: addInformation with mehrdeutigkeit");
+                    Program.infoLogger.logLine("TODO:: addInformation with mehrdeutigkeit");
                 }
 
                 List<DuneFeature> dfs = new List<DuneFeature>();

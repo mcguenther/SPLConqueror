@@ -70,7 +70,7 @@ namespace Dune
             dat.Load(path);
             XmlElement current = dat.DocumentElement;
             XmlNodeList childList = current.ChildNodes;
-            System.Console.WriteLine("Parsing the file...");
+            Console.WriteLine("Parsing the file...");
 
             //List<XmlNode> namespaces = new List<XmlNode>();
 
@@ -103,16 +103,16 @@ namespace Dune
             }
 
 
-            Console.WriteLine("number of if conditions in tremplates: " + ifConds);
-            Console.WriteLine("easy to find : " + easyToFind);
-            Console.WriteLine("not easy to find : " + notEasy);
-            Console.WriteLine("mehrdeutigkeiten : " + mehrdeutigkeit);
-            Console.WriteLine("further informaion : " + furtherInformation);
-            Console.WriteLine("further informaion for template elements : " + tempElementsWithFurtherInformation);
-            Console.WriteLine("only info in paramlist " + onlyInParamList);
-            Console.WriteLine("multi refs in one param " + multiRefsInOneParam);
-            Console.WriteLine("multi refs in einem defVal " + defValRefCountGlob);
-            Console.WriteLine("id not found... " + idNotFound);
+            Program.infoLogger.logLine("number of if conditions in tremplates: " + ifConds);
+            Program.infoLogger.logLine("easy to find : " + easyToFind);
+            Program.infoLogger.logLine("not easy to find : " + notEasy);
+            Program.infoLogger.logLine("mehrdeutigkeiten : " + mehrdeutigkeit);
+            Program.infoLogger.logLine("further informaion : " + furtherInformation);
+            Program.infoLogger.logLine("further informaion for template elements : " + tempElementsWithFurtherInformation);
+            Program.infoLogger.logLine("only info in paramlist " + onlyInParamList);
+            Program.infoLogger.logLine("multi refs in one param " + multiRefsInOneParam);
+            Program.infoLogger.logLine("multi refs in einem defVal " + defValRefCountGlob);
+            Program.infoLogger.logLine("id not found... " + idNotFound);
 
 
             closeFoundOutput();
@@ -797,13 +797,13 @@ namespace Dune
                     }
                     else
                     {
-                        Console.WriteLine("Class " + className + " not found...");
+                        Program.infoLogger.logLine("Class " + className + " not found...");
                     }
                 }
 
                 if (className.Contains(" "))
                 {
-                    Console.WriteLine("Non-obvious case");
+                    Program.infoLogger.logLine("Non-obvious case");
                 }
 
                 if (XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(className))
@@ -825,7 +825,7 @@ namespace Dune
                     tt.addInformation(arg);
                 }
                 else
-                    Console.WriteLine("Non-obvious case");
+                    Program.infoLogger.logLine("Non-obvious case");
 
 
             }
@@ -1392,15 +1392,6 @@ namespace Dune
                             {
                                 typeMapping.Add(key, val);
                             }
-                            //else
-                            //{
-                            //    string currentValue ="";
-                            //    typeMapping.TryGetValue(key, out currentValue);
-                            //    if (!currentValue.Equals(val))
-                            //    {
-                            //        System.Console.WriteLine("Key: " + key + "; Current value: " + currentValue + "; Other value: " + val);
-                            //    }
-                            //}
                         }
                     }
                 }
@@ -1455,7 +1446,7 @@ namespace Dune
             // DEBUG
             if (text.Contains(" k ") || text.Contains(" k,") || text.Contains(" dorder ") || text.Contains(" dorder,") || text.Contains(" size ") || text.Contains(" size,"))
             {
-                System.Console.WriteLine("Found a class that uses k, dorder or size from the global dictionary...");
+                Program.infoLogger.logLine("Found a class that uses k, dorder or size from the global dictionary...");
             }
 
             // Apply the mapping on the inner text of the type node using the global mapping
@@ -1976,7 +1967,7 @@ namespace Dune
                                                         if (!XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(defValRef.InnerText))
                                                         {
                                                             // ignore such cases:::
-                                                            Console.WriteLine("id not found type " + defValRef_curr_id);
+                                                            Program.infoLogger.logLine("id not found type " + defValRef_curr_id);
                                                             idNotFound += 1;
 
                                                             df = new DuneClass();
@@ -2006,15 +1997,14 @@ namespace Dune
                                                     else
                                                     {
                                                         //type_tree.addInformation(defValRef.InnerText);
-                                                        Console.Write(defValRef.InnerText);
-                                                        Console.Write(defValRef.InnerText);
+                                                        Program.infoLogger.log(defValRef.InnerText);
                                                     }
                                                     break;
                                             }
                                         }    
                                         break;
                                     default:
-                                        Console.WriteLine(innerNode.Name + " is not considered in the template extraction");
+                                        Program.infoLogger.logLine(innerNode.Name + " is not considered in the template extraction");
                                         break;
                                 }
                             }
@@ -2111,7 +2101,6 @@ namespace Dune
                 if (templateString.Contains("enable_if"))
                 {
                     ifConds += 1;
-                    Console.WriteLine("");
                     return null;
                 }
                 // template splitting
@@ -2188,7 +2177,7 @@ namespace Dune
                     }
 
                 }
-                Console.WriteLine("OrgString " + className);
+                Program.infoLogger.logLine("OrgString " + className);
             }
 
 
@@ -2196,8 +2185,7 @@ namespace Dune
             onlyInParamList += templateParamList.Count();
 
             if (templateTree != null)
-                Console.WriteLine("parsed:: " + templateTree.toString());
-            //Console.WriteLine("");
+                Program.infoLogger.logLine("parsed:: " + templateTree.toString());
 
             if (currFeature.tempTree != null && templateTree == null)
             {
@@ -2252,9 +2240,8 @@ namespace Dune
                             if (!XMLParser.nameWithoutPackageToDuneFeatures.ContainsKey(defValRef.InnerText))
                             {
                                 // ignore such cases:::
-                                Console.WriteLine("id not found type " + defValRef.InnerText);
+                                Program.infoLogger.logLine("id not found type " + defValRef.InnerText);
                                 idNotFound += 1;
-                                Console.WriteLine("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNEEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNN");
                             }
                             else
                             {
@@ -2327,7 +2314,7 @@ namespace Dune
                                     List<DuneFeature> multiple = nameWithPackageToDuneFeatures[s];
                                     if (nameWithPackageToDuneFeatures[s].Count > 1)
                                     {
-                                        System.Console.WriteLine("The feature it refers to is not unique.");
+                                        Program.infoLogger.logLine("The feature it refers to is not unique.");
                                         type_tree.addInformation(nameWithPackageToDuneFeatures[s]);
                                     }
                                     else if (nameWithPackageToDuneFeatures[s].Count > 0)
@@ -2406,7 +2393,7 @@ namespace Dune
                         }
                         break;
                     default:
-                        Console.WriteLine("foo");
+                        Program.infoLogger.logLine("foo");
                         // TODO: What about "Dune::PDELab::DOFIndex&lt; std::size_t, <ref refid="structDune_1_1TypeTree_1_1TreeInfo" kindref="compound">TypeTree::TreeInfo</ref>&lt; GFS &gt;::depth, 2 &gt;"?
                         if (defValRef.InnerText.Equals("&gt;"))
                         {
@@ -2420,8 +2407,7 @@ namespace Dune
                         else
                         {
                             type_tree.addInformation(defValRef.InnerText);
-                            Console.Write(defValRef.InnerText);
-                            Console.Write(defValRef.InnerText);
+                            Program.infoLogger.log(defValRef.InnerText);
                         }
                         break;
                 }
@@ -2446,7 +2432,7 @@ namespace Dune
             }
             if (nonGroupObjects.Count > 1)
             {
-                System.Console.WriteLine("The feature it refers to is not unique.");
+                Program.infoLogger.logLine("The feature it refers to is not unique.");
             }
             else if (nonGroupObjects.Count > 0)
             {
