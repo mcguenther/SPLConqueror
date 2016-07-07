@@ -177,6 +177,7 @@ namespace Dune
             else
             {
                 newPart.artificalString = token;
+                //newPart.declmame_cont = token;
                 newPart.type = Kind.placeholder;
                 newPart.isTerminal = true;
             }
