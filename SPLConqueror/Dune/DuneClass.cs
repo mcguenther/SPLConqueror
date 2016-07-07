@@ -336,6 +336,20 @@ namespace Dune
             this.templateElements.Add(te);
         }
 
+        public bool hasTemplateElement(String name)
+        {
+            for (int i = 0; i < templateElements.Count; i++)
+            {
+                if(templateElements[i].type.Equals(name))
+                    return true;
+                if (templateElements[i].deftype_cont.Equals(name))
+                    return true;
+
+            }
+            return false;
+        }
+
+
         /// <summary>
         /// Returns whether this feature has parents or not.
         /// </summary>
@@ -537,7 +551,8 @@ namespace Dune
                         {
                             if (!variability.Contains(d))
                             {
-                                result.Add(d.ToString(), d);
+                                if(!result.ContainsKey(d.ToString()))
+                                    result.Add(d.ToString(), d);
                             }
                         }
                     }

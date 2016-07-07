@@ -1798,9 +1798,9 @@ namespace Dune
             Dictionary<String, TemplateTree> templateParamList = new Dictionary<String, TemplateTree>();
 
 
-            if (name.Contains("Dune::PDELab::QkLocalFiniteElementMap"))
+            if (name.Contains("Dune::PDELab::fem::PkLocalFiniteElementMapBase"))
             {
-
+                // TODO, die Anzahl der Template Parameter wurde nicht richtig erkannt. Das letzte Element, welches 2/1/3 ist, wird ignoriert
             }
 
             // analyse the templateparamlist-elements.
@@ -1911,7 +1911,7 @@ namespace Dune
                                 te.defVal_cont_ref = defVal_cont_ref;
                                 te.defVal_cont_ref_id = defVal_cont_ref_id;
                                 te.defname_cont = defname_cont;
-                                te.deftype_cont = deftype_cont;
+                                te.deftype_cont = deftype_cont.Replace("typename","").Trim();
                                 te.defVal_tree = new TemplateTree();
                                 te.type_tree = new TemplateTree();
 
@@ -2013,6 +2013,20 @@ namespace Dune
                     {
                         templateTree.parentHasUnlimitedNumberOfParameters();
                         token = token.Replace("...", "");
+                    }
+
+                    if (((DuneClass)currFeature).hasTemplateElement(token))
+                    {
+
+                    }
+                    else
+                    {
+                        if (Double.TryParse(token, out val))
+                        {
+                            TemplateTree te = new TemplateTree();
+                            te.deftype_cont = token;
+                            ((DuneClass)currFeature).addTemplateElement(te);
+                        }
                     }
 
 

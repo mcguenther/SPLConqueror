@@ -211,7 +211,10 @@ namespace Dune
             {
                 foreach(KeyValuePair<String,DuneFeature> element in alternativesFirstLevel)
                 {
-                   
+
+                    if (element.Key.Contains("Dune::PDELab::fem::PkLocalFiniteElementMapBase"))
+                        Console.WriteLine("");
+
                     if(((DuneClass)element.Value).templateElements.Count > 0)
                     {
                         DuneClass alternative = (DuneClass)element.Value;
@@ -231,7 +234,7 @@ namespace Dune
                                 {
                                     if (alternative.templateElements[i].deftype_cont.Length > 0)
                                     {
-                                        if(alternative.templateElements[i].defval_cont.Length >0)
+                                        if (alternative.templateElements[i].defval_cont.Length > 0)
                                             if (mapping.ContainsKey(alternative.templateElements[i].defval_cont))
                                                 alternativStringWithUserInput += mapping[alternative.templateElements[i].defval_cont];
                                             else
@@ -240,7 +243,16 @@ namespace Dune
                                             alternativStringWithUserInput += alternative.templateElements[i].deftype_cont;
                                     }
                                     else
-                                        alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
+                                    {
+                                        String deftype_cont = alternative.templateElements[i].deftype_cont;
+                                        Double res;
+                                        if (Double.TryParse(deftype_cont, out res))
+                                        {
+                                            alternativStringWithUserInput += deftype_cont;
+                                        }
+                                        else
+                                            alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
+                                    }
                                 }
                             }
                             else
