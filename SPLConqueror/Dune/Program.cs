@@ -212,9 +212,6 @@ namespace Dune
                 foreach(KeyValuePair<String,DuneFeature> element in alternativesFirstLevel)
                 {
 
-                    if (element.Key.Contains("Dune::PDELab::fem::PkLocalFiniteElementMapBase"))
-                        Console.WriteLine("");
-
                     if(((DuneClass)element.Value).templateElements.Count > 0)
                     {
                         DuneClass alternative = (DuneClass)element.Value;
