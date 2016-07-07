@@ -939,8 +939,6 @@ namespace Dune
             // The newer version with optimizations
             foreach (DuneClass df in featuresToCompare)
             {
-                if (df.getFeatureName().Contains("Dune::PDELab::PkLocalFiniteElementMap"))
-                { }
                 finished++;
                 if (df.isIgnored())
                 {
@@ -958,9 +956,6 @@ namespace Dune
                     {
                         continue;
                     }
-
-                    if (df.getFeatureName().Contains("Dune::PDELab::PkLocalFiniteElementMap") && comp.getFeatureName().Contains("Dune::PDELab::RT0Cube2DLocalFiniteElementMap"))
-                    { }
 
                     // Every class is analyzed with every other class
                     if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes())
@@ -1168,7 +1163,7 @@ namespace Dune
                 pureClassName = classname.Substring(indx + 1, classname.Length - indx - 1);
             }
 
-            List<int> methodHashes = new List<int>();
+            List <int> methodHashes = new List<int>();
             List<int> methodNameHashes = new List<int>();
             List<int> argumentCount = new List<int>();
             List<string> methodArguments = new List<string>();

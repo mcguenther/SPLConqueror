@@ -535,7 +535,7 @@ namespace Dune
                     {
                         foreach (DuneClass d in dc.children)
                         {
-                            if (!variability.Contains(d))
+                            if (!variability.Contains(d) && !result.ContainsKey(d.ToString()))
                             {
                                 result.Add(d.ToString(), d);
                             }

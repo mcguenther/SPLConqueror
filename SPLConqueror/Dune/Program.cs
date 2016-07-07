@@ -25,7 +25,7 @@ namespace Dune
 
         public static bool USE_DUCK_TYPING = true;
 
-        public static bool INCLUDE_CONSTRUCTORS = true;
+        public static bool INCLUDE_CONSTRUCTORS = false;
 
 
         /// <summary>
