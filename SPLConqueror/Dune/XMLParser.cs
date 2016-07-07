@@ -310,8 +310,6 @@ namespace Dune
                 }
             }
 
-           
-
             df = new DuneClass(refId, name, template, templateInName, suffix);
 
             features.Add(df);
@@ -644,22 +642,8 @@ namespace Dune
             {
                 return null;
             }
-            List<DuneFeature> result = new List<DuneFeature>(); ;
+            List<DuneFeature> result = new List<DuneFeature>();
             alternativeClasses.TryGetValue(df, out result);
-            foreach (KeyValuePair<DuneFeature, List<DuneFeature>> curr in alternativeClasses)
-            {
-                if (curr.Key.getFeatureNameWithoutTemplate().Contains("ALUGrid"))
-                {
-                    var x = curr.Key.getFeatureNameWithoutTemplate();
-                    Console.WriteLine("");
-                }
-
-                if (curr.Key.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()))
-                {   
-                    
-                    Console.WriteLine();
-                }
-            }
             
             return result;
         }
@@ -942,7 +926,6 @@ namespace Dune
             // Compare only classes with at least one public method
             foreach (DuneClass df in features)
             {
-
                 if (df.getNumberOfMethodHashes() > 0)
                 {
                     featuresToCompare.Add(df);
@@ -956,8 +939,8 @@ namespace Dune
             // The newer version with optimizations
             foreach (DuneClass df in featuresToCompare)
             {
-
-
+                if (df.getFeatureName().Contains("Dune::PDELab::PkLocalFiniteElementMap"))
+                { }
                 finished++;
                 if (df.isIgnored())
                 {
@@ -965,7 +948,7 @@ namespace Dune
                 }
 
                 // Show the progress bar:
-                Console.Write("\r{0}%   ", finished * 100 / total);
+                    Console.Write("\r{0}%   ", finished * 100 / total);
 
 
 
@@ -975,6 +958,9 @@ namespace Dune
                     {
                         continue;
                     }
+
+                    if (df.getFeatureName().Contains("Dune::PDELab::PkLocalFiniteElementMap") && comp.getFeatureName().Contains("Dune::PDELab::RT0Cube2DLocalFiniteElementMap"))
+                    { }
 
                     // Every class is analyzed with every other class
                     if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes())

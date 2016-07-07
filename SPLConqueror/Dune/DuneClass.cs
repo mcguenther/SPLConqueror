@@ -526,6 +526,22 @@ namespace Dune
             {
                 //TODO: Be aware of an ArgumentException...
                 result.Add(df.ToString(), df);
+
+                // If a class is an alternative and has children, then also the children are alternatives
+                if (df.GetType() == typeof(DuneClass))
+                {
+                    DuneClass dc = (DuneClass)df;
+                    if (dc.hasChildren())
+                    {
+                        foreach (DuneClass d in dc.children)
+                        {
+                            if (!variability.Contains(d))
+                            {
+                                result.Add(d.ToString(), d);
+                            }
+                        }
+                    }
+                }
             }
             return result;
         }
