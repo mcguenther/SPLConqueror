@@ -216,15 +216,10 @@ namespace Dune
                 foreach(KeyValuePair<String,DuneFeature> element in alternativesFirstLevel)
                 {
                    
-
                     if(((DuneClass)element.Value).templateElements.Count > 0)
                     {
-
                         DuneClass alternative = (DuneClass)element.Value;
-
                         String alternativStringWithUserInput = element.Value.getFeatureNameWithoutTemplate()+"<";
-
-
                         for (int i = 0; i < alternative.templateElements.Count; i++)
                         {
 
@@ -239,7 +234,15 @@ namespace Dune
                                 else
                                 {
                                     if (alternative.templateElements[i].deftype_cont.Length > 0)
-                                        alternativStringWithUserInput += alternative.templateElements[i].deftype_cont;
+                                    {
+                                        if(alternative.templateElements[i].defval_cont.Length >0)
+                                            if (mapping.ContainsKey(alternative.templateElements[i].defval_cont))
+                                                alternativStringWithUserInput += mapping[alternative.templateElements[i].defval_cont];
+                                            else
+                                                alternativStringWithUserInput += alternative.templateElements[i].defval_cont;
+                                        else
+                                            alternativStringWithUserInput += alternative.templateElements[i].deftype_cont;
+                                    }
                                     else
                                         alternativStringWithUserInput += "??" + nameTemplateParameter + "??";
                                 }
