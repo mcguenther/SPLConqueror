@@ -25,7 +25,7 @@ namespace Dune
 
         public static bool USE_DUCK_TYPING = true;
 
-        public static bool INCLUDE_CONSTRUCTORS = false;
+        public static bool INCLUDE_CONSTRUCTORS = true;
 
 
         /// <summary>
@@ -101,11 +101,6 @@ namespace Dune
         {
             input = input.Trim();           
             bool inputHasTemplate = false;
-
-            if (input.Contains("Dune::PDELab::QkLocalFiniteElementMap"))
-            {
-
-            }
             
 
             List<String> alternatives = new List<string>();
@@ -205,6 +200,7 @@ namespace Dune
             {
                 Console.Write("Potential error in getAlternativesRecursive() in the identification of the DuneClass of the given class for " + input + ".  ");
                 Console.WriteLine("no internal representation for the given class could be found");
+                return new List<String>();
                 //System.Environment.Exit(1);
             }
 
