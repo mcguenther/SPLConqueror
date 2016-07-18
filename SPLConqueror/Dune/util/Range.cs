@@ -65,5 +65,25 @@ namespace Dune.util
         {
             return this.lowerBound;
         }
+
+        public override bool Equals(System.Object obj)
+        {
+            // If parameter is null return false.
+            if (obj == null)
+            {
+                return false;
+            }
+
+            // If parameter cannot be cast to Range return false.
+            Range p = obj as Range;
+            if ((System.Object)p == null)
+            {
+                return false;
+            }
+
+            // Return true if the fields match:
+            return this.lowerBound == p.lowerBound && this.upperBound == p.upperBound;
+        }
+
     }
 }

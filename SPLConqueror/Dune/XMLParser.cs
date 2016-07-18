@@ -439,6 +439,8 @@ namespace Dune
                         }
                         break;
                     case "basecompoundref":
+                        if (name.StartsWith("Dune::PDELab::PkLocalFiniteElementMap"))
+                        { }
                         String refNew = null;
                         String nameNew = node.InnerText.ToString().Replace(" ", "");
 
@@ -575,19 +577,6 @@ namespace Dune
                 }
             }
 
-            foreach (String alternativeRefId in alternativeRefIds)
-            {
-                //refIdToFeature.Add(alternativeRefId, df);
-
-                if (alternativeRefId.Equals("group__GridFunctionSpace_1ga4ac2e3483d6f96786582dfb56a3eaaca"))
-                {
-                    String c = df.getFeatureName();
-                    Console.WriteLine(c);
-                }
-
-            }
-
-
             output.Flush();
         }
 
@@ -643,9 +632,14 @@ namespace Dune
             {
                 return null;
             }
-            List<DuneFeature> result = new List<DuneFeature>();
+            List<DuneFeature> result;
             alternativeClasses.TryGetValue(df, out result);
             
+            if (result == null)
+            {
+                result = new List<DuneFeature>();
+                result.Add(df);
+            }
             return result;
         }
 
@@ -1685,8 +1679,6 @@ namespace Dune
         /// <returns>the feature with the given name; <code>null</code> if no feature is found</returns>
         private static DuneClass getFeatureByName(DuneClass df)
         {
-            String name = df.getFeatureName();
-
             foreach (DuneFeature dfeature in features)
             {
                 if (dfeature.GetType() != typeof(DuneClass))
@@ -1696,8 +1688,8 @@ namespace Dune
 
                 DuneClass d = (DuneClass)dfeature;
 
-                if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()) && d.getTemplateArgumentCount() == df.getTemplateArgumentCount())
-                {
+                if (d.getFeatureNameWithoutTemplate().Equals(df.getFeatureNameWithoutTemplate()) && d.getTemplateArgumentCount().Equals(df.getTemplateArgumentCount()))
+                { 
                     return d;
                 }
             }
