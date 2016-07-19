@@ -978,7 +978,10 @@ namespace Dune
                 // Show the progress bar:
                 Console.Write("\r{0}%   ", finished * 100 / total);
 
-
+                List<DuneFeature> altList = new List<DuneFeature>();
+                // The own class is also an alternative (duck-typing is reflexive)
+                altList.Add(df);
+                alternativeClasses.Add(df, altList);
 
                 foreach (DuneClass comp in featuresToCompare)
                 {
@@ -987,24 +990,23 @@ namespace Dune
                         continue;
                     }
 
+                    if (comp.getFeatureNameWithoutTemplate().StartsWith("Dune::YaspGrid") && df.getFeatureNameWithoutTemplate().StartsWith("Dune::GridDefaultImplementation") 
+                        || comp.getFeatureNameWithoutTemplate().StartsWith("Dune::GridDefaultImplementation") && df.getFeatureNameWithoutTemplate().StartsWith("Dune::YaspGrid"))
+                    { }
+
                     // Every class is analyzed with every other class
-                    if (df != comp && df.getNumberOfMethodHashes() >= comp.getNumberOfMethodHashes())
+                    if (df != comp && df.getNumberOfMethodHashes() <= comp.getNumberOfMethodHashes())
                     {
                         Boolean isSubclassOf = true;
-                        for (int i = 0; i < comp.getMethodHashes().Count; i++)
+                        for (int i = 0; i < df.getMethodHashes().Count; i++)
                         {
-                            int methodHash = comp.getMethodHashes()[i];
-                            if (!df.containsMethodHash(methodHash))// && !variableSubmethod(df, comp, i))
+                            int methodHash = df.getMethodHashes()[i];
+                            if (!comp.containsMethodHash(methodHash))// && !variableSubmethod(df, comp, i))
                             {
                                 isSubclassOf = false;
                                 break;
                             }
                         }
-
-                        if(!alternativeClasses.ContainsKey(df))
-                            alternativeClasses.Add(df,new List<DuneFeature>()); 
-
-
 
                         if (isSubclassOf)
                         {
@@ -1017,11 +1019,7 @@ namespace Dune
                     }
 
                 }
-                List<DuneFeature> altFeature;
-                alternativeClasses.TryGetValue(df, out altFeature);
-
-                // The own class is also an alternative (duck-typing is reflexive)
-                altFeature.Add(df);
+                
             }
             file.Flush();
             file.Close();
