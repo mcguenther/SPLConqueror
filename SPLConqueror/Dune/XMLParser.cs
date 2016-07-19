@@ -950,11 +950,11 @@ namespace Dune
                         df.setMethodNameHashes(specs.ElementAt(0).getMethodNameHashes());
                         df.setMethodArgumentCount(specs.ElementAt(0).getMethodArgumentCount());
                         df.setAllPossibleMethodHashes(specs.ElementAt(0).getAllPossibleMethodHashes());
-                        df.setMethodArguments(specs.ElementAt(0).getMethodArguments());
                     } else
-                    { }
+                    {
+                        selectMethods(specs, df);
+                    }
                 }
-
 
                 if (df.getNumberOfMethodHashes() > 0)
                 {
@@ -976,7 +976,7 @@ namespace Dune
                 }
 
                 // Show the progress bar:
-                    Console.Write("\r{0}%   ", finished * 100 / total);
+                Console.Write("\r{0}%   ", finished * 100 / total);
 
 
 
@@ -1025,6 +1025,112 @@ namespace Dune
             }
             file.Flush();
             file.Close();
+        }
+
+        /// <summary>
+        /// Builds the cut of the methods and saves them in the geiven <code>DuneClass</code>.
+        /// </summary>
+        /// <param name="specs">the specializations the <code>lists</code> have to be extracted from</param>
+        /// <param name="dc">the class to set the new lists to</param>
+        private static void selectMethods(List<DuneClass> specs, DuneClass df)
+        {
+            List<List<int>> methodHashes = new List<List<int>>();
+            List<List<int>> methodNameHashes = new List<List<int>>();
+            List<List<int>> methodArgumentCounts = new List<List<int>>();
+            List<List<int>> allPossibleMethodHashes = new List<List<int>>();
+
+            foreach (DuneClass dc in specs)
+            {
+                methodHashes.Add(dc.getMethodHashes());
+                methodNameHashes.Add(dc.getMethodNameHashes());
+                methodArgumentCounts.Add(dc.getMethodArgumentCount());
+                allPossibleMethodHashes.Add(dc.getAllPossibleMethodHashes());
+            }
+
+            df.setAllPossibleMethodHashes(buildCut(allPossibleMethodHashes));
+            df.setMethodArgumentCount(buildCut(methodArgumentCounts));
+            df.setMethods(buildCut(methodHashes));
+            df.setMethodNameHashes(buildCut(methodNameHashes));
+        }
+
+
+        /// <summary>
+        /// Takes a list of lists and builds the cut from these lists. This will be returned.
+        /// </summary>
+        /// <param name="objs">the list of lists to build the cut from</param>
+        /// <returns>the cut of the elements in the lists of lists</returns>
+        private static List<int> buildCut(List<List<int>> objs)
+        {
+            List<int> refObj = new List<int>();
+            // Identify the first list without a null-list. Null-lists are ignored
+            int first = 0;
+
+            for (int i = 0; i < objs.Count; i++)
+            {
+                if (objs.ElementAt(i) != null)
+                {
+                    first = i;
+                }
+            }
+
+            // Make a shallow copy
+            foreach (int obj in objs.ElementAt(first))
+            {
+                refObj.Add(obj);
+            }
+
+            List<int> noResult = new List<int>();
+            foreach (int obj in refObj)
+            {
+                for (int i = first + 1; i < objs.Count; i++)
+                {
+                    if (objs.ElementAt(i) != null && !objs.ElementAt(i).Contains(obj))
+                    {
+                        noResult.Add(obj);
+                    }
+                }
+            }
+            
+            foreach (int obj in noResult)
+            {
+                refObj.Remove(obj);
+            }
+
+            return refObj;
+        }
+
+        /// <summary>
+        /// Takes a list of lists and builds the cut from these lists. This will be returned.
+        /// </summary>
+        /// <param name="objs">the list of lists to build the cut from</param>
+        /// <returns>the cut of the elements in the lists of lists</returns>
+        private static List<string> buildCut(List<List<string>> objs)
+        {
+            List<string> refObj = new List<string>();
+            // Make a shallow copy
+            foreach (string obj in objs.ElementAt(0))
+            {
+                refObj.Add(obj);
+            }
+
+            List<string> noResult = new List<string>();
+            foreach (string obj in refObj)
+            {
+                for (int i = 1; i < objs.Count; i++)
+                {
+                    if (!objs.ElementAt(i).Contains(obj))
+                    {
+                        noResult.Add(obj);
+                    }
+                }
+            }
+
+            foreach (string obj in noResult)
+            {
+                refObj.Remove(obj);
+            }
+
+            return refObj;
         }
 
         /// <summary>
