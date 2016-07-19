@@ -33,6 +33,8 @@ namespace Dune
         private List<int> methodArgumentCount;
         private List<int> allPossibleMethodHashes;
 
+        private List<DuneClass> specializations;
+
         private bool ignoreDuckTyping = false;
 
         public LinkedList<TemplateTree> templat = new LinkedList<TemplateTree>();
@@ -162,6 +164,28 @@ namespace Dune
         }
 
         /// <summary>
+        /// Adds the specializations of the class to a list.
+        /// </summary>
+        /// <param name="dc">the specialization class to add</param>
+        public void addSpecialization(DuneClass dc)
+        {
+            if(this.specializations == null)
+            {
+                this.specializations = new List<DuneClass>();
+            }
+            this.specializations.Add(dc);
+        }
+
+        /// <summary>
+        /// Returns the list of specializations the class has. Note that this value is <code>null</code> if there are no specializations.
+        /// </summary>
+        /// <returns>the list of specializations the class has; <code>null</code> if there are no specializations</returns>
+        public List<DuneClass> getSpecializations()
+        {
+            return this.specializations;
+        }
+
+        /// <summary>
         /// Extracts the types from each of the template parameters.
         /// </summary>
         /// <param name="template">the template to extract the types from</param>
@@ -269,6 +293,15 @@ namespace Dune
         }
 
         /// <summary>
+        /// Returns a list of the method arguments.
+        /// </summary>
+        /// <returns>a list of the method arguments</returns>
+        public List<string> getMethodArguments()
+        {
+            return this.methodArguments;
+        }
+
+        /// <summary>
         /// Returns the template argument on the specified position.
         /// </summary>
         /// <param name="index">the number of the template argument to return. Note that this begins with 0</param>
@@ -297,6 +330,24 @@ namespace Dune
         public int getMethodArgumentCount(int index)
         {
             return methodArgumentCount[index];
+        }
+
+        /// <summary>
+        /// Returns the list containing the argument counts of the methods.
+        /// </summary>
+        /// <returns>the list containing the argument counts of the methods</returns>
+        public List<int> getMethodArgumentCount()
+        {
+            return this.methodArgumentCount;
+        }
+
+        /// <summary>
+        /// Returns all possible method hashes.
+        /// </summary>
+        /// <returns>all possible method hashes</returns>
+        public List<int> getAllPossibleMethodHashes()
+        {
+            return this.allPossibleMethodHashes;
         }
 
         /// <summary>
@@ -368,6 +419,15 @@ namespace Dune
         public Boolean hasChildren()
         {
             return children.Any();
+        }
+
+        /// <summary>
+        /// Returns the methodNameHashes of the specific class.
+        /// </summary>
+        /// <returns>the methodNameHashes of the specific class</returns>
+        public List<int> getMethodNameHashes()
+        {
+            return this.methodNameHashes;
         }
 
         /// <summary>
@@ -569,6 +629,15 @@ namespace Dune
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// Returns <code>true</code> if this class is a specialization of another class; <code>false</code> otherwise.
+        /// </summary>
+        /// <returns><code>true</code> iff this class is a specialization of another class</returns>
+        public bool isSpecialization()
+        {
+            return this.implementingTemplate != this.templateForCode;
         }
 
         /// <summary>

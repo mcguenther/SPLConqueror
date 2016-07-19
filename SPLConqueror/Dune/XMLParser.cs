@@ -439,8 +439,6 @@ namespace Dune
                         }
                         break;
                     case "basecompoundref":
-                        if (name.StartsWith("Dune::PDELab::PkLocalFiniteElementMap"))
-                        { }
                         String refNew = null;
                         String nameNew = node.InnerText.ToString().Replace(" ", "");
 
@@ -515,6 +513,15 @@ namespace Dune
             if (df == null)
             {
                 return;
+            }
+
+            if (df.isSpecialization())
+            {
+                DuneClass gen = getClassGeneralization(df);
+                if (gen != null)
+                {
+                    gen.addSpecialization(df);
+                }
             }
 
             if (methods != null)
@@ -921,6 +928,34 @@ namespace Dune
             // Compare only classes with at least one public method
             foreach (DuneClass df in features)
             {
+                List<DuneClass> specs = df.getSpecializations();
+                
+                // If a class has specializations then the methods from these specializations are taken
+                if (df.getNumberOfMethodHashes() == 0 && specs != null)
+                {
+                    int val = specs.ElementAt(0).getMethodHashes().Count;
+                    bool sameValues = true;
+                    for (int i = 1; i < specs.Count; i++)
+                    {
+                        if (specs.ElementAt(i).getMethodHashes().Count != val)
+                        {
+                            sameValues = false;
+                        }
+                    }
+
+                    if (sameValues)
+                    {
+                        // Maybe a shallow copy would do it here...
+                        df.setMethods(specs.ElementAt(0).getMethodHashes());
+                        df.setMethodNameHashes(specs.ElementAt(0).getMethodNameHashes());
+                        df.setMethodArgumentCount(specs.ElementAt(0).getMethodArgumentCount());
+                        df.setAllPossibleMethodHashes(specs.ElementAt(0).getAllPossibleMethodHashes());
+                        df.setMethodArguments(specs.ElementAt(0).getMethodArguments());
+                    } else
+                    { }
+                }
+
+
                 if (df.getNumberOfMethodHashes() > 0)
                 {
                     featuresToCompare.Add(df);
@@ -1805,6 +1840,25 @@ namespace Dune
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dc"></param>
+        /// <returns></returns>
+        public static DuneClass getClassGeneralization(DuneClass dc)
+        {
+
+            string name = dc.getFeatureNameWithoutTemplate();
+            foreach (DuneClass f in features)
+            {
+                if (f.getFeatureNameWithoutTemplate().Equals(name) && !f.isSpecialization())
+                {
+                    return f;
+                }
+            }
+            return null;
         }
 
         /// <summary>
