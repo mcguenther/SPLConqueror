@@ -508,6 +508,17 @@ namespace SPLConqueror_Core
 
             double value = 0.0;
 
+            token = " -4.33442626414906E-06";
+
+            if (double.TryParse(token, out value))
+            {
+                Console.WriteLine("double");
+            }
+            if (Double.TryParse(token, out value))
+            {
+                Console.WriteLine("Double");
+            }
+
             if (Double.TryParse(token, out value))
             {
                 return true;
@@ -767,6 +778,87 @@ namespace SPLConqueror_Core
 
             return false;
         }
+
+        public String toOsil_Syntax(Dictionary<String, Tuple<ConfigurationOption, int>> nameToOptionAndID)
+        {
+            StringBuilder sb = new StringBuilder();
+            return constructOsil_Syntax(0, sb, nameToOptionAndID).Item1.ToString();
+        }
+
+        //private int runningIndex = 0;
+
+        internal Tuple<StringBuilder,int> constructOsil_Syntax(int index, StringBuilder sb, Dictionary<String, Tuple<ConfigurationOption, int>> nameToOptionAndID)
+        {
+            String currItem = expressionArray[expressionArray.Length - 1 - index];
+
+            index = index + 1;
+
+            double valueAsDouble = 0.0;
+            bool isNumeric = double.TryParse(currItem, out valueAsDouble);
+                
+            if(currItem.Equals("+"))
+            {
+                sb.Append("<plus>\n");
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                sb.Append("</plus>\n");
+
+            }
+            else if (currItem.Equals("*"))
+            {
+                sb.Append("<times>\n");
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                sb.Append("</times>\n");
+            } else if(currItem.Equals("ln"))
+            {
+                sb.Append("<ln>\n");
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                sb.Append("</ln>\n");
+            } else if(currItem.Equals("log10"))
+            {
+                sb.Append("<log10>\n");
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                sb.Append("</log10>\n");
+            } else if(currItem.Equals("log"))
+            {
+                sb.Append("<log>\n");
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                sb.Append("</log>\n");
+            } else if(currItem.Equals("/"))
+            {
+                sb.Append("<divide>\n");
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                sb.Append("</divide>\n");
+            } else if(currItem.Equals("exp"))
+            {
+                sb.Append("<exp>\n");
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                sb.Append("</exp>\n");
+            } else if(currItem.Equals("squrt"))
+            {
+                sb.Append("<squareRoot>\n");
+                index = constructOsil_Syntax(index, sb, nameToOptionAndID).Item2;
+                sb.Append("</squareRoot>\n");
+            }
+
+            // TODO: support log, divide and further operations
+            else if (isNumeric)
+            {
+                sb.Append("<number type=\"real\" value=\"" + currItem + "\"/>\n");
+            }
+            else
+            {
+                int indexOption = nameToOptionAndID[currItem].Item2;
+                sb.Append("<variable coef=\"1.0\" idx=\"" + indexOption + "\"/>\n");
+            }
+
+            return new Tuple<StringBuilder,int>(sb,index);
+        }
+
 
     }
 }

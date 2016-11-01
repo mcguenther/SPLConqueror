@@ -8,6 +8,7 @@ using MachineLearning.Learning.Regression;
 using MachineLearning.Sampling.ExperimentalDesigns;
 using MachineLearning.Sampling.Heuristics;
 using MachineLearning.Solver;
+using MachineLearning.Optimizer;
 using SPLConqueror_Core;
 
 namespace CommandLine
@@ -61,6 +62,7 @@ namespace CommandLine
 
         public const string COMMAND_SUBSCRIPT = "script";
 
+        public const string COMMAND_OPTIMIZE = "optimize";
 
         ExperimentState exp = new ExperimentState();
 
@@ -90,6 +92,42 @@ namespace CommandLine
 
             switch (command.ToLower())
             {
+                case COMMAND_OPTIMIZE:
+
+
+                    if (exp.learning == null)
+                    {
+                        GlobalState.logError.log("Error... learning was not performed! The optimization need models which are already learned.");
+                        break;
+                    }
+                    foreach (LearningRound lr in exp.learning.LearningHistory)
+                    {
+                        string additionalConstraints = null;
+                        if(taskAsParameter.Length >= 3)
+                        {
+                            additionalConstraints = taskAsParameter[2];
+                        }
+                        SCIP_Wrapper optimizer = new SCIP_Wrapper();
+                        string[] columns = lr.ToString().Split(new char[] { ';' });
+                        string ModelAsOSiL = optimizer.generateOsil_Syntax(columns[1], additionalConstraints);
+                        string osilFileName = "OSIL_MODEL_" + lr.ToString().GetHashCode() + ".osil";
+                        string funcFileName = "FUNC_MODEL_" + lr.ToString().GetHashCode() + ".txt";
+                        string solFileName = "SOL_MODEL_" + lr.ToString().GetHashCode() + ".sol";
+                        StreamWriter osilWriter = new StreamWriter(taskAsParameter[1] + osilFileName);
+                        osilWriter.Write(ModelAsOSiL);
+                        osilWriter.Flush();
+                        osilWriter.Close();
+
+                        StreamWriter funcWriter = new StreamWriter(taskAsParameter[1] + funcFileName);
+                        funcWriter.Write(columns[1]);
+                        funcWriter.Flush();
+                        funcWriter.Close();
+
+                        optimizer.useSolver(taskAsParameter[0], taskAsParameter[1] + osilFileName, taskAsParameter[1] + solFileName);
+                        GlobalState.logInfo.log(lr.ToString()+" ");
+                    }
+                    break;
+
                 case COMMAND_TRUEMODEL:
                     StreamReader readModel = new StreamReader(task);
                     String model = readModel.ReadLine().Trim();

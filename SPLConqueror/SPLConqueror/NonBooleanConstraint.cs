@@ -42,7 +42,7 @@ namespace SPLConqueror_Core
 
             String[] parts = unparsedExpression.Split(comparator.ToCharArray());
             leftHandSide = new InfluenceFunction(parts[0], varModel);
-            rightHandSide = new InfluenceFunction(parts[parts.Length-1], varModel);
+            rightHandSide = new InfluenceFunction(parts[parts.Length - 1], varModel);
 
 
         }
@@ -95,7 +95,7 @@ namespace SPLConqueror_Core
 
         private bool configHasOptionsOfConstraint(Configuration config)
         {
-            foreach(BinaryOption bo in leftHandSide.participatingBoolOptions.Union(rightHandSide.participatingBoolOptions))
+            foreach (BinaryOption bo in leftHandSide.participatingBoolOptions.Union(rightHandSide.participatingBoolOptions))
             {
                 if (!config.BinaryOptions.ContainsKey(bo))
                     return false;
@@ -108,6 +108,21 @@ namespace SPLConqueror_Core
             }
 
             return true;
+        }
+
+        public string GetComparator()
+        {
+            return comparator;
+        }
+
+        public InfluenceFunction GetLeftSide()
+        {
+            return leftHandSide;
+        }
+
+        public InfluenceFunction GetRightSide()
+        {
+            return rightHandSide;
         }
 
 
