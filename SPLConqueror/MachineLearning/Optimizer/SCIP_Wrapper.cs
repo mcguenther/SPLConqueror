@@ -5,6 +5,7 @@ using System.Text;
 using SPLConqueror_Core;
 using System.Diagnostics;
 using System.Xml;
+using System.Threading;
 
 namespace MachineLearning.Optimizer
 {
@@ -37,6 +38,9 @@ namespace MachineLearning.Optimizer
             solver.StandardInput.WriteLine("write solution");
             solver.StandardInput.WriteLine(solutionTarget);
             solver.StandardInput.WriteLine("quit");
+            solver.Close();
+            //to assure the file is written
+            Thread.Sleep(1000);
         }
 
 

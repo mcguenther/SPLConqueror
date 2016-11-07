@@ -82,6 +82,13 @@ namespace MachineLearning.Learning.Regression
             }
         }
 
+        public List<Feature> refitCoefficients(List<Feature> model)
+        {
+            this.fitModel(model);
+            return model;
+
+        }
+
         #region learning algorithm
         
         /// <summary>
