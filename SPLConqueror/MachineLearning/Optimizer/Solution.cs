@@ -20,6 +20,8 @@ namespace MachineLearning.Optimizer
 
         private double improvement = 0;
 
+        double averageError = double.MaxValue;
+
         private LearningRound learnedFunction;
 
         private double optimalNfp;
@@ -63,6 +65,7 @@ namespace MachineLearning.Optimizer
                 sb.Append("optimal solution found; ");
                 sb.Append("Nfp value: " + optimalNfp + " ; ");
                 sb.Append("improvement: " + improvement + " ; ");
+                sb.Append("averageError: " + averageError + " ; ");
                 sb.Append("result config was in sample set: " + resultIsInSampleSet + " ; ");
                 sb.Append("number of distinct configs: " + numberOfDistinctLearnConfigs + " ; ");
                 sb.Append("used settings: ");
@@ -162,6 +165,23 @@ namespace MachineLearning.Optimizer
             {
                 return new Solution(false);
             }
+        }
+
+        public void computeError(List<Configuration> configurations)
+        {
+            double[] errorPerConfig = new double[configurations.Count];
+            for(int i = 0; i < errorPerConfig.Length; ++i)
+            {
+                Configuration currConfig = configurations[i];
+                double measuredNfp = currConfig.GetNFPValue();
+                double predictedValue = 0.0;
+                foreach(Feature feature in this.learnedFunction.FeatureSet)
+                {
+                    predictedValue += feature.eval(currConfig) * feature.Constant;
+                }
+                errorPerConfig[i] = Math.Abs(predictedValue - measuredNfp) / measuredNfp;
+            }
+            this.averageError = errorPerConfig.Average();
         }
         
         public Configuration toConfiguration()

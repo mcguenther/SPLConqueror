@@ -84,6 +84,7 @@ namespace MachineLearning.Optimizer
                 }
 
                 optimalSolution.testIfConfigIsInSampleSet(optimalSolution.toConfiguration(), sampleSetLearn);
+                optimalSolution.computeError(sampleSetLearn);
 
                 if (optimizationHistory.Count >= 1)
                 {
