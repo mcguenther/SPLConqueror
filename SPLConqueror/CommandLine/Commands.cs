@@ -68,6 +68,8 @@ namespace CommandLine
 
         public const string COMMAND_OPTIMIZE_ITERATIVE_COEFFICIENTS = "optimize-coefficients";
 
+        public const string COMMAND_OPTIMIZE_FEATURES = "optimize-features";
+
         ExperimentState exp = new ExperimentState();
 
         /// <summary>
@@ -96,6 +98,82 @@ namespace CommandLine
 
             switch (command.ToLower())
             {
+
+                case COMMAND_OPTIMIZE_FEATURES:
+                    List<Configuration> configurations_LearnFeatureOpt = new List<Configuration>();
+
+                    List<Configuration> configurations_ValidationFeatureOpt = new List<Configuration>();
+
+                    if (exp.TrueModel == null)
+                    {
+                        //List<List<BinaryOption>> availableBinary 
+                        //configurations_Learning = GlobalState.getMeasuredConfigs(exp.BinarySelections_Learning, exp.NumericSelection_Learning);
+                        configurations_LearnFeatureOpt = GlobalState.getMeasuredConfigs(Configuration.getConfigurations(exp.BinarySelections_Learning, exp.NumericSelection_Learning));
+                        configurations_LearnFeatureOpt = configurations_LearnFeatureOpt.Distinct().ToList();
+
+                        configurations_ValidationFeatureOpt = GlobalState.getMeasuredConfigs(Configuration.getConfigurations(exp.BinarySelections_Validation, exp.NumericSelection_Validation));
+                        configurations_ValidationFeatureOpt = configurations_ValidationFeatureOpt.Distinct().ToList();
+                        //break;//todo only to get the configurations that we haven't measured
+                    }
+                    else
+                    {
+                        foreach (List<BinaryOption> binConfig in exp.BinarySelections_Learning)
+                        {
+                            if (exp.NumericSelection_Learning.Count == 0)
+                            {
+                                Configuration c = new Configuration(binConfig);
+                                c.setMeasuredValue(GlobalState.currentNFP, exp.TrueModel.eval(c));
+                                if (!configurations_LearnFeatureOpt.Contains(c))
+                                    configurations_LearnFeatureOpt.Add(c);
+                                continue;
+                            }
+                            foreach (Dictionary<NumericOption, double> numConf in exp.NumericSelection_Learning)
+                            {
+
+                                Configuration c = new Configuration(binConfig, numConf);
+                                c.setMeasuredValue(GlobalState.currentNFP, exp.TrueModel.eval(c));
+                                if (GlobalState.varModel.configurationIsValid(c))
+                                    //                    if (!configurations_Learning.Contains(c))
+                                    configurations_LearnFeatureOpt.Add(c);
+                            }
+                        }
+
+                    }
+                    if (configurations_LearnFeatureOpt.Count == 0)
+                    {
+                        configurations_LearnFeatureOpt = configurations_ValidationFeatureOpt;
+                    }
+
+                    if (configurations_LearnFeatureOpt.Count == 0)
+                    {
+                        GlobalState.logInfo.log("The learning set is empty! Cannot start learning!");
+                        break;
+                    }
+
+                    if (configurations_ValidationFeatureOpt.Count == 0)
+                    {
+                        configurations_ValidationFeatureOpt = configurations_LearnFeatureOpt;
+                    }
+                    //break;
+                    GlobalState.logInfo.log("Learning: " + "NumberOfConfigurationsLearning:" + configurations_LearnFeatureOpt.Count + " NumberOfConfigurationsValidation:" + configurations_ValidationFeatureOpt.Count
+                    + " UnionNumberOfConfigurations:" + (configurations_LearnFeatureOpt.Union(configurations_ValidationFeatureOpt)).Count());
+
+                    OptimizerFeatures featureOptimizer = new OptimizerFeatures(0.01, configurations_LearnFeatureOpt, configurations_ValidationFeatureOpt, exp.mlSettings);
+                    List<Solution> featureOptimizationHistory = featureOptimizer.learnWithOptimization(taskAsParameter[0], taskAsParameter[1]);
+                    if (featureOptimizationHistory.Count == 0)
+                    {
+                        GlobalState.logInfo.log("A feasable solution couldnt be found for the first model");
+                    }
+                    else
+                    {
+                        GlobalState.logInfo.log("Number of sample optimization performed: " + featureOptimizer.numberOfRounds() + " ; Lowest NFP value in sample set: " + featureOptimizer.getLowestNFP());
+                        foreach (Solution sol in featureOptimizationHistory)
+                        {
+                            GlobalState.logInfo.log(sol.ToString());
+                        }
+                    }
+                    break;
+
                 case COMMAND_OPTIMIZE_ITERATIVE_CONFIGS:
 
                     List<Configuration> configurations_LearnOpt = new List<Configuration>();
