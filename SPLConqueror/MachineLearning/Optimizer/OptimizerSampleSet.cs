@@ -4,6 +4,7 @@ using MachineLearning.Learning.Regression;
 using MachineLearning.Learning;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 
 namespace MachineLearning.Optimizer
 {
@@ -17,15 +18,20 @@ namespace MachineLearning.Optimizer
 
         private double lowestNfp;
 
+        private Configuration lowestConfiguration;
+
         private List<Solution> optimizationHistory;
 
         private InfluenceModel infModel;
 
         private double minImprovement;
 
-        public OptimizerSampleSet(double minImprovement, List<Configuration> sampleSetLearn, List<Configuration> sampleSetValidation, ML_Settings mlSettings)
+        private double optimumRange;
+
+        public OptimizerSampleSet(string minImprovement, string optimumRange, List<Configuration> sampleSetLearn, List<Configuration> sampleSetValidation, ML_Settings mlSettings)
         {
-            this.minImprovement = minImprovement;
+            this.minImprovement = double.Parse(minImprovement, CultureInfo.GetCultureInfo("en-US"));
+            this.optimumRange = double.Parse(optimumRange, CultureInfo.GetCultureInfo("en-US"));
             this.sampleSetLearn = sampleSetLearn;
             this.sampleSetValidation = sampleSetValidation;
             this.mlSettings = mlSettings;
@@ -37,6 +43,7 @@ namespace MachineLearning.Optimizer
                 if(config.GetNFPValue() < lowestNfp)
                 {
                     lowestNfp = config.GetNFPValue();
+                    lowestConfiguration = config;
                 }
             }
         }
@@ -85,6 +92,7 @@ namespace MachineLearning.Optimizer
 
                 optimalSolution.testIfConfigIsInSampleSet(optimalSolution.toConfiguration(), sampleSetLearn);
                 optimalSolution.computeError(sampleSetLearn);
+                optimalSolution.testOptimalConfiguration(lowestConfiguration);
 
                 if (optimizationHistory.Count >= 1)
                 {
@@ -97,7 +105,11 @@ namespace MachineLearning.Optimizer
 
                 expandSampleSet(optimalSolution.toConfiguration());
 
-                if(optimalSolution.getOptimalNfp() < lowestNfp)
+                if ((optimalSolution.getOptimalNfp() < lowestNfp) && optimalSolution.isOptimalConfigurationInSampleSet)
+                {
+                    return optimizationHistory;
+                }
+                else if (optimalSolution.getOptimalNfp() < (optimumRange * lowestNfp))
                 {
                     return optimizationHistory;
                 }

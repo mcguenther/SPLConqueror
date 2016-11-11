@@ -18,6 +18,8 @@ namespace MachineLearning.Optimizer
 
         private bool resultIsInSampleSet;
 
+        public bool isOptimalConfigurationInSampleSet;
+
         private double improvement = 0;
 
         double averageError = double.MaxValue;
@@ -83,6 +85,11 @@ namespace MachineLearning.Optimizer
             sb.Append((learnedFunction.ToString().Split(new char[] { ';' }))[1]);
             sb.Append(" ; ");
             return sb.ToString();
+        }
+
+        public void testOptimalConfiguration(Configuration bestInSampleSet)
+        {
+            this.isOptimalConfigurationInSampleSet = (this.toConfiguration()).Equals(bestInSampleSet);
         }
 
         public double getImprovement()

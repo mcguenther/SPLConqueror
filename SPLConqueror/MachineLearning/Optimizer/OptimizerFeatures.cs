@@ -3,6 +3,7 @@ using MachineLearning.Learning.Regression;
 using SPLConqueror_Core;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,15 +20,20 @@ namespace MachineLearning.Optimizer
 
         private double lowestNfp;
 
+        private Configuration lowestConfiguration;
+
         private List<Solution> optimizationHistory;
 
         private InfluenceModel infModel;
 
         private double minImprovement;
 
-        public OptimizerFeatures(double minImprovement, List<Configuration> sampleSetLearn, List<Configuration> sampleSetValidation, ML_Settings mlSettings)
+        private double optimumRange;
+
+        public OptimizerFeatures(string minImprovement, string optimumRange,  List<Configuration> sampleSetLearn, List<Configuration> sampleSetValidation, ML_Settings mlSettings)
         {
-            this.minImprovement = minImprovement;
+            this.minImprovement = double.Parse(minImprovement, CultureInfo.GetCultureInfo("en-US"));
+            this.optimumRange = double.Parse(optimumRange, CultureInfo.GetCultureInfo("en-US"));
             this.sampleSetLearn = sampleSetLearn;
             this.sampleSetValidation = sampleSetValidation;
             this.mlSettings = mlSettings;
@@ -39,6 +45,7 @@ namespace MachineLearning.Optimizer
                 if (config.GetNFPValue() < lowestNfp)
                 {
                     lowestNfp = config.GetNFPValue();
+                    lowestConfiguration = config;
                 }
             }
         }
