@@ -131,10 +131,15 @@ namespace MachineLearning.Optimizer
                 {
                     StreamReader test = new StreamReader(file);
                     fileWritten = true;
-            }
+                }
                 catch (FileNotFoundException a)
                 {
                     Thread.Sleep(100);
+                }
+                catch(IOException b)
+                {
+                    Thread.Sleep(100);
+                    GlobalState.logInfo.log(DateTime.Now.ToShortTimeString() + ": Its assumed the optimizer claims ownership to the solution file.");
                 }
             }
             StreamReader solutionReader = new StreamReader(file);
