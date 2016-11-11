@@ -158,7 +158,7 @@ namespace CommandLine
                     GlobalState.logInfo.log("Learning: " + "NumberOfConfigurationsLearning:" + configurations_LearnFeatureOpt.Count + " NumberOfConfigurationsValidation:" + configurations_ValidationFeatureOpt.Count
                     + " UnionNumberOfConfigurations:" + (configurations_LearnFeatureOpt.Union(configurations_ValidationFeatureOpt)).Count());
 
-                    OptimizerFeatures featureOptimizer = new OptimizerFeatures(taskAsParameter[2], configurations_LearnFeatureOpt, configurations_ValidationFeatureOpt, exp.mlSettings);
+                    OptimizerFeatures featureOptimizer = new OptimizerFeatures(taskAsParameter[2], taskAsParameter[3], configurations_LearnFeatureOpt, configurations_ValidationFeatureOpt, exp.mlSettings);
                     List<Solution> featureOptimizationHistory = featureOptimizer.learnWithOptimization(taskAsParameter[0], taskAsParameter[1]);
                     if (featureOptimizationHistory.Count == 0)
                     {
@@ -234,7 +234,7 @@ namespace CommandLine
                     GlobalState.logInfo.log("Learning: " + "NumberOfConfigurationsLearning:" + configurations_LearnOpt.Count + " NumberOfConfigurationsValidation:" + configurations_ValidationOpt.Count
                     + " UnionNumberOfConfigurations:" + (configurations_LearnOpt.Union(configurations_ValidationOpt)).Count());
 
-                    OptimizerSampleSet sampleOptimizer = new OptimizerSampleSet(taskAsParameter[2], configurations_LearnOpt, configurations_ValidationOpt, exp.mlSettings);
+                    OptimizerSampleSet sampleOptimizer = new OptimizerSampleSet(taskAsParameter[2], taskAsParameter[3], configurations_LearnOpt, configurations_ValidationOpt, exp.mlSettings);
                     List<Solution> sampleOptimizationHistory = sampleOptimizer.learnWithOptimization(taskAsParameter[0], taskAsParameter[1]);
                     if(sampleOptimizationHistory.Count == 0)
                     {
@@ -309,7 +309,7 @@ namespace CommandLine
                     GlobalState.logInfo.log("Learning: " + "NumberOfConfigurationsLearning:" + configs_LearnOpt.Count + " NumberOfConfigurationsValidation:" + configs_ValidationOpt.Count
                     + " UnionNumberOfConfigurations:" + (configs_LearnOpt.Union(configs_ValidationOpt)).Count());
 
-                    OptimizerCoefficients sampleOptimizerCoefficents = new OptimizerCoefficients(taskAsParameter, configs_LearnOpt, configs_ValidationOpt, exp.mlSettings);
+                    OptimizerCoefficients sampleOptimizerCoefficents = new OptimizerCoefficients(taskAsParameter[2], taskAsParameter[3], configs_LearnOpt, configs_ValidationOpt, exp.mlSettings);
                     List<Solution> sampleCoeffOptimizationHistory = sampleOptimizerCoefficents.learnWithOptimization(taskAsParameter[0], taskAsParameter[1]);
                     if (sampleCoeffOptimizationHistory.Count == 0)
                     {
