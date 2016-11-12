@@ -445,8 +445,8 @@ namespace MachineLearning.Optimizer
                     constraint.Append("<nl idx=\"" + numberOfConstraints + "\">\n");
                     numberOfConstraints++;
                     constraint.Append("<times>\n");
-                    constraint.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>/n");
-                    constraint.Append("<variable coef=\"1.0\" idx=\"" + nameToOptionAndID[alternativeConf.Name].Item2 + "\"/>/n");
+                    constraint.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>\n");
+                    constraint.Append("<variable coef=\"1.0\" idx=\"" + nameToOptionAndID[alternativeConf.Name].Item2 + "\"/>\n");
                     constraint.Append("</times>\n");
                     constraint.Append("</nl>\n");
                     boundariesAndConstraints.Add(Tuple.Create(boundPart, constraint.ToString()));
@@ -470,12 +470,12 @@ namespace MachineLearning.Optimizer
             {
                 foreach (ConfigurationOption implication in implications)
                 {
-                    nonLinearExpr.Append("<variable coef=\"1.0\" idx=\"" + nameToOptionAndID[implication.Name].Item2 + "\"/>/n");
+                    nonLinearExpr.Append("<variable coef=\"1.0\" idx=\"" + nameToOptionAndID[implication.Name].Item2 + "\"/>\n");
                 }
             }
-            nonLinearExpr.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>/n");
+            nonLinearExpr.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>\n");
             nonLinearExpr.Append("</product>\n");
-            nonLinearExpr.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>/n");
+            nonLinearExpr.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>\n");
             nonLinearExpr.Append("</minus>\n");
             nonLinearExpr.Append("</nl>\n");
 
@@ -495,16 +495,16 @@ namespace MachineLearning.Optimizer
             numberOfConstraints++;
             constraint.Append("<minus>\n");
             constraint.Append("<product>\n");
-            constraint.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>/n");
+            constraint.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>\n");
             foreach(List<ConfigurationOption> impliedOptions in binOpt.Implied_Options)
             {
                 foreach(ConfigurationOption impliedOption in impliedOptions)
                 {
-                    constraint.Append("<variable coef=\"1.0\" idx=\"" + nameToOptionAndID[impliedOption.Name].Item2 + "\"/>/n");
+                    constraint.Append("<variable coef=\"1.0\" idx=\"" + nameToOptionAndID[impliedOption.Name].Item2 + "\"/>\n");
                 }
             }
             constraint.Append("</product>\n");
-            constraint.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>/n");
+            constraint.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>\n");
             constraint.Append("</minus>");
             constraint.Append("</nl>");
 

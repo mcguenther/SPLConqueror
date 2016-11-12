@@ -85,6 +85,7 @@
     <Compile Include="Learning\Regression\Feature.cs" />
     <Compile Include="Learning\Regression\FeatureSubsetSelection.cs" />
     <Compile Include="Learning\Regression\LearningRound.cs" />
+    <Compile Include="Optimizer\Optimizer.cs" />
     <Compile Include="Optimizer\OptimizerCoefficients.cs" />
     <Compile Include="Optimizer\OptimizerFeatures.cs" />
     <Compile Include="Optimizer\OptimizerSampleSet.cs" />

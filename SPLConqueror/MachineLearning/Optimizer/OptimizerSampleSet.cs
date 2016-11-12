@@ -8,57 +8,15 @@ using System.Globalization;
 
 namespace MachineLearning.Optimizer
 {
-    public class OptimizerSampleSet
+    public class OptimizerSampleSet : Optimizer
     {
-        private List<Configuration> sampleSetLearn;
 
-        private List<Configuration> sampleSetValidation;
-
-        private  ML_Settings mlSettings = new ML_Settings();
-
-        private double lowestNfp;
-
-        private Configuration lowestConfiguration;
-
-        private List<Solution> optimizationHistory;
-
-        private InfluenceModel infModel;
-
-        private double minImprovement;
-
-        private double optimumRange;
-
-        public OptimizerSampleSet(string minImprovement, string optimumRange, List<Configuration> sampleSetLearn, List<Configuration> sampleSetValidation, ML_Settings mlSettings)
+        public OptimizerSampleSet(string minImprovement, string optimumRange, List<Configuration> sampleSetLearn, List<Configuration> sampleSetValidation, ML_Settings mlSettings) : base(minImprovement, optimumRange, sampleSetLearn, sampleSetValidation, mlSettings)
         {
-            this.minImprovement = double.Parse(minImprovement, CultureInfo.GetCultureInfo("en-US"));
-            this.optimumRange = double.Parse(optimumRange, CultureInfo.GetCultureInfo("en-US"));
-            this.sampleSetLearn = sampleSetLearn;
-            this.sampleSetValidation = sampleSetValidation;
-            this.mlSettings = mlSettings;
-            optimizationHistory = new List<Solution>();
-            infModel = new InfluenceModel(GlobalState.varModel, GlobalState.currentNFP);
-            lowestNfp = double.MaxValue;
-            foreach(Configuration config in sampleSetLearn)
-            {
-                if(config.GetNFPValue() < lowestNfp)
-                {
-                    lowestNfp = config.GetNFPValue();
-                    lowestConfiguration = config;
-                }
-            }
         }
 
-        public double getLowestNFP()
-        {
-            return this.lowestNfp;
-        }
 
-        public int numberOfRounds()
-        {
-            return this.optimizationHistory.Count;
-        }
-
-        public List<Solution> learnWithOptimization(string solverPath, string solPath)
+        override public List<Solution> learnWithOptimization(string solverPath, string solPath)
         {
             double roundImprovement = double.MaxValue;
             while(minImprovement < roundImprovement)
@@ -124,21 +82,6 @@ namespace MachineLearning.Optimizer
             learning.setValidationSet(sampleSetValidation);
             learning.learn();
             return learning.LearningHistory;
-        }
-
-        private LearningRound findBestRound(List<LearningRound> lrs)
-        {
-            double error = double.MaxValue;
-            LearningRound bestRound = null;
-            foreach(LearningRound lr in lrs)
-            {
-                if(lr.learningError < error)
-                {
-                    bestRound = lr;
-                    error = lr.learningError;
-                }
-            }
-            return bestRound;
         }
 
         private void expandSampleSet(Configuration toAdd)
