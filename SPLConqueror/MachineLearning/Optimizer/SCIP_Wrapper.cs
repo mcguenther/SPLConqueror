@@ -408,11 +408,7 @@ namespace MachineLearning.Optimizer
             } else if(stepExpr.Contains("*"))
             {
                 string[] expressions = stepExpr.Split(new char[] { '*' });
-                int baseValue = 1;
-                foreach(string literal in expressions)
-                {
-                    Int32.TryParse(literal.Trim(), out baseValue);
-                }
+                int baseValue = Convert.ToInt32(numOpt.getNextValue(numOpt.Min_value) - numOpt.Min_value);
 
                 stepFunctionOSnL.Append("<nl idx=\"" + numberOfConstraints + "\">\n");
                 numberOfConstraints++;
@@ -505,8 +501,8 @@ namespace MachineLearning.Optimizer
             }
             constraint.Append("</product>\n");
             constraint.Append("<variable coef=\"1.0\" idx=\"" + currentVar + "\"/>\n");
-            constraint.Append("</minus>");
-            constraint.Append("</nl>");
+            constraint.Append("</minus>\n");
+            constraint.Append("</nl>\n");
 
             return Tuple.Create(boundPart, constraint.ToString());
         }
