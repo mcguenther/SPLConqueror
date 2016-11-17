@@ -139,7 +139,13 @@ namespace MachineLearning.Optimizer
                     alternativeString_OsilSyntax.Append("</nl>\n");
 
                     constraintPart.Append(alternativeString_OsilSyntax.ToString());
-                    boundPart.Append("<con lb=\"1.0\" ub=\"1.0\"/>\n");
+                    if(binOption.Optional)
+                    {
+                        boundPart.Append("<con lb=\"0.0\" ub=\"1.0\"/>\n");
+                    } else
+                    {
+                        boundPart.Append("<con lb=\"1.0\" ub=\"1.0\"/>\n");
+                    }
 
 
                     // non-alternative options which are exluded
@@ -164,7 +170,7 @@ namespace MachineLearning.Optimizer
 
                     }
 
-                    // implied options function
+                   // implied options function
                     int numberOfImpliedOptions = 0;
                     foreach (List<ConfigurationOption> implications in binOption.Implied_Options)
                     {
@@ -408,7 +414,7 @@ namespace MachineLearning.Optimizer
             } else if(stepExpr.Contains("*"))
             {
                 string[] expressions = stepExpr.Split(new char[] { '*' });
-                int baseValue = Convert.ToInt32(numOpt.getNextValue(numOpt.Min_value) - numOpt.Min_value);
+                int baseValue = Convert.ToInt32(Double.Parse(expressions[1]));
 
                 stepFunctionOSnL.Append("<nl idx=\"" + numberOfConstraints + "\">\n");
                 numberOfConstraints++;
