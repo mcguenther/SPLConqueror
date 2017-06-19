@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Xml.Serialization;
+using MachineLearning.Learning.ActiveLearningHeuristics;
 
 namespace MachineLearning.Learning.Regression
 {
@@ -35,6 +36,7 @@ namespace MachineLearning.Learning.Regression
 
         //Learning and validation data sets
         protected List<Configuration> learningSet = new List<Configuration>();
+        private ILearningSetExplorer learningSetExplorer = null;
         protected List<Configuration> validationSet = new List<Configuration>();
         protected ILArray<double> Y_learning, Y_validation = ILMath.empty();
         protected ConcurrentDictionary<Feature, ILArray<double>> DM_columns = new ConcurrentDictionary<Feature, ILArray<double>>();
@@ -51,6 +53,8 @@ namespace MachineLearning.Learning.Regression
         {
             get { if (learningHistory.Count == 0) return null; else return learningHistory[learningHistory.Count - 1]; }
         }
+
+        public ILearningSetExplorer LearningSetExplorer { get => learningSetExplorer; set => learningSetExplorer = value; }
 
         // TODO: unused method?
         public void clean()
@@ -94,7 +98,7 @@ namespace MachineLearning.Learning.Regression
                 }
                 initialFeatures.Add(new Feature(opt.Name, infModel.Vm));
             }
-            if(this.strictlyMandatoryFeatures.Count == 0)
+            if (this.strictlyMandatoryFeatures.Count == 0)
                 this.strictlyMandatoryFeatures.Add(new Feature(infModel.Vm.Root.Name, infModel.Vm));
             foreach (var opt in infModel.Vm.NumericOptions)
                 initialFeatures.Add(new Feature(opt.Name, infModel.Vm));
@@ -126,7 +130,7 @@ namespace MachineLearning.Learning.Regression
                 initialFeatures.Add(new Feature(opt.Name, infModel.Vm));
             }
             if (this.strictlyMandatoryFeatures.Count == 0)
-            this.strictlyMandatoryFeatures.Add(new Feature(infModel.Vm.Root.Name, infModel.Vm));
+                this.strictlyMandatoryFeatures.Add(new Feature(infModel.Vm.Root.Name, infModel.Vm));
             foreach (var opt in infModel.Vm.NumericOptions)
                 initialFeatures.Add(new Feature(opt.Name, infModel.Vm));
         }
@@ -206,12 +210,37 @@ namespace MachineLearning.Learning.Regression
             if (this.strictlyMandatoryFeatures.Count > 0)
                 current.FeatureSet.AddRange(this.strictlyMandatoryFeatures);
             LearningRound previous;
+            int initTmp = 15;
+            int temperature = initTmp;
             do
             {
                 previous = current;
+
+                // fetch new learning set entries if applicable
+                if (this.learningSetExplorer != null)
+                {
+                    List<Configuration> tmpSet = LearningSetExplorer.GetKnowledge();
+                    this.setLearningSet(tmpSet);
+                }
+
                 current = performForwardStep(previous);
                 if (current == null)
-                    return;
+                {
+                    if (temperature > 0)
+                    {
+                        temperature--;
+                        current = previous;
+                        continue;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    temperature = initTmp;
+                }
                 learningHistory.Add(current);
                 GlobalState.logInfo.logLine(current.ToString());
 
@@ -310,7 +339,7 @@ namespace MachineLearning.Learning.Regression
             ConcurrentDictionary<Feature, double> errorOfFeature = new ConcurrentDictionary<Feature, double>();
             ConcurrentDictionary<Feature, List<Feature>> errorOfFeatureWithModel = new ConcurrentDictionary<Feature, List<Feature>>();
             Feature bestCandidate = null;
-            
+
             List<Task> tasks = new List<Task>();
             //Learn for each candidate a new model and compute the error for each newly learned model
             foreach (Feature candidate in candidates)
@@ -325,7 +354,7 @@ namespace MachineLearning.Learning.Regression
                 {
                     continue;
                 }
-                    
+
                 List<Feature> newModel = copyCombination(previousRound.FeatureSet);
                 newModel.Add(threadCandidate);
                 if (this.MLsettings.parallelization)
@@ -362,7 +391,7 @@ namespace MachineLearning.Learning.Regression
             sortedFeatures.Sort(sortedFeatures.First());
             if (MLsettings.scoreMeasure == ML_Settings.ScoreMeasure.RELERROR)
             {
-				foreach (Feature candidate in sortedFeatures)
+                foreach (Feature candidate in sortedFeatures)
                 {
                     var candidateError = errorOfFeature[candidate];
                     var candidateScore = previousRound.validationError_relative - candidateError;
@@ -378,27 +407,29 @@ namespace MachineLearning.Learning.Regression
                             minimalRoundError = errorOfFeature[candidate];
                             bestCandidate = candidate;
                             bestModel = errorOfFeatureWithModel[candidate];
-                        } else
+                        }
+                        else
                         {
-                            candidate.Constant = 1;                        
+                            candidate.Constant = 1;
                         }
                     }
                 }
-            } else if (MLsettings.scoreMeasure == ML_Settings.ScoreMeasure.INFLUENCE)
+            }
+            else if (MLsettings.scoreMeasure == ML_Settings.ScoreMeasure.INFLUENCE)
             {
                 throw new NotImplementedException();
-//                foreach (Feature candidate in errorOfFeature.Keys)
-//                {
-//                    double candidateRate = bfCandidateRate[candidate];
-//                    double candidateWeightedAbsoluteInfluence = Math.Abs(candidate.Constant) * candidateRate;
-//                    if (candidateWeightedAbsoluteInfluence > maximalWeightedAbsoluteRoundInfluence)
-//                    {
-//                        maximalWeightedAbsoluteRoundInfluence = candidateWeightedAbsoluteInfluence;
-//                        bestCandidate = candidate;
-//                        bestModel = errorOfFeatureWithModel[candidate];
-//                    } else
-//                        candidate.Constant = 1;
-//                }
+                //                foreach (Feature candidate in errorOfFeature.Keys)
+                //                {
+                //                    double candidateRate = bfCandidateRate[candidate];
+                //                    double candidateWeightedAbsoluteInfluence = Math.Abs(candidate.Constant) * candidateRate;
+                //                    if (candidateWeightedAbsoluteInfluence > maximalWeightedAbsoluteRoundInfluence)
+                //                    {
+                //                        maximalWeightedAbsoluteRoundInfluence = candidateWeightedAbsoluteInfluence;
+                //                        bestCandidate = candidate;
+                //                        bestModel = errorOfFeatureWithModel[candidate];
+                //                    } else
+                //                        candidate.Constant = 1;
+                //                }
             }
 
             //error computations and logging stuff
@@ -532,7 +563,7 @@ namespace MachineLearning.Learning.Regression
                     Feature newCandidate = new Feature(feature, basicFeature, basicFeature.getVariabilityModel());
                     if (!currentModel.Contains(newCandidate) && !listOfCandidates.Contains(newCandidate))
                         listOfCandidates.Add(newCandidate);
-                nextRound:
+                    nextRound:
                     { }
                 }
 
@@ -1073,7 +1104,7 @@ namespace MachineLearning.Learning.Regression
                 current.terminationReason = "abortError";
                 return true;
             }
-            
+
             //if (minimalRequiredImprovement(current) + current.validationError_relative > oldRoundRelativeError)
             if (MLsettings.minImprovementPerRound > current.bestCandidateScore)
             {
@@ -1081,7 +1112,8 @@ namespace MachineLearning.Learning.Regression
                 {
                     hierachyLevel++;
                     return false;
-                } else
+                }
+                else
                 {
                     current.terminationReason = "minImprovementPerRound";
                     return true;
@@ -1120,7 +1152,7 @@ namespace MachineLearning.Learning.Regression
         /// <returns>True if all is set, false otherwise.</returns>
         protected bool allInformationAvailable()
         {
-            if (this.learningSet.Count == 0 || this.validationSet.Count == 0 || this.infModel == null || this.MLsettings == null)
+            if ((this.learningSet.Count == 0 && this.learningSetExplorer == null) || this.validationSet.Count == 0 || this.infModel == null || this.MLsettings == null)
             {
                 GlobalState.logError.logLine("Error: you need to specify a learning and validation set.");
                 return false;
@@ -1131,6 +1163,11 @@ namespace MachineLearning.Learning.Regression
         #endregion
 
 
+        public List<Configuration> GetLearningSet()
+        {
+            return this.learningSet;
+        }
+
 
         #region set data set
         /// <summary>
@@ -1140,6 +1177,8 @@ namespace MachineLearning.Learning.Regression
         public void setLearningSet(List<Configuration> measurements)
         {
             double[] temparryLearn = new double[measurements.Count]; ;//measured values
+
+            this.learningSet.Clear();
             for (int i = 0; i < measurements.Count; i++)
             {
                 this.learningSet.Add(measurements[i]);
@@ -1183,8 +1222,10 @@ namespace MachineLearning.Learning.Regression
                 if (nbDeselections == this.learningSet.Count)
                     featuresToRemove.Add(f);
             }
-            foreach (var f in featuresToRemove)
-                this.initialFeatures.Remove(f);
+
+            //TODO: check if features can be discarded if using a config space explorer
+            //foreach (var f in featuresToRemove)
+            //  this.initialFeatures.Remove(f);
         }
 
 
@@ -1233,8 +1274,10 @@ namespace MachineLearning.Learning.Regression
             for (int i = 0; i < featureSet.Count; i++)
             {
                 var x = featureSet[i];
-                if (DM_columns.ContainsKey(x))
+                if (DM_columns.ContainsKey(x) && DM_columns[x].Length == this.learningSet.Count)
+                {
                     DM[i, ILMath.full] = DM_columns[x];
+                }
                 else
                 {
                     generateDM_column(x);
@@ -1272,7 +1315,7 @@ namespace MachineLearning.Learning.Regression
                 }
                 i++;
             }
-            this.DM_columns.GetOrAdd(feature, column);
+            this.DM_columns.AddOrUpdate(feature, column, (key, existingVal) => column);
         }
         #endregion
 
@@ -1381,7 +1424,7 @@ namespace MachineLearning.Learning.Regression
                         {
                             error = 0.0;
                         }
-                        
+
                         break;
                     case ML_Settings.LossFunction.LEASTSQUARES:
                         error = Math.Pow(realValue - estimatedValue, 2);

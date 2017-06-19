@@ -11,6 +11,7 @@ using System.Diagnostics;
 using MachineLearning.Sampling;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using MachineLearning.Learning.ActiveLearningHeuristics;
 
 namespace MachineLearning.Learning.Regression
 {
@@ -102,13 +103,22 @@ namespace MachineLearning.Learning.Regression
                 InfluenceModel infMod = new InfluenceModel(GlobalState.varModel, GlobalState.currentNFP);
                 FeatureSubsetSelection sel = new FeatureSubsetSelection(infMod, this.mlSettings);
                 this.models.Add(sel);
-                sel.setLearningSet(testSet);
+
+                //ILearningSetExplorer expl = new HighErrorExplorer(testSet, sel, 10);
+                ILearningSetExplorer expl = new RandomExplorer(testSet, 10,1);
+                //ILearningSetExplorer expl = new OmniscientExplorer(testSet);
+                //ILearningSetExplorer expl = new CombinatorialExplorer(testSet, GlobalState.varModel, 30);
+                //ILearningSetExplorer expl = new MaxDistanceExplorer(testSet, GlobalState.varModel, 5);
+                //sel.setLearningSet(testSet);
+
+                sel.LearningSetExplorer = expl;
                 sel.setValidationSet(this.validationSet);
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 sel.learn();
                 sw.Stop();
                 Console.WriteLine("Elapsed={0}", sw.Elapsed);
+                GlobalState.logInfo.logLine("Number of measurements=" + sel.GetLearningSet().Count);
             }
         }
 
