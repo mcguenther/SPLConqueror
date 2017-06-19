@@ -87,6 +87,11 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Learning\ActiveLearningHeuristics\RandomExplorer.cs" />
+    <Compile Include="Learning\ActiveLearningHeuristics\OmniscientExplorer.cs" />
+    <Compile Include="Learning\ActiveLearningHeuristics\MaxDistanceExplorer.cs" />
+    <Compile Include="Learning\ActiveLearningHeuristics\HighErrorExplorer.cs" />
+    <Compile Include="Learning\ActiveLearningHeuristics\ILearningSetExplorer.cs" />
     <Compile Include="Learning\LearningInfo.cs" />
     <Compile Include="Learning\ML_Settings.cs" />
     <Compile Include="Learning\ML_SettingsGenerator.cs" />

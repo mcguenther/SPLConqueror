@@ -1043,7 +1043,9 @@ namespace MachineLearning.Learning.Regression
         private double computeModelError(List<Feature> currentModel, out double relativeError)
         {
             if (!this.MLsettings.crossValidation)
-                return computeValidationError(currentModel, out relativeError);
+                //return computeValidationError(currentModel, out relativeError);
+                //TODO: check when it would appropriate to use validationError for training
+                return computeLearningError(currentModel, out relativeError);
             else
             {
                 //todo k-fold
@@ -1130,14 +1132,17 @@ namespace MachineLearning.Learning.Regression
         /// <returns>True if we should abort learning, false otherwise.</returns>
         protected bool abortDueError(LearningRound current)
         {
-            if (current.validationError == 0)
+            //TODO: check when validationError would be needed
+            //if (current.validationError == 0)
+            if (current.learningError == 0)
                 return true;
 
             double error = 0;
             if (this.MLsettings.crossValidation)
                 error = (current.learningError + current.validationError) / 2;
             else
-                error = current.validationError;
+                //error = current.validationError;
+                error = current.learningError;
 
 
             if (error < this.MLsettings.abortError)
