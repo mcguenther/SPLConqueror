@@ -33,6 +33,10 @@ namespace MachineLearning.Learning.Regression
         protected List<Feature> bruteForceCandidates = new List<Feature>();
         protected IDictionary<Feature, double> bruteForceCandidateRate = new Dictionary<Feature, double>();
         public double finalError = 0.0;
+        protected static int INIT_LEARNING_TEMPERATURE = 10;
+        protected int learningTemperature = INIT_LEARNING_TEMPERATURE;
+        protected static int INIT_SAMPLING_TEMPERATURE = 3;
+        protected int samplingTemperature = INIT_SAMPLING_TEMPERATURE;
 
         //Learning and validation data sets
         protected List<Configuration> learningSet = new List<Configuration>();
@@ -210,8 +214,6 @@ namespace MachineLearning.Learning.Regression
             if (this.strictlyMandatoryFeatures.Count > 0)
                 current.FeatureSet.AddRange(this.strictlyMandatoryFeatures);
             LearningRound previous;
-            int initTmp = 15;
-            int temperature = initTmp;
             do
             {
                 previous = current;
@@ -226,9 +228,9 @@ namespace MachineLearning.Learning.Regression
                 current = performForwardStep(previous);
                 if (current == null)
                 {
-                    if (temperature > 0)
+                    if (learningTemperature > 0)
                     {
-                        temperature--;
+                        learningTemperature--;
                         current = previous;
                         continue;
                     }
@@ -239,7 +241,7 @@ namespace MachineLearning.Learning.Regression
                 }
                 else
                 {
-                    temperature = initTmp;
+                    ResetLearningTemperature();
                 }
                 learningHistory.Add(current);
                 GlobalState.logInfo.logLine(current.ToString());
@@ -255,6 +257,15 @@ namespace MachineLearning.Learning.Regression
             this.finalError = evaluateError(this.validationSet, out this.finalError);
         }
 
+        private void ResetLearningTemperature()
+        {
+            learningTemperature = INIT_LEARNING_TEMPERATURE;
+        }
+
+        private void ResetSamplingTemperature()
+        {
+            samplingTemperature = INIT_SAMPLING_TEMPERATURE;
+        }
         /// <summary>
         /// Based on the given learning round, the method intantiates the influence model.
         /// </summary>
@@ -1081,6 +1092,23 @@ namespace MachineLearning.Learning.Regression
         protected bool abortLearning(LearningRound current, LearningRound previous)
         {
             TimeSpan diff = DateTime.Now - this.startTime;
+            if (abortDueError(current))
+            {
+                if (samplingTemperature == 0)
+                {
+                    current.terminationReason = "abortError";
+                    return true;
+                }
+                else
+                {
+                    samplingTemperature--;
+                    return false;
+                }
+            }
+            else
+            {
+                ResetLearningTemperature();
+            }
             if (MLsettings.outputRoundsToStdout)
             {
                 //GlobalState.logInfo.logToStdout(current.round.ToString() + ";" + diff.ToString());
@@ -1101,11 +1129,7 @@ namespace MachineLearning.Learning.Regression
                 current.terminationReason = "stopOnLongRound";
                 return true;
             }
-            if (abortDueError(current))
-            {
-                current.terminationReason = "abortError";
-                return true;
-            }
+
 
             //if (minimalRequiredImprovement(current) + current.validationError_relative > oldRoundRelativeError)
             if (MLsettings.minImprovementPerRound > current.bestCandidateScore)
