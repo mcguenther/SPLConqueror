@@ -102,13 +102,14 @@ namespace MachineLearning.Learning.Regression
                 GlobalState.logInfo.logLine("Learning progress:");
                 InfluenceModel infMod = new InfluenceModel(GlobalState.varModel, GlobalState.currentNFP);
                 FeatureSubsetSelection sel = new FeatureSubsetSelection(infMod, this.mlSettings);
+                VariabilityModel vm = GlobalState.varModel;
                 this.models.Add(sel);
 
                 //ILearningSetExplorer expl = new HighErrorExplorer(testSet, sel, 10);
-                ILearningSetExplorer expl = new RandomExplorer(testSet, 10,1);
+                //ILearningSetExplorer expl = new RandomExplorer(testSet, vm, 10,2);
                 //ILearningSetExplorer expl = new OmniscientExplorer(testSet);
-                //ILearningSetExplorer expl = new CombinatorialExplorer(testSet, GlobalState.varModel, 30);
-                //ILearningSetExplorer expl = new MaxDistanceExplorer(testSet, GlobalState.varModel, 5);
+                ILearningSetExplorer expl = new CombinatorialExplorer(testSet, vm, 10,1);
+                //ILearningSetExplorer expl = new MaxDistanceExplorer(testSet, vm, 5);
                 //sel.setLearningSet(testSet);
 
                 sel.LearningSetExplorer = expl;

@@ -18,10 +18,13 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
         private int batchSize;
         static Random rnd = new Random();
         private int sleepCycles;
-        private Dictionary<BinaryOption, int> binaryOptionUsages;
+        private Dictionary<BinaryOption, int> binaryOptionalOptionUsages;
         Solver.VariantGenerator variantGenerator;
         private VariabilityModel vm;
         private List<BinaryOption> binaryOptions;
+        private List<BinaryOption> binaryOptionalOptions;
+        private List<BinaryOption> binaryMandatoryOptions;
+        private CheckConfigSAT checkSAT;
 
         public MaxDistanceExplorer(List<Configuration> globalConfigList, VariabilityModel vm)
         {
@@ -33,15 +36,40 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
             remainingSleepCycles = 0;
 
             this.binaryOptions = new List<BinaryOption>(vm.BinaryOptions);
+            this.binaryOptionalOptions = new List<BinaryOption>();
             // Dictionary<BinaryOption, BinaryOption.BinaryValue> binaryOptions = globalConfigList[0].BinaryOptions;
             //List<BinaryOption> binKeys = new List<BinaryOption>(binaryOptions.Keys);
             //this.binaryOptions = binKeys;
-            this.binaryOptionUsages = new Dictionary<BinaryOption, int>();
+            this.binaryOptionalOptionUsages = new Dictionary<BinaryOption, int>();
+
+
+            //first filter out mandatory options
+            this.binaryMandatoryOptions = new List<BinaryOption>();
+            foreach (BinaryOption binOpt in binaryOptions)
+            {
+                if ((binOpt.Parent == null || binOpt.Parent == vm.Root) && !binOpt.Optional && !binOpt.hasAlternatives())
+                {
+
+                    this.binaryMandatoryOptions.Add(binOpt);
+                    //Todo: Recursive down search
+                    /*List<BinaryOption> tmpList = (List<BinaryOption>)vm.getMandatoryChildsRecursive(binOpt);
+                    if (tmpList != null && tmpList.Count > 0)
+                        firstLevelMandatoryFeatures.AddRange(tmpList);*/
+
+                }
+                else
+                {
+                    this.binaryOptionalOptions.Add(binOpt);
+                }
+
+            }
+
+            this.checkSAT = new Solver.CheckConfigSAT();
 
             // initialize number of usages for each option
-            foreach (BinaryOption opt in this.binaryOptions)
+            foreach (BinaryOption opt in this.binaryOptionalOptions)
             {
-                this.binaryOptionUsages.Add(opt, 0);
+                this.binaryOptionalOptionUsages.Add(opt, 0);
             }
             this.variantGenerator = new VariantGenerator(); //  null;//new VariantGenerator(null);
             this.vm = vm;
@@ -52,11 +80,15 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
         private void DiscoverFirstConfig()
         {
             /* Adds Config that has least least amount of options */
-            List<BinaryOption> binaryOptList = new List<BinaryOption>();
-            List<BinaryOption> newList = variantGenerator.minimizeConfig(binaryOptList, this.vm, true, null);
-            Configuration newConfig = this.GetConfigWithBinaryOptions(newList);
-            UpdateOptionUsages(newConfig);
-            this.ExpandCurrentKnowledge(new List<Configuration>() { newConfig });
+            //Generating new configurations: one per option
+            if (checkSAT.checkConfigurationSAT(this.binaryMandatoryOptions, vm, false))
+            {
+                Configuration newConfig = GetConfigWithBinaryOptions(this.binaryMandatoryOptions);
+                if (newConfig != null)
+                {
+                    this.ExpandCurrentKnowledge(new List<Configuration>() { newConfig });
+                }
+            }
         }
 
         private void UpdateOptionUsages(Configuration newConfig)
@@ -64,8 +96,11 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
             List<BinaryOption> selectedOptions = newConfig.getBinaryOptions(BinaryOption.BinaryValue.Selected);
             foreach (BinaryOption opt in selectedOptions)
             {
-                int oldUsages = this.binaryOptionUsages[opt];
-                this.binaryOptionUsages[opt] = oldUsages + 1;
+                if (this.binaryOptionalOptionUsages.Keys.Contains(opt))
+                {
+                    int oldUsages = this.binaryOptionalOptionUsages[opt];
+                    this.binaryOptionalOptionUsages[opt] = oldUsages + 1;
+                }
             }
         }
 
@@ -98,7 +133,6 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
         private void Explore()
         {
             List<Configuration> step = new List<Configuration>();
-
             for (int i = 0; i < this.batchSize; i++)
             {
                 if (this.undiscoveredConfigs.Count > 0)
@@ -114,9 +148,7 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
                 {
                     break;
                 }
-
             }
-
             ExpandCurrentKnowledge(step);
         }
 
@@ -138,9 +170,9 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
                 List<BinaryOption> optionsPassive = new List<BinaryOption>();
                 int configCount = this.currentKnowledge.Count;
                 double threshold = configCount / 2.0;
-                foreach (BinaryOption opt in this.binaryOptions)
+                foreach (BinaryOption opt in this.binaryOptionalOptions)
                 {
-                    int usages = this.binaryOptionUsages[opt];
+                    int usages = this.binaryOptionalOptionUsages[opt];
                     if (usages > threshold)
                     {
                         /* option was more often active than it was passive */
@@ -151,12 +183,26 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
                         optionsActive.Add(opt);
                     }
                 }
-
-
-
-                //List<BinaryOption> newList = variantGenerator.minimizeConfig(optionsActive, this.vm, true, optionsPassive);
-                List<BinaryOption> newList = variantGenerator.minimizeConfig(optionsActive, this.vm, true, null);
-                //List<List<BinaryOption>> newLists = variantGenerator.maximizeConfig(optionsActive, this.vm, true, optionsPassive);
+                List<BinaryOption> newList = null;
+                while (optionsActive.Count > 0 && (newList == null || newList.Count == 0))
+                {
+                    //List<BinaryOption> newList = variantGenerator.minimizeConfig(optionsActive, this.vm, true, optionsPassive);
+                    newList = variantGenerator.minimizeConfig(optionsActive, this.vm, true, optionsPassive);
+                    //List<List<BinaryOption>> newLists = variantGenerator.maximizeConfig(optionsActive, this.vm, true, optionsPassive);
+                    if(newList == null || newList.Count == 0)
+                    {
+                        Dictionary<BinaryOption, int> sortdict = new Dictionary<BinaryOption, int>();
+                        foreach(BinaryOption opt in optionsActive)
+                        {
+                            int usages = this.binaryOptionalOptionUsages[opt];
+                            sortdict.Add(opt, usages);
+                        }
+                        IOrderedEnumerable<KeyValuePair<BinaryOption, int>> sortedDict = sortdict.OrderByDescending(entry => entry.Value);
+                        KeyValuePair<BinaryOption, int> maxUsedOptionEntry = sortedDict.First();
+                        BinaryOption maxUsedOption = maxUsedOptionEntry.Key;
+                        optionsActive.Remove(maxUsedOption);
+                    }
+                }
 
                 if (newList == null || newList.Count == 0)
                 {
@@ -169,7 +215,12 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
                     throw new Exception(message);
                 }
                 newConfig = this.GetConfigWithBinaryOptions(newList);
-
+                if (newConfig == null)
+                {
+                    /* we assume that we already fetched the config we tried to fetch now */
+                    continue;
+                }
+                UpdateOptionUsages(newConfig);
             }
             return newConfig;
         }

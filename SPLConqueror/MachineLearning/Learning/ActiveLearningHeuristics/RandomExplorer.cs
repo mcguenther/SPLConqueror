@@ -6,72 +6,25 @@ using System.Text;
 
 namespace MachineLearning.Learning.ActiveLearningHeuristics
 {
-    class RandomExplorer : ILearningSetExplorer
+    class RandomExplorer : StepExplorer 
     {
-        private List<Configuration> globalConfigList;
-        private List<Configuration> undiscoveredConfigs;
-        private List<Configuration> currentKnowledge;
-        private List<List<Configuration>> history = new List<List<Configuration>>();
-        private int sleepCycles;
-        private int STANDARD_STEP_SIZE = 5;
-        private int batchSize;
         static Random rnd = new Random();
-        private int remainingSleepCycles;
+    
 
-        public RandomExplorer(List<Configuration> globalConfigList)
-        {
-            this.globalConfigList = globalConfigList;
-            this.undiscoveredConfigs = globalConfigList;
-            currentKnowledge = new List<Configuration>();
-            batchSize = STANDARD_STEP_SIZE;
-            sleepCycles = 0;
-            remainingSleepCycles = 0;
-        }
-
-        public RandomExplorer(List<Configuration> globalConfigList, int batchSize) : this(globalConfigList, batchSize, 0)
+        public RandomExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize) : this(globalConfigList, vm, batchSize, 0)
         {
         }
 
 
-        public RandomExplorer(List<Configuration> globalConfigList, int batchSize, int sleepCycles) : this(globalConfigList)
+        public RandomExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize, int sleepCycles) : base(globalConfigList, vm, batchSize,sleepCycles)
         {
-            this.batchSize = batchSize;
-            this.sleepCycles = sleepCycles;
         }
 
 
 
-        public List<Configuration> GetKnowledge()
+        protected override Configuration DiscoverNewConfig()
         {
-            if (remainingSleepCycles <= 0)
-            {
-                Explore();
-                remainingSleepCycles = sleepCycles;
-            }
-            else
-            {
-                remainingSleepCycles--;
-            }
-            return currentKnowledge;
-        }
-
-        private void Explore()
-        {
-            List<Configuration> step = new List<Configuration>();
-            for (int i = 0; i < this.batchSize; i++)
-            {
-                if (this.undiscoveredConfigs.Count > 0)
-                {
-                    Configuration newConf = DiscoverNewConfig();
-                    step.Add(newConf);
-                }
-            }
-            ExpandCurrentKnowledge(step);
-        }
-
-        private Configuration DiscoverNewConfig()
-        {
-            int rndConfId = rnd.Next(undiscoveredConfigs.Count);
+            int rndConfId = rnd.Next(this.undiscoveredConfigs.Count);
             Configuration newConf = undiscoveredConfigs[rndConfId];
             undiscoveredConfigs.Remove(newConf);
             return newConf;
@@ -85,14 +38,11 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
             return newConf;
         }
 
-
-        private void ExpandCurrentKnowledge(List<Configuration> newConfigs)
+        protected override void DiscoverFirstConfig()
         {
-            History.Add(newConfigs);
-            currentKnowledge = new List<Configuration>(currentKnowledge);
-            currentKnowledge.AddRange(newConfigs);
+           /* No need for speacial initialization */
         }
-
-        public List<List<Configuration>> History { get => history; }
+        
+        
     }
 }

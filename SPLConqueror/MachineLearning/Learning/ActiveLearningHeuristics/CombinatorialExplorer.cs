@@ -7,106 +7,49 @@ using System.Text;
 
 namespace MachineLearning.Learning.ActiveLearningHeuristics
 {
-    public class CombinatorialExplorer : ILearningSetExplorer
+    public class CombinatorialExplorer : StepExplorer
     {
-        private List<Configuration> globalConfigList;
-        private List<Configuration> undiscoveredConfigs;
-        private List<Configuration> currentKnowledge;
-        private List<List<Configuration>> history = new List<List<Configuration>>();
-        private int remainingSleepCycles = 0;
-        private int STANDARD_STEP_SIZE = 5;
-        private int batchSize;
         static Random rnd = new Random();
-        private int sleepCycles;
-        private List<BinaryOption> binaryOptions;
-        private List<BinaryOption> unusedBinaryOptions;
-        private List<Tuple<BinaryOption, BinaryOption>> unusedBinaryOptionPairs;
-        VariantGenerator variantGenerator;
-        private VariabilityModel vm;
+        public List<BinaryOption> unusedBinaryOptions;
+        public List<Tuple<BinaryOption, BinaryOption>> unusedBinaryOptionPairs;
 
-        public CombinatorialExplorer(List<Configuration> globalConfigList, VariabilityModel vm)
-        {
-            this.globalConfigList = globalConfigList;
-            this.undiscoveredConfigs = globalConfigList;
-            currentKnowledge = new List<Configuration>();
-            batchSize = STANDARD_STEP_SIZE;
-            sleepCycles = 0;
-            remainingSleepCycles = 0;
-
-            // Dictionary<BinaryOption, BinaryOption.BinaryValue> binaryOptions = globalConfigList[0].BinaryOptions;
-            //List<BinaryOption> binKeys = new List<BinaryOption>(binaryOptions.Keys);
-            //this.binaryOptions = binKeys;
-            this.binaryOptions = vm.BinaryOptions;
-            this.unusedBinaryOptions = new List<BinaryOption>(vm.BinaryOptions);
-            this.variantGenerator = new VariantGenerator();
-            this.vm = vm;
-            unusedBinaryOptionPairs = new List<Tuple<BinaryOption, BinaryOption>>();
-            for (int i = 0; i < this.binaryOptions.Count - 1; i++)
-            {
-                for (int j = i + 1; j < this.binaryOptions.Count; j++)
-                {
-                    Tuple<BinaryOption, BinaryOption> newPair = new Tuple<BinaryOption, BinaryOption>(binaryOptions[i], binaryOptions[j]);
-                    this.unusedBinaryOptionPairs.Add(newPair);
-                }
-            }
-        }
-
-        public CombinatorialExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize) : this(globalConfigList, vm, batchSize, 0)
+        public CombinatorialExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize, int sleepCycles) : base(globalConfigList, vm, batchSize, sleepCycles)
         {
         }
 
 
-        public CombinatorialExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize, int sleepCycles) : this(globalConfigList, vm)
-        {
-            this.batchSize = batchSize;
-            this.sleepCycles = sleepCycles;
-        }
 
-
-        public List<Configuration> GetKnowledge()
+        protected override Configuration DiscoverNewConfig()
         {
-            if (remainingSleepCycles <= 0)
-            {
-                Explore();
-                remainingSleepCycles = sleepCycles;
-            }
-            else
-            {
-                remainingSleepCycles--;
-            }
-            return currentKnowledge;
-        }
-
-        private void Explore()
-        {
-            List<Configuration> step = new List<Configuration>();
+            Configuration newConf = null;
             if (this.unusedBinaryOptions.Count > 0 || this.unusedBinaryOptionPairs.Count > 0)
             {
-                for (int i = 0; i < this.batchSize; i++)
-                {
-                    if (this.undiscoveredConfigs.Count > 0)
-                    {
-                        Configuration newConf = DiscoverNewConfig();
-                        if (newConf == null)
-                        {
-                            /* no new combinations available */
-                            // each single feature and each 2-interaction has been seen
-                            break;
-                        }
+                newConf = DiscoverNewCombinatorialConfig();
+            }
 
-                        step.Add(newConf);
-                    }
-                }
+            if (newConf == null)
+            {
+                newConf = DiscoverNewRandomConfig();
+            }
+            return newConf;
+        }
+
+        protected Configuration DiscoverNewRandomConfig()
+        {
+            RandomExplorer rndExpl = new RandomExplorer(undiscoveredConfigs, this.vm, 1, 0);
+            List<Configuration> step = rndExpl.GetKnowledge();
+            if (step != null && step.Count > 0)
+            {
+
+                return step[0];
             }
             else
             {
-                RandomExplorer rndExpl = new RandomExplorer(this.undiscoveredConfigs, this.batchSize, 0);
-                step = rndExpl.GetKnowledge();
+                return null;
             }
-            ExpandCurrentKnowledge(step);
         }
 
-        private Configuration DiscoverNewConfig()
+        protected Configuration DiscoverNewCombinatorialConfig()
         {
             Configuration newConfig = null;
 
@@ -114,7 +57,7 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
             {
                 BinaryOption option = this.unusedBinaryOptions[0];
                 List<BinaryOption> optionList = new List<BinaryOption> { option };
-                List<BinaryOption> newList = variantGenerator.minimizeConfig(optionList, this.vm, true, null);
+                List<BinaryOption> newList = this.variantGenerator.minimizeConfig(optionList, this.vm, true, null);
                 newConfig = this.GetConfigWithBinaryOptions(newList);
                 this.unusedBinaryOptions.Remove(option);
             }
@@ -128,7 +71,7 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
                     int id = rnd.Next(this.unusedBinaryOptionPairs.Count);
                     Tuple<BinaryOption, BinaryOption> tup = this.unusedBinaryOptionPairs[id];
                     List<BinaryOption> optionList = new List<BinaryOption> { tup.Item1, tup.Item2 };
-                    List<BinaryOption> newList = variantGenerator.minimizeConfig(optionList, this.vm, true, null);
+                    List<BinaryOption> newList = this.variantGenerator.minimizeConfig(optionList, this.vm, true, null);
                     newConfig = this.GetConfigWithBinaryOptions(newList);
                     this.unusedBinaryOptionPairs.Remove(tup);
                 }
@@ -136,29 +79,24 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
             return newConfig;
         }
 
-        private Configuration GetConfigWithBinaryOptions(List<BinaryOption> newList)
+        
+        protected override void DiscoverFirstConfig()
         {
-            Configuration configTemplate = new Configuration(newList);
-            Configuration configMatch = null;
-            foreach (Configuration config in this.undiscoveredConfigs)
+            // Dictionary<BinaryOption, BinaryOption.BinaryValue> binaryOptions = globalConfigList[0].BinaryOptions;
+            //List<BinaryOption> binKeys = new List<BinaryOption>(binaryOptions.Keys);
+            //this.binaryOptions = binKeys;
+            this.binaryOptions = vm.BinaryOptions;
+            this.unusedBinaryOptions = new List<BinaryOption>(vm.BinaryOptions);
+            unusedBinaryOptionPairs = new List<Tuple<BinaryOption, BinaryOption>>();
+            for (int i = 0; i < this.binaryOptions.Count - 1; i++)
             {
-                if (config.Equals(configTemplate))
+                for (int j = i + 1; j < this.binaryOptions.Count; j++)
                 {
-                    configMatch = config;
-                    break;
+                    Tuple<BinaryOption, BinaryOption> newPair = new Tuple<BinaryOption, BinaryOption>(binaryOptions[i], binaryOptions[j]);
+                    this.unusedBinaryOptionPairs.Add(newPair);
                 }
             }
-            this.undiscoveredConfigs.Remove(configMatch);
-            return configMatch;
         }
 
-        private void ExpandCurrentKnowledge(List<Configuration> newConfigs)
-        {
-            History.Add(newConfigs);
-            currentKnowledge = new List<Configuration>(currentKnowledge);
-            currentKnowledge.AddRange(newConfigs);
-        }
-
-        public List<List<Configuration>> History { get => history; }
     }
 }
