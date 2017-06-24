@@ -15,6 +15,17 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
 
         public CombinatorialExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize, int sleepCycles) : base(globalConfigList, vm, batchSize, sleepCycles)
         {
+            this.binaryOptions = vm.BinaryOptions;
+            this.unusedBinaryOptions = new List<BinaryOption>(vm.BinaryOptions);
+            unusedBinaryOptionPairs = new List<Tuple<BinaryOption, BinaryOption>>();
+            for (int i = 0; i < this.binaryOptions.Count - 1; i++)
+            {
+                for (int j = i + 1; j < this.binaryOptions.Count; j++)
+                {
+                    Tuple<BinaryOption, BinaryOption> newPair = new Tuple<BinaryOption, BinaryOption>(binaryOptions[i], binaryOptions[j]);
+                    this.unusedBinaryOptionPairs.Add(newPair);
+                }
+            }
         }
 
 
@@ -36,17 +47,8 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
 
         protected Configuration DiscoverNewRandomConfig()
         {
-            RandomExplorer rndExpl = new RandomExplorer(undiscoveredConfigs, this.vm, 1, 0);
-            List<Configuration> step = rndExpl.GetKnowledge();
-            if (step != null && step.Count > 0)
-            {
-
-                return step[0];
-            }
-            else
-            {
-                return null;
-            }
+            Configuration conf = RandomExplorer.DrawWithReplacement(this.undiscoveredConfigs);
+            return conf;
         }
 
         protected Configuration DiscoverNewCombinatorialConfig()
@@ -80,22 +82,9 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
         }
 
         
-        protected override void DiscoverFirstConfig()
+        protected override List<Configuration> DiscoverFirstConfigs()
         {
-            // Dictionary<BinaryOption, BinaryOption.BinaryValue> binaryOptions = globalConfigList[0].BinaryOptions;
-            //List<BinaryOption> binKeys = new List<BinaryOption>(binaryOptions.Keys);
-            //this.binaryOptions = binKeys;
-            this.binaryOptions = vm.BinaryOptions;
-            this.unusedBinaryOptions = new List<BinaryOption>(vm.BinaryOptions);
-            unusedBinaryOptionPairs = new List<Tuple<BinaryOption, BinaryOption>>();
-            for (int i = 0; i < this.binaryOptions.Count - 1; i++)
-            {
-                for (int j = i + 1; j < this.binaryOptions.Count; j++)
-                {
-                    Tuple<BinaryOption, BinaryOption> newPair = new Tuple<BinaryOption, BinaryOption>(binaryOptions[i], binaryOptions[j]);
-                    this.unusedBinaryOptionPairs.Add(newPair);
-                }
-            }
+            return new List<Configuration>();
         }
 
     }

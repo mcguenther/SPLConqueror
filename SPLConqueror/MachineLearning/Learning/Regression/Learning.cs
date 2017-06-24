@@ -105,11 +105,11 @@ namespace MachineLearning.Learning.Regression
                 VariabilityModel vm = GlobalState.varModel;
                 this.models.Add(sel);
 
-                //ILearningSetExplorer expl = new HighErrorExplorer(testSet, sel, 10);
-                //ILearningSetExplorer expl = new RandomExplorer(testSet, vm, 10,2);
+                //ILearningSetExplorer expl = new HighErrorExplorer(testSet, vm, sel, 4, 2, 4, 2, 1);
+                ILearningSetExplorer expl = new RandomExplorer(testSet, vm, 10,2);
                 //ILearningSetExplorer expl = new OmniscientExplorer(testSet);
-                ILearningSetExplorer expl = new CombinatorialExplorer(testSet, vm, 10,1);
-                //ILearningSetExplorer expl = new MaxDistanceExplorer(testSet, vm, 5);
+                //ILearningSetExplorer expl = new CombinatorialExplorer(testSet, vm, 10,1);
+                //ILearningSetExplorer expl = new MaxDistanceExplorer(testSet, vm, 20,2);
                 //sel.setLearningSet(testSet);
 
                 sel.LearningSetExplorer = expl;
@@ -119,7 +119,7 @@ namespace MachineLearning.Learning.Regression
                 sel.learn();
                 sw.Stop();
                 Console.WriteLine("Elapsed={0}", sw.Elapsed);
-                GlobalState.logInfo.logLine("Number of measurements=" + sel.GetLearningSet().Count);
+                GlobalState.logInfo.logLine("Final number of measurements=" + sel.GetLearningSet().Count);
             }
         }
 
@@ -140,7 +140,7 @@ namespace MachineLearning.Learning.Regression
             {
                 ObservableCollection<LearningRound> learningRounds = new ObservableCollection<LearningRound>();
                 GlobalState.logInfo.logLine("Learning progress:");
-                foreach(LearningRound lr in recoveredLr)
+                foreach (LearningRound lr in recoveredLr)
                 {
                     GlobalState.logInfo.logLine(lr.ToString());
                     learningRounds.Add(lr);
@@ -236,7 +236,7 @@ namespace MachineLearning.Learning.Regression
                     this.Consume();
                 }
                 );
-             }
+            }
         }
 
         public void Dispose() { _taskQ.CompleteAdding(); }
@@ -305,7 +305,8 @@ namespace MachineLearning.Learning.Regression
                 if (this.testSet.Count == GlobalState.allMeasurements.Configurations.Count)
                 {
                     this.testSet = new List<Configuration>();
-                } else
+                }
+                else
                 {
                     this.testSet.Clear();
                 }
@@ -313,7 +314,8 @@ namespace MachineLearning.Learning.Regression
                 if (this.validationSet.Count == GlobalState.allMeasurements.Configurations.Count)
                 {
                     this.validationSet = new List<Configuration>();
-                } else
+                }
+                else
                 {
                     this.validationSet.Clear();
                 }

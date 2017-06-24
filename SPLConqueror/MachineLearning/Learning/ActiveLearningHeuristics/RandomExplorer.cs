@@ -6,17 +6,17 @@ using System.Text;
 
 namespace MachineLearning.Learning.ActiveLearningHeuristics
 {
-    class RandomExplorer : StepExplorer 
+    class RandomExplorer : StepExplorer
     {
         static Random rnd = new Random();
-    
+
 
         public RandomExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize) : this(globalConfigList, vm, batchSize, 0)
         {
         }
 
 
-        public RandomExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize, int sleepCycles) : base(globalConfigList, vm, batchSize,sleepCycles)
+        public RandomExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize, int sleepCycles) : base(globalConfigList, vm, batchSize, sleepCycles)
         {
         }
 
@@ -38,11 +38,19 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
             return newConf;
         }
 
-        protected override void DiscoverFirstConfig()
+        public static Configuration DrawWithReplacement(List<Configuration> configs)
         {
-           /* No need for speacial initialization */
+            int rndConfId = rnd.Next(configs.Count);
+            Configuration newConf = configs[rndConfId];
+            return newConf;
         }
-        
-        
+
+
+        protected override List<Configuration> DiscoverFirstConfigs()
+        {
+            return new List<Configuration>();
+        }
+
+
     }
 }

@@ -33,7 +33,7 @@ namespace MachineLearning.Learning.Regression
         protected List<Feature> bruteForceCandidates = new List<Feature>();
         protected IDictionary<Feature, double> bruteForceCandidateRate = new Dictionary<Feature, double>();
         public double finalError = 0.0;
-        protected static int INIT_LEARNING_TEMPERATURE = 10;
+        protected static int INIT_LEARNING_TEMPERATURE = 5;
         protected int learningTemperature = INIT_LEARNING_TEMPERATURE;
         protected static int INIT_SAMPLING_TEMPERATURE = 3;
         protected int samplingTemperature = INIT_SAMPLING_TEMPERATURE;
@@ -245,7 +245,7 @@ namespace MachineLearning.Learning.Regression
                 }
                 learningHistory.Add(current);
                 GlobalState.logInfo.logLine(current.ToString());
-
+                GlobalState.logInfo.logLine("samples=" + GetLearningSet().Count);
                 if (this.MLsettings.useBackward)
                 {
                     current = performBackwardStep(current);
@@ -399,7 +399,10 @@ namespace MachineLearning.Learning.Regression
 
             // Evaluation of the candidates
             List<Feature> sortedFeatures = errorOfFeature.Keys.ToList();
-            sortedFeatures.Sort(sortedFeatures.First());
+            if (sortedFeatures.Count > 0)
+            {
+                sortedFeatures.Sort(sortedFeatures.First());
+            }
             if (MLsettings.scoreMeasure == ML_Settings.ScoreMeasure.RELERROR)
             {
                 foreach (Feature candidate in sortedFeatures)
