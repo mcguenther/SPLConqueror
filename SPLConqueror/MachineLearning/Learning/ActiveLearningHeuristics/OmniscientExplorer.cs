@@ -6,9 +6,10 @@ using System.Text;
 
 namespace MachineLearning.Learning.ActiveLearningHeuristics
 {
-    class OmniscientExplorer : ILearningSetExplorer
+    public class OmniscientExplorer : ILearningSetExplorer
     {
         private List<Configuration> globalConfigList;
+        public const string command = "explorer-omni";
         public OmniscientExplorer(List<Configuration> globalConfigList)
         {
             this.globalConfigList = globalConfigList;

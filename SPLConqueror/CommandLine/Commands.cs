@@ -7,6 +7,7 @@ using MachineLearning.Learning;
 using MachineLearning.Learning.Regression;
 using MachineLearning.Sampling.ExperimentalDesigns;
 using MachineLearning.Sampling.Heuristics;
+using MachineLearning.Learning.ActiveLearningHeuristics;
 using MachineLearning.Solver;
 using SPLConqueror_Core;
 using MachineLearning.Sampling;
@@ -84,6 +85,14 @@ namespace CommandLine
         public const string COMMAND_EXPDESIGN_RANDOM = "random";
 
         public const string COMMAND_SUBSCRIPT = "script";
+
+        public const string COMMAND_EXPLORER_COMINATORIAL = CombinatorialExplorer.command;
+        public const string COMMAND_EXPLORER_MAX_ERROR = MaxErrorExplorer.command;
+        public const string COMMAND_EXPLORER_MAX_DISTANCE = MaxDistanceExplorer.command;
+        public const string COMMAND_EXPLORER_RANDOM = RandomExplorer.command;
+        public const string COMMAND_EXPLORER_OMNISCIENT = OmniscientExplorer.command;
+
+
 
         public const string DEFINE_PYTHON_PATH = "define-python-path";
         public const string COMMAND_PYTHON_LEARN = "learn-python";
@@ -636,10 +645,11 @@ namespace CommandLine
                         Dictionary<String, String> prameters = new Dictionary<string, string>();
                         //parseParametersToLinearAndQuadraticBinarySampling(para);
 
- 						for(int i = 0; i < para.Length; i++)
+                        for (int i = 0; i < para.Length; i++)
                         {
                             prameters.Add(para[i].Split(':')[0], para[i].Split(':')[1]);
-                        }                        if (taskAsParameter.Contains(COMMAND_VALIDATION))
+                        }
+                        if (taskAsParameter.Contains(COMMAND_VALIDATION))
                         {
                             this.binaryToSampleValidation.Add(SamplingStrategies.T_WISE);
                             this.exp.info.binarySamplings_Validation = "T_WISE ";
@@ -651,7 +661,7 @@ namespace CommandLine
                         }
                         ConfigurationBuilder.binaryParams.tWiseParameters.Add(prameters);
                     }
-                    break;  
+                    break;
 
                 case COMMAND_LOG:
 
@@ -741,7 +751,7 @@ namespace CommandLine
                     {
                         Dictionary<String, String> parameter = new Dictionary<String, String>();
                         string[] para = task.Split(new char[] { ' ' });
-                        for(int i = 0; i < para.Length; i++)
+                        for (int i = 0; i < para.Length; i++)
                         {
                             String key = para[i].Split(':')[0];
                             String value = para[i].Split(':')[1];
@@ -926,6 +936,40 @@ namespace CommandLine
                         break;
                         GlobalState.logInfo.logLine("Finished");
                     }
+
+
+                case COMMAND_EXPLORER_RANDOM:
+                    {
+                        Dictionary<string, string> tmpDict = ExtractExplorerSettings(task, COMMAND_EXPLORER_RANDOM);
+                        GlobalState.explorerSettings = tmpDict;
+                        break;
+                    }
+                case COMMAND_EXPLORER_OMNISCIENT:
+                    {
+                        Dictionary<string, string> tmpDict = ExtractExplorerSettings(task, COMMAND_EXPLORER_OMNISCIENT);
+                        GlobalState.explorerSettings = tmpDict;
+                        break;
+                    }
+                case COMMAND_EXPLORER_MAX_ERROR:
+                    {
+                        Dictionary<string, string> tmpDict = ExtractExplorerSettings(task, COMMAND_EXPLORER_MAX_ERROR);
+                        GlobalState.explorerSettings = tmpDict;
+                        break;
+                    }
+                case COMMAND_EXPLORER_MAX_DISTANCE:
+                    {
+                        Dictionary<string, string> tmpDict = ExtractExplorerSettings(task, COMMAND_EXPLORER_MAX_DISTANCE);
+                        GlobalState.explorerSettings = tmpDict;
+                        break;
+                    }
+                case COMMAND_EXPLORER_COMINATORIAL:
+                    {
+                        Dictionary<string, string> tmpDict = ExtractExplorerSettings(task, COMMAND_EXPLORER_COMINATORIAL);
+                        GlobalState.explorerSettings = tmpDict;
+                        break;
+                    }
+
+
                 case COMMAND_OPTIMIZE_PARAMETER:
                     {
                         InfluenceModel infMod = new InfluenceModel(GlobalState.varModel, GlobalState.currentNFP);
@@ -997,6 +1041,24 @@ namespace CommandLine
                     return command;
             }
             return "";
+        }
+
+        private static Dictionary<string, string> ExtractExplorerSettings(string task, string type)
+        {
+            Dictionary<string, string> tmpDict = new Dictionary<String, String>();
+            String settings = task.Trim();
+            settings = settings.Replace(System.Environment.NewLine, "");
+            if (!String.IsNullOrEmpty(settings))
+            {
+                String[] settingArray = settings.Split(' ');
+                for (int i = 0; i < settingArray.Length; i++)
+                {
+                    string[] nameAndValue = settingArray[i].Split(new char[] { ':' }, 2);
+                    tmpDict.Add(nameAndValue[0], nameAndValue[1]);
+                }
+            }
+            tmpDict.Add("type", type);
+            return tmpDict;
         }
 
         private string createSamplingIdentifier()

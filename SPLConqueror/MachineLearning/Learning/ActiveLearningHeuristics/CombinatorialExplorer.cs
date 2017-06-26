@@ -9,6 +9,7 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
 {
     public class CombinatorialExplorer : StepExplorer
     {
+        public const string command = "explorer-combi";
         static Random rnd = new Random();
         public List<BinaryOption> unusedBinaryOptions;
         public List<Tuple<BinaryOption, BinaryOption>> unusedBinaryOptionPairs;
@@ -81,7 +82,7 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
             return newConfig;
         }
 
-        
+
         protected override List<Configuration> DiscoverFirstConfigs()
         {
             return new List<Configuration>();

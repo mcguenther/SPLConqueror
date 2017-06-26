@@ -105,12 +105,7 @@ namespace MachineLearning.Learning.Regression
                 VariabilityModel vm = GlobalState.varModel;
                 this.models.Add(sel);
 
-                //ILearningSetExplorer expl = new HighErrorExplorer(testSet, vm, sel, 4, 2, 4, 2, 1);
-                ILearningSetExplorer expl = new RandomExplorer(testSet, vm, 10,2);
-                //ILearningSetExplorer expl = new OmniscientExplorer(testSet);
-                //ILearningSetExplorer expl = new CombinatorialExplorer(testSet, vm, 10,1);
-                //ILearningSetExplorer expl = new MaxDistanceExplorer(testSet, vm, 20,2);
-                //sel.setLearningSet(testSet);
+                ILearningSetExplorer expl = CreateLearningSetExplorer(GlobalState.explorerSettings, testSet, vm, sel);
 
                 sel.LearningSetExplorer = expl;
                 sel.setValidationSet(this.validationSet);
@@ -122,6 +117,56 @@ namespace MachineLearning.Learning.Regression
                 GlobalState.logInfo.logLine("Final number of measurements=" + sel.GetLearningSet().Count);
             }
         }
+
+        private ILearningSetExplorer CreateLearningSetExplorer(Dictionary<string, string> explorerSettings, List<Configuration> configs, VariabilityModel vm, FeatureSubsetSelection sel)
+        {
+            ILearningSetExplorer expl = null;
+            //TODO: consider implementing factory pattern
+            string type = explorerSettings["type"];
+            switch (type)
+            {
+                case CombinatorialExplorer.command:
+                    {
+                        int batchSize = Int32.Parse(explorerSettings["batchSize"]);
+                        int sleepCycles = Int32.Parse(explorerSettings["sleepCycles"]);
+                        expl = new CombinatorialExplorer(testSet, vm, batchSize, sleepCycles);
+                        break;
+                    }
+                case MaxDistanceExplorer.command:
+                    {
+                        int batchSize = Int32.Parse(explorerSettings["batchSize"]);
+                        int sleepCycles = Int32.Parse(explorerSettings["sleepCycles"]);
+                        expl = new MaxDistanceExplorer(testSet, vm, batchSize, sleepCycles);
+                        break;
+                    }
+                case MaxErrorExplorer.command:
+                    {
+                        int internalRoundsPerCycle = Int32.Parse(explorerSettings["internalRoundsPerCycle"]);
+                        int batchSizeExploit = Int32.Parse(explorerSettings["batchSizeExploit"]);
+                        int batchSizeExplore = Int32.Parse(explorerSettings["batchSizeExplore"]);
+                        int sleepCycles = Int32.Parse(explorerSettings["sleepCycles"]);
+                        int sleepRoundsExplore = Int32.Parse(explorerSettings["sleepRoundsExplore"]);
+                        expl = new MaxErrorExplorer(testSet, vm, sel, internalRoundsPerCycle, batchSizeExploit, batchSizeExplore, sleepCycles, sleepRoundsExplore);
+                        break;
+                    }
+                case OmniscientExplorer.command:
+                    {
+                        expl = new OmniscientExplorer(testSet);
+                        break;
+                    }
+                case RandomExplorer.command:
+                    {
+                        int batchSize = Int32.Parse(explorerSettings["batchSize"]);
+                        int sleepCycles = Int32.Parse(explorerSettings["sleepCycles"]);
+                        expl = new RandomExplorer(testSet, vm, batchSize, sleepCycles);
+                        break;
+                    }
+
+            }
+
+            return expl;
+        }
+
 
 
         /// <summary>

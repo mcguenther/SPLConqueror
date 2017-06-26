@@ -7,8 +7,9 @@ using System.Text;
 
 namespace MachineLearning.Learning.ActiveLearningHeuristics
 {
-    class HighErrorExplorer : StepExplorer
+    public class MaxErrorExplorer : StepExplorer
     {
+        public const string command = "explorer-max-error";
         private FeatureSubsetSelection sel;
         private int batchSizeExploit;
         private int batchSizeExplore;
@@ -16,7 +17,7 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
         private int sleepRoundsExploreRemaining;
         private int internalRoundsPerCycle;
 
-        public HighErrorExplorer(List<Configuration> globalConfigs, VariabilityModel vm,
+        public MaxErrorExplorer(List<Configuration> globalConfigs, VariabilityModel vm,
             FeatureSubsetSelection sel, int internalRoundsPerCycle,
             int batchSizeExploit, int batchSizeExplore,
              int sleepCycles, int sleepRoundsExplore) : base(globalConfigs, vm, batchSizeExploit, sleepCycles)

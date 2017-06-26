@@ -245,7 +245,10 @@ namespace MachineLearning.Learning.Regression
                 }
                 learningHistory.Add(current);
                 GlobalState.logInfo.logLine(current.ToString());
-                GlobalState.logInfo.logLine("samples=" + GetLearningSet().Count);
+                if (this.learningSetExplorer != null)
+                {
+                    GlobalState.logInfo.logLine("samples=" + GetLearningSet().Count);
+                }
                 if (this.MLsettings.useBackward)
                 {
                     current = performBackwardStep(current);

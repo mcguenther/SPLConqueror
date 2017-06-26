@@ -7,12 +7,10 @@ using System.Text;
 
 namespace MachineLearning.Learning.ActiveLearningHeuristics
 {
-    class MaxDistanceExplorer : StepExplorer
+    public class MaxDistanceExplorer : StepExplorer
     {
+        public const string command = "explorer-max-distance";
         static Random rnd = new Random();
-
-
-
 
         public MaxDistanceExplorer(List<Configuration> globalConfigList, VariabilityModel vm, int batchSize) : this(globalConfigList, vm, batchSize, 0)
         {

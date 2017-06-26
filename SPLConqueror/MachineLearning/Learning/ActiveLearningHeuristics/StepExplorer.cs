@@ -189,7 +189,7 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
 
         }
 
-            static protected int ManhattenDistance(Configuration centralConf, Configuration remoteConf)
+        static protected int ManhattenDistance(Configuration centralConf, Configuration remoteConf)
         {
             Dictionary<BinaryOption, BinaryOption.BinaryValue> opts = remoteConf.BinaryOptions;
             int confDistance = 0;

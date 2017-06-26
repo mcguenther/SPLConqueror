@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 
+
 namespace SPLConqueror_Core
 {
     /// <summary>
@@ -70,6 +71,8 @@ namespace SPLConqueror_Core
         private static Dictionary<Configuration, Configuration> substitutedConfigs = new Dictionary<Configuration, Configuration>();
 
         public static List<ConfigurationOption> optionOrder = new List<ConfigurationOption>();
+
+        public static Dictionary<string, string> explorerSettings;
 
         private GlobalState(){ }
 
