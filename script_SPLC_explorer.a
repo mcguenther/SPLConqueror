@@ -1,0 +1,22 @@
+log C:\Users\Johannes\Documents\SPLConqueror\full.log
+mlSettings abortError:1 minImprovementPerRound:0.01 numberOfRounds:96 withHierarchy:False parallelization:False bagging:False crossValidation:False
+vm C:\Users\Johannes\OneDrive\Dokumente\Master Weimar\Module\WiSe16\Search-Based Software Engineering\Phase3\sample-input\testData\H264_new.xml
+all C:\Users\Johannes\OneDrive\Dokumente\Master Weimar\Module\WiSe16\Search-Based Software Engineering\Phase3\sample-input\testData\measurements.xml
+nfp Measured Value
+#negfw
+#featureWise
+#pairWise
+#random
+allBinary
+
+#explorer-random batchSize:10 sleepCycles:1
+#explorer-max-distance batchSize:10 sleepCycles:1
+#explorer-max-error internalRoundsPerCycle:2 batchSizeExploit:3 batchSizeExplore:4 sleepCycles:1 sleepRoundsExplore:1
+explorer-combi batchSize:20 sleepCycles:2
+#explorer-omni
+
+start
+#analyze-learning
+clean-sampling
+# clean-learning
+# clean-global 
