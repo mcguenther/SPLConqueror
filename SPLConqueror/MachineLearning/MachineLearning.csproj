@@ -20,6 +20,24 @@
     <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'with .a-File|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\with .a-File\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'with .a-File|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\with .a-File\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -87,11 +105,13 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Learning\ActiveLearningHeuristics\CombinatorialExplorer.cs" />
     <Compile Include="Learning\ActiveLearningHeuristics\RandomExplorer.cs" />
     <Compile Include="Learning\ActiveLearningHeuristics\OmniscientExplorer.cs" />
     <Compile Include="Learning\ActiveLearningHeuristics\MaxDistanceExplorer.cs" />
-    <Compile Include="Learning\ActiveLearningHeuristics\HighErrorExplorer.cs" />
+    <Compile Include="Learning\ActiveLearningHeuristics\MaxErrorExplorer.cs" />
     <Compile Include="Learning\ActiveLearningHeuristics\ILearningSetExplorer.cs" />
+    <Compile Include="Learning\ActiveLearningHeuristics\StepExplorer.cs" />
     <Compile Include="Learning\LearningInfo.cs" />
     <Compile Include="Learning\ML_Settings.cs" />
     <Compile Include="Learning\ML_SettingsGenerator.cs" />
