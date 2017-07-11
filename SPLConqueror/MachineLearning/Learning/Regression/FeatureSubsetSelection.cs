@@ -1211,7 +1211,7 @@ namespace MachineLearning.Learning.Regression
         /// <param name="measurements">The configurations containing the measured values.</param>
         public void setLearningSet(List<Configuration> measurements)
         {
-            double[] temparryLearn = new double[measurements.Count]; ;//measured values
+            double[] temparryLearn = new double[measurements.Count];//measured values
 
             this.learningSet.Clear();
             for (int i = 0; i < measurements.Count; i++)
@@ -1337,7 +1337,7 @@ namespace MachineLearning.Learning.Regression
                 {
                     column[r] = 1;
                 }
-                this.DM_columns.GetOrAdd(feature, column);
+                this.DM_columns.AddOrUpdate(feature, column, (key, existingVal) => column);
                 return;
             }
 

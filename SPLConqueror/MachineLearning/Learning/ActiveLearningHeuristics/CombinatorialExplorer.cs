@@ -41,16 +41,12 @@ namespace MachineLearning.Learning.ActiveLearningHeuristics
 
             if (newConf == null)
             {
-                newConf = DiscoverNewRandomConfig();
+                newConf = DiscoverRandomConfig();
             }
             return newConf;
         }
 
-        protected Configuration DiscoverNewRandomConfig()
-        {
-            Configuration conf = RandomExplorer.DrawWithReplacement(this.undiscoveredConfigs);
-            return conf;
-        }
+ 
 
         protected Configuration DiscoverNewCombinatorialConfig()
         {
