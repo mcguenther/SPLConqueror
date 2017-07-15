@@ -16,7 +16,7 @@ explorer-combi batchSize:20 sleepCycles:2
 #explorer-omni
 
 start
-#analyze-learning
+analyze-learning
 clean-sampling
 # clean-learning
 # clean-global 
